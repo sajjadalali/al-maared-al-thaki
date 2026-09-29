@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-tajawal);
+
+  --color-brand-50: #eef4fb;
+  --color-brand-100: #d9e6f4;
+  --color-brand-200: #b3cce9;
+  --color-brand-300: #82abd9;
+  --color-brand-400: #4d84c2;
+  --color-brand-500: #2c62a3;
+  --color-brand-600: #1f4c86;
+  --color-brand-700: #193d6c;
+  --color-brand-800: #132f54;
+  --color-brand-900: #0f2540;
+  --color-brand-950: #081627;
+
+  --color-surface: #f4f7fb;
+  --color-surface-muted: #eaf0f7;
+
+  --color-success: #1c9a5b;
+  --color-warning: #c8862a;
+  --color-danger: #c33f3f;
+
+  --animate-fade-in: fade-in 0.25s ease-out;
+  --animate-bounce-dot: bounce-dot 1.2s infinite ease-in-out;
+  --animate-pop-in: pop-in 0.2s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes bounce-dot {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.5;
+    }
+    30% {
+      transform: translateY(-4px);
+      opacity: 1;
+    }
+  }
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #101828;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brand-300) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-brand-300);
+  border-radius: 999px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
