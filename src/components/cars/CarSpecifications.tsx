@@ -26,15 +26,15 @@ export function CarSpecifications({ car }: { car: Car }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
       {specs.map(({ icon: Icon, label, value }) => (
-        <div key={label} className="flex items-center gap-3 rounded-xl border border-black/5 bg-surface p-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-700">
+        <div key={label} className="flex items-center gap-2.5 rounded-xl border border-black/5 bg-surface p-3 sm:gap-3 sm:p-3.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-700 sm:h-9 sm:w-9">
             <Icon className="h-4.5 w-4.5" />
           </span>
           <div className="min-w-0">
             <p className="text-[11px] text-neutral-500">{label}</p>
-            <p className="truncate text-sm font-bold text-brand-950">{value}</p>
+            <p className="break-words text-sm font-bold leading-6 text-brand-950">{value}</p>
           </div>
         </div>
       ))}

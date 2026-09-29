@@ -2,13 +2,16 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
-import { getBrands, getCities, getBodyTypes } from "@/data/cars";
-import { PRICE_BANDS, YEAR_OPTIONS } from "@/lib/filterOptions";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { PRICE_BANDS, getFilterOptions, priceBandIndex } from "@/lib/filterOptions";
+import { cn } from "@/lib/cn";
 
-const CONDITIONS = ["جديدة", "مستعملة"];
-const FUELS = ["بنزين", "ديزل", "هايبرد", "كهربائي"];
-const TRANSMISSIONS = ["أوتوماتيك", "يدوي"];
+// URL keys that count as a user-chosen filter (sorting doesn't).
+const FILTER_KEYS = [
+  "query", "brand", "bodyType", "condition", "city", "fuel",
+  "transmission", "minPrice", "maxPrice", "minYear", "tag",
+];
 
 export function CarFilters() {
   const router = useRouter();
@@ -16,133 +19,149 @@ export function CarFilters() {
   const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState(searchParams.get("query") ?? "");
+  const priceIdx = priceBandIndex(searchParams.get("minPrice"), searchParams.get("maxPrice"));
+  const options = getFilterOptions({
+    query: searchParams.get("query") ?? undefined,
+    tag: searchParams.get("tag") ?? undefined,
+    brand: searchParams.get("brand") ?? undefined,
+    city: searchParams.get("city") ?? undefined,
+    year: searchParams.get("minYear") ?? undefined,
+    price: priceIdx || undefined,
+    bodyType: searchParams.get("bodyType") ?? undefined,
+    condition: searchParams.get("condition") ?? undefined,
+    fuel: searchParams.get("fuel") ?? undefined,
+    transmission: searchParams.get("transmission") ?? undefined,
+  });
+
+  // Every change goes through one URL update, so related keys (minYear +
+  // maxYear, minPrice + maxPrice) never overwrite each other.
+  function setParams(updates: Record<string, string | null>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    router.replace(`${pathname}${params.toString() ? `?${params}` : ""}`, { scroll: false });
+  }
 
   useEffect(() => {
     const handle = setTimeout(() => {
-      const current = searchParams.get("query") ?? "";
-      if (query !== current) updateParam("query", query || null);
+      if (query !== (searchParams.get("query") ?? "")) setParams({ query: query || null });
     }, 350);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  function updateParam(key: string, value: string | null) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value);
-    else params.delete(key);
-    router.replace(`${pathname}${params.toString() ? `?${params}` : ""}`, { scroll: false });
-  }
+  const param = (key: string) => searchParams.get(key) ?? "";
+  const activeCount = FILTER_KEYS.filter((k) => k !== "maxPrice" && searchParams.has(k)).length;
 
-  function currentPriceIdx() {
-    const min = searchParams.get("minPrice");
-    const max = searchParams.get("maxPrice");
-    if (!min && !max) return "";
-    const idx = PRICE_BANDS.findIndex(
-      (b) => String(b.min ?? "") === (min ?? "") && String(b.max ?? "") === (max ?? "")
-    );
-    return idx === -1 ? "" : String(idx);
+  function clearAll() {
+    setQuery("");
+    const sort = searchParams.get("sort");
+    router.replace(sort ? `${pathname}?sort=${sort}` : pathname, { scroll: false });
   }
-
-  function applyPriceBand(idx: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("minPrice");
-    params.delete("maxPrice");
-    if (idx !== "") {
-      const band = PRICE_BANDS[Number(idx)];
-      if (band.min) params.set("minPrice", String(band.min));
-      if (band.max) params.set("maxPrice", String(band.max));
-    }
-    router.replace(`${pathname}${params.toString() ? `?${params}` : ""}`, { scroll: false });
-  }
-
-  const hasActiveFilters = [...searchParams.keys()].length > 0;
 
   const fields = (
-    <div className="flex flex-col gap-5">
-      <div>
-        <label className="mb-1.5 block text-xs font-bold text-neutral-500">بحث</label>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="ابحث عن ماركة أو موديل..."
-          className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-sm outline-none focus:border-brand-400"
-        />
+    <>
+      <div className="sm:col-span-2 lg:col-span-1">
+        <label htmlFor="car-search" className="mb-1.5 block text-xs font-bold text-neutral-500">
+          بحث
+        </label>
+        <div className="relative">
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <input
+            id="car-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ماركة، موديل، مدينة..."
+            className="w-full rounded-xl border border-black/10 bg-white py-2.5 pe-3.5 ps-9 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+          />
+        </div>
       </div>
 
-      <FilterSelect
+      <Dropdown
         label="الماركة"
-        value={searchParams.get("brand") ?? ""}
-        onChange={(v) => updateParam("brand", v || null)}
-        options={getBrands()}
+        value={param("brand")}
+        onChange={(v) => setParams({ brand: v || null })}
+        options={options.brands}
         placeholder="جميع الماركات"
+        placeholderCount={options.totals.brand}
       />
-      <FilterSelect
-        label="نوع الهيكل"
-        value={searchParams.get("bodyType") ?? ""}
-        onChange={(v) => updateParam("bodyType", v || null)}
-        options={getBodyTypes()}
-        placeholder="جميع الأنواع"
-      />
-      <FilterSelect
-        label="الحالة"
-        value={searchParams.get("condition") ?? ""}
-        onChange={(v) => updateParam("condition", v || null)}
-        options={CONDITIONS}
-        placeholder="الكل"
-      />
-      <FilterSelect
-        label="المدينة"
-        value={searchParams.get("city") ?? ""}
-        onChange={(v) => updateParam("city", v || null)}
-        options={getCities()}
-        placeholder="جميع المحافظات"
-      />
-      <FilterSelect
-        label="نوع الوقود"
-        value={searchParams.get("fuel") ?? ""}
-        onChange={(v) => updateParam("fuel", v || null)}
-        options={FUELS}
-        placeholder="الكل"
-      />
-      <FilterSelect
-        label="ناقل الحركة"
-        value={searchParams.get("transmission") ?? ""}
-        onChange={(v) => updateParam("transmission", v || null)}
-        options={TRANSMISSIONS}
-        placeholder="الكل"
-      />
-      <FilterSelect
-        label="نطاق السعر"
-        value={currentPriceIdx()}
-        onChange={applyPriceBand}
-        options={PRICE_BANDS.map((b, i) => ({ label: b.label, value: String(i) }))}
-        placeholder="كل الأسعار"
-      />
-      <FilterSelect
-        label="سنة الصنع"
-        value={searchParams.get("minYear") ?? ""}
+      <Dropdown
+        label="السعر"
+        value={priceIdx}
         onChange={(v) => {
-          updateParam("minYear", v || null);
-          updateParam("maxYear", v || null);
+          const band = v === "" ? undefined : PRICE_BANDS[Number(v)];
+          setParams({
+            minPrice: band?.min !== undefined ? String(band.min) : null,
+            maxPrice: band?.max !== undefined ? String(band.max) : null,
+          });
         }}
-        options={YEAR_OPTIONS.map(String)}
+        options={options.prices}
+        placeholder="كل الأسعار"
+        placeholderCount={options.totals.price}
+      />
+      <Dropdown
+        label="الموديل (سنة الصنع)"
+        value={param("minYear")}
+        onChange={(v) => setParams({ minYear: v || null, maxYear: v || null })}
+        options={options.years}
         placeholder="كل السنوات"
+        placeholderCount={options.totals.year}
+      />
+      <Dropdown
+        label="نوع الهيكل"
+        value={param("bodyType")}
+        onChange={(v) => setParams({ bodyType: v || null })}
+        options={options.bodyTypes}
+        placeholder="جميع الأنواع"
+        placeholderCount={options.totals.bodyType}
+      />
+      <Dropdown
+        label="الحالة"
+        value={param("condition")}
+        onChange={(v) => setParams({ condition: v || null })}
+        options={options.conditions}
+        placeholder="جديدة ومستعملة"
+        placeholderCount={options.totals.condition}
+      />
+      <Dropdown
+        label="المحافظة"
+        value={param("city")}
+        onChange={(v) => setParams({ city: v || null })}
+        options={options.cities}
+        placeholder="جميع المحافظات"
+        placeholderCount={options.totals.city}
+      />
+      <Dropdown
+        label="نوع الوقود"
+        value={param("fuel")}
+        onChange={(v) => setParams({ fuel: v || null })}
+        options={options.fuels}
+        placeholder="جميع الأنواع"
+        placeholderCount={options.totals.fuel}
+      />
+      <Dropdown
+        label="ناقل الحركة"
+        value={param("transmission")}
+        onChange={(v) => setParams({ transmission: v || null })}
+        options={options.transmissions}
+        placeholder="الكل"
+        placeholderCount={options.totals.transmission}
       />
 
-      {hasActiveFilters && (
+      {activeCount > 0 && (
         <button
           type="button"
-          onClick={() => {
-            setQuery("");
-            router.replace(pathname, { scroll: false });
-          }}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-black/10 py-2.5 text-sm font-semibold text-neutral-600 hover:bg-surface"
+          onClick={clearAll}
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-black/10 py-2.5 text-sm font-semibold text-neutral-600 transition hover:bg-surface sm:col-span-2 lg:col-span-1"
         >
           <X className="h-4 w-4" />
           مسح كل الفلاتر
         </button>
       )}
-    </div>
+    </>
   );
 
   return (
@@ -151,63 +170,41 @@ export function CarFilters() {
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-black/10 bg-white py-3 text-sm font-bold text-brand-900"
+          aria-expanded={mobileOpen}
+          className="flex w-full items-center justify-between gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-bold text-brand-900"
         >
-          <SlidersHorizontal className="h-4 w-4" />
-          الفلاتر {hasActiveFilters && "• مُفعّلة"}
+          <span className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4" />
+            تصفية النتائج
+            {activeCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-900 px-1.5 text-[11px] text-white">
+                {activeCount}
+              </span>
+            )}
+          </span>
+          <ChevronDown className={cn("h-4 w-4 transition-transform", mobileOpen && "rotate-180")} />
         </button>
         {mobileOpen && (
-          <div className="mt-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">{fields}</div>
+          <div className="mt-3 grid grid-cols-1 gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:grid-cols-2">
+            {fields}
+          </div>
         )}
       </div>
 
       <aside className="hidden lg:block lg:w-72 lg:shrink-0">
-        <div className="sticky top-24 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+        <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-extrabold text-brand-950">
             <SlidersHorizontal className="h-4 w-4" />
             تصفية النتائج
+            {activeCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-900 px-1.5 text-[11px] text-white">
+                {activeCount}
+              </span>
+            )}
           </h2>
-          {fields}
+          <div className="flex flex-col gap-4">{fields}</div>
         </div>
       </aside>
     </>
-  );
-}
-
-interface Option {
-  label: string;
-  value: string;
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: (string | Option)[];
-  placeholder: string;
-}) {
-  const normalized: Option[] = options.map((o) => (typeof o === "string" ? { label: o, value: o } : o));
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-bold text-neutral-500">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-400"
-      >
-        <option value="">{placeholder}</option>
-        {normalized.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }

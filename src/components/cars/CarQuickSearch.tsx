@@ -3,127 +3,93 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, MapPin, Coins, Calendar, Car as CarIcon } from "lucide-react";
-import { PRICE_BANDS, YEAR_OPTIONS } from "@/lib/filterOptions";
-import { getBodyTypes, getCities } from "@/data/cars";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { PRICE_BANDS, getFilterOptions } from "@/lib/filterOptions";
 
 export function CarQuickSearch() {
   const router = useRouter();
   const [city, setCity] = useState("");
-  const [priceIdx, setPriceIdx] = useState("");
+  const [brand, setBrand] = useState("");
   const [year, setYear] = useState("");
-  const [bodyType, setBodyType] = useState("");
-
-  const cities = getCities();
-  const bodyTypes = getBodyTypes();
+  const [priceIdx, setPriceIdx] = useState("");
+  const options = getFilterOptions({ city, brand, year, price: priceIdx });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
     if (city) params.set("city", city);
-    if (bodyType) params.set("bodyType", bodyType);
+    if (brand) params.set("brand", brand);
     if (year) {
       params.set("minYear", year);
       params.set("maxYear", year);
     }
     if (priceIdx !== "") {
       const band = PRICE_BANDS[Number(priceIdx)];
-      if (band.min) params.set("minPrice", String(band.min));
-      if (band.max) params.set("maxPrice", String(band.max));
+      if (band.min !== undefined) params.set("minPrice", String(band.min));
+      if (band.max !== undefined) params.set("maxPrice", String(band.max));
     }
     router.push(`/cars${params.toString() ? `?${params}` : ""}`);
   }
 
+  const cell = "lg:border-s lg:border-black/5 lg:first:border-s-0";
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-1 gap-2 rounded-2xl border border-black/5 bg-white p-2.5 shadow-xl shadow-brand-950/10 sm:grid-cols-2 lg:grid-cols-[auto_1fr_1fr_1fr_1fr]"
+      className="grid grid-cols-1 gap-1 rounded-2xl border border-black/5 bg-white p-2 shadow-xl shadow-brand-950/10 sm:grid-cols-2 sm:gap-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-center lg:gap-0"
     >
-      <button
-        type="submit"
-        className="order-last flex items-center justify-center gap-2 rounded-xl bg-brand-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-800 lg:order-first"
-      >
-        <Search className="h-4 w-4" />
-        بحث
-      </button>
-
-      <SelectField
-        icon={<MapPin className="h-4 w-4" />}
+      <Dropdown
+        variant="hero"
+        className={cell}
+        icon={<MapPin className="h-3.5 w-3.5" />}
         label="الموقع"
         value={city}
         onChange={setCity}
         placeholder="جميع المحافظات"
-        options={cities}
+        placeholderCount={options.totals.city}
+        options={options.cities}
       />
-      <SelectField
-        icon={<Coins className="h-4 w-4" />}
-        label="السعر"
-        value={priceIdx}
-        onChange={setPriceIdx}
-        placeholder="اختر السعر"
-        options={PRICE_BANDS.map((b, i) => ({ label: b.label, value: String(i) }))}
+      <Dropdown
+        variant="hero"
+        className={cell}
+        icon={<CarIcon className="h-3.5 w-3.5" />}
+        label="النوع"
+        value={brand}
+        onChange={setBrand}
+        placeholder="جميع الماركات"
+        placeholderCount={options.totals.brand}
+        options={options.brands}
       />
-      <SelectField
-        icon={<Calendar className="h-4 w-4" />}
+      <Dropdown
+        variant="hero"
+        className={cell}
+        icon={<Calendar className="h-3.5 w-3.5" />}
         label="الموديل"
         value={year}
         onChange={setYear}
-        placeholder="اختر الموديل"
-        options={YEAR_OPTIONS.map((y) => String(y))}
+        placeholder="كل السنوات"
+        placeholderCount={options.totals.year}
+        options={options.years}
       />
-      <SelectField
-        icon={<CarIcon className="h-4 w-4" />}
-        label="النوع"
-        value={bodyType}
-        onChange={setBodyType}
-        placeholder="اختر النوع"
-        options={bodyTypes}
+      <Dropdown
+        variant="hero"
+        className={cell}
+        icon={<Coins className="h-3.5 w-3.5" />}
+        label="السعر"
+        value={priceIdx}
+        onChange={setPriceIdx}
+        placeholder="كل الأسعار"
+        placeholderCount={options.totals.price}
+        options={options.prices}
       />
-    </form>
-  );
-}
 
-interface Option {
-  label: string;
-  value: string;
-}
-
-function SelectField({
-  icon,
-  label,
-  value,
-  onChange,
-  placeholder,
-  options,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  options: (string | Option)[];
-}) {
-  const normalized: Option[] = options.map((o) =>
-    typeof o === "string" ? { label: o, value: o } : o
-  );
-
-  return (
-    <label className="flex flex-col gap-1 rounded-xl px-3 py-1.5 hover:bg-surface">
-      <span className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-400">
-        {icon}
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none bg-transparent text-sm font-semibold text-brand-950 outline-none"
+      <button
+        type="submit"
+        className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-brand-900 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-brand-800 sm:col-span-2 lg:col-span-1 lg:ms-2 lg:mt-0"
       >
-        <option value="">{placeholder}</option>
-        {normalized.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <Search className="h-4 w-4" />
+        ابحث الآن
+      </button>
+    </form>
   );
 }

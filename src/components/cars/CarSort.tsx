@@ -1,13 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { ArrowUpDown } from "lucide-react";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 const SORT_OPTIONS = [
-  { value: "featured", label: "الأكثر تميزاً" },
-  { value: "newest", label: "الأحدث موديلاً" },
-  { value: "price-asc", label: "السعر: من الأقل للأعلى" },
-  { value: "price-desc", label: "السعر: من الأعلى للأقل" },
-  { value: "mileage-asc", label: "الأقل كيلومترات" },
+  { value: "featured", label: "الأكثر تميزاً", count: -1 },
+  { value: "newest", label: "الأحدث موديلاً", count: -1 },
+  { value: "price-asc", label: "السعر: من الأقل للأعلى", count: -1 },
+  { value: "price-desc", label: "السعر: من الأعلى للأقل", count: -1 },
+  { value: "mileage-asc", label: "الأقل كيلومترات", count: -1 },
 ];
 
 export function CarSort() {
@@ -24,16 +26,15 @@ export function CarSort() {
   }
 
   return (
-    <select
+    <Dropdown
+      variant="compact"
+      required
+      label="ترتيب النتائج"
+      icon={<ArrowUpDown className="h-4 w-4 shrink-0 text-neutral-400" />}
       value={value}
-      onChange={(e) => handleChange(e.target.value)}
-      className="rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm font-semibold text-brand-950 outline-none focus:border-brand-400"
-    >
-      {SORT_OPTIONS.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+      onChange={handleChange}
+      options={SORT_OPTIONS}
+      placeholder="الأكثر تميزاً"
+    />
   );
 }

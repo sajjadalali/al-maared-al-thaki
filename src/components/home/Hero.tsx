@@ -73,17 +73,17 @@ export function Hero() {
             مهمة ترشيح السيارة الأنسب لميزانيتك واحتياجك خلال ثوانٍ.
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-7 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-center">
             <Link
               href="/cars"
-              className="rounded-xl bg-white px-6 py-3 text-sm font-bold text-brand-900 shadow-lg shadow-black/10 transition hover:bg-white/90"
+              className="rounded-xl bg-white px-6 py-3 text-center text-sm font-bold text-brand-900 shadow-lg shadow-black/10 transition hover:bg-white/90"
             >
               تصفح السيارات
             </Link>
             <button
               type="button"
               onClick={() => openSadeemChat()}
-              className="flex items-center gap-2 rounded-xl bg-white/10 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/20 transition hover:bg-white/20"
+              className="flex items-center justify-center gap-2 rounded-xl bg-white/10 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/20 transition hover:bg-white/20"
             >
               <MessageCircle className="h-4 w-4" />
               تحدث مع سديم

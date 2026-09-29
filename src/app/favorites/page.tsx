@@ -35,7 +35,7 @@ export default function FavoritesPage() {
           </Link>
         </div>
       ) : (
-        <CarGrid cars={cars} />
+        <CarGrid cars={cars} className="lg:grid-cols-3 xl:grid-cols-4" />
       )}
     </div>
   );

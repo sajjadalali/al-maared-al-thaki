@@ -48,37 +48,15 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
         <span className="text-brand-900">{car.brand} {car.model}</span>
       </nav>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      {/* Phones read top to bottom: photo, then price and contact, then details.
+          On desktop the price box sits beside both, sticky while scrolling. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
         <div className="lg:col-span-2">
           <CarGallery car={car} />
-
-          <div className="mt-8">
-            <h2 className="mb-3 text-lg font-extrabold text-brand-950">المواصفات</h2>
-            <CarSpecifications car={car} />
-          </div>
-
-          <div className="mt-8">
-            <h2 className="mb-3 text-lg font-extrabold text-brand-950">الوصف</h2>
-            <p className="leading-8 text-neutral-600">{car.description}</p>
-          </div>
-
-          {car.features.length > 0 && (
-            <div className="mt-8">
-              <h2 className="mb-3 text-lg font-extrabold text-brand-950">المواصفات الإضافية</h2>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {car.features.map((feature) => (
-                  <div key={feature} className="flex items-center gap-2 text-sm text-neutral-700">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
-                    {feature}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
-        <div className="lg:col-span-1">
-          <div className="sticky top-24 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+        <div className="lg:col-start-3 lg:row-span-2 lg:row-start-1">
+          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm lg:sticky lg:top-24">
             <div className="mb-1 flex items-center justify-between">
               <span
                 className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLES[car.status]}`}
@@ -104,12 +82,38 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
             <CarContactActions car={car} />
           </div>
         </div>
+
+        <div className="flex flex-col gap-8 lg:col-span-2 lg:row-start-2">
+          <div>
+            <h2 className="mb-3 text-lg font-extrabold text-brand-950">المواصفات</h2>
+            <CarSpecifications car={car} />
+          </div>
+
+          <div>
+            <h2 className="mb-3 text-lg font-extrabold text-brand-950">الوصف</h2>
+            <p className="leading-8 text-neutral-600">{car.description}</p>
+          </div>
+
+          {car.features.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-lg font-extrabold text-brand-950">المواصفات الإضافية</h2>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {car.features.map((feature) => (
+                  <div key={feature} className="flex items-center gap-2 text-sm text-neutral-700">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                    {feature}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {similar.length > 0 && (
         <div className="mt-14">
           <h2 className="mb-4 text-xl font-extrabold text-brand-950">سيارات مشابهة</h2>
-          <CarGrid cars={similar} />
+          <CarGrid cars={similar} className="lg:grid-cols-3" />
         </div>
       )}
     </div>

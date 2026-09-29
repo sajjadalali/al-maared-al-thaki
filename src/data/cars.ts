@@ -94,19 +94,9 @@ export function getSimilarCars(car: Car, limit = 4): Car[] {
     .slice(0, limit);
 }
 
-/** Distinct brand list, sorted alphabetically. */
-export function getBrands(): string[] {
-  return uniqueSorted(cars.map((car) => car.brand));
-}
-
 /** Distinct city list, in a stable order derived from the data. */
 export function getCities(): string[] {
   return uniqueSorted(cars.map((car) => car.city));
-}
-
-/** Distinct body types available in the catalog. */
-export function getBodyTypes(): string[] {
-  return uniqueSorted(cars.map((car) => car.bodyType));
 }
 
 /** Live catalog numbers for marketing blocks, so they never overstate the stock. */
