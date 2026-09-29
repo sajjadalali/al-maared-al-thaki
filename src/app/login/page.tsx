@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Lock, ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "تسجيل الدخول | المعرض الذكي",
+  title: "تسجيل الدخول",
 };
 
 export default function LoginPage() {

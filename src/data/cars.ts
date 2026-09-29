@@ -79,12 +79,19 @@ export function filterCars(filters: CarFilters): Car[] {
   return result;
 }
 
-/** Returns similar cars to the given car (same body type or brand), excluding itself. */
+/**
+ * Cars a buyer of `car` would also consider: same body type first, then same
+ * brand, then closest in price. Sold cars are excluded.
+ */
 export function getSimilarCars(car: Car, limit = 4): Car[] {
-  const sameBrandOrType = cars.filter(
-    (c) => c.id !== car.id && (c.brand === car.brand || c.bodyType === car.bodyType)
-  );
-  return sameBrandOrType.slice(0, limit);
+  const score = (c: Car) => (c.bodyType === car.bodyType ? 2 : 0) + (c.brand === car.brand ? 1 : 0);
+  return cars
+    .filter((c) => c.id !== car.id && c.status !== "مباعة" && score(c) > 0)
+    .sort(
+      (a, b) =>
+        score(b) - score(a) || Math.abs(a.price - car.price) - Math.abs(b.price - car.price)
+    )
+    .slice(0, limit);
 }
 
 /** Distinct brand list, sorted alphabetically. */
@@ -100,6 +107,16 @@ export function getCities(): string[] {
 /** Distinct body types available in the catalog. */
 export function getBodyTypes(): string[] {
   return uniqueSorted(cars.map((car) => car.bodyType));
+}
+
+/** Live catalog numbers for marketing blocks, so they never overstate the stock. */
+export function getCatalogStats(): { available: number; brands: number; cities: number } {
+  const available = cars.filter((car) => car.status === "متوفرة");
+  return {
+    available: available.length,
+    brands: new Set(available.map((car) => car.brand)).size,
+    cities: new Set(available.map((car) => car.city)).size,
+  };
 }
 
 export function getMinMaxPrice(): { min: number; max: number } {

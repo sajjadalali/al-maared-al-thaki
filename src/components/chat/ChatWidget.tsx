@@ -18,6 +18,9 @@ export function ChatWidget() {
   const [typing, setTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasHydrated = useRef(false);
+  // The prompt listener below is registered once, so it reads history from a
+  // ref rather than the `messages` it closed over on first render.
+  const messagesRef = useRef<ChatMessage[]>([]);
 
   useEffect(() => {
     let initial: ChatMessage[] = [];
@@ -34,6 +37,7 @@ export function ChatWidget() {
   }, []);
 
   useEffect(() => {
+    messagesRef.current = messages;
     if (!hasHydrated.current) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -49,7 +53,6 @@ export function ChatWidget() {
         setOpen(true);
         void handleSend(message);
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -68,7 +71,7 @@ export function ChatWidget() {
     setTyping(true);
 
     try {
-      const response = await aiService.sendMessage(text, messages);
+      const response = await aiService.sendMessage(text, messagesRef.current);
       setMessages((prev) => [...prev, response]);
     } finally {
       setTyping(false);

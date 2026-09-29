@@ -8,8 +8,8 @@ import { CategoryPills } from "@/components/cars/CategoryPills";
 import type { CarCondition, FuelType, Transmission } from "@/types/car";
 
 export const metadata: Metadata = {
-  title: "تصفح السيارات | المعرض الذكي",
-  description: "تصفح مجموعتنا الواسعة من السيارات الجديدة والمستعملة في العراق.",
+  title: "تصفح السيارات",
+  description: "تصفح السيارات الجديدة والمستعملة المتوفرة في العراق مع الأسعار والمواصفات.",
 };
 
 interface CarsPageProps {
@@ -62,8 +62,8 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold text-brand-950 sm:text-3xl">تصفح السيارات</h1>
         <p className="mt-1.5 text-sm text-neutral-500">
-          اكتشف مجموعتنا الواسعة من السيارات الجديدة والمستعملة، أو تحدث مع سديم ليدورلك على
-          أفضل خيار يناسبك.
+          اكتشف مجموعتنا من السيارات الجديدة والمستعملة، أو تحدث مع سديم ليبحث لك عن أفضل خيار
+          يناسبك.
         </p>
       </div>
 

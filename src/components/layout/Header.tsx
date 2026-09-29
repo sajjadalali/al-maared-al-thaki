@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Car, Heart, Menu, Phone, User, X } from "lucide-react";
 import { useFavorites } from "@/context/FavoritesContext";
 import { cn } from "@/lib/cn";
+import { site, phoneHref } from "@/config/site";
 
 const NAV_LINKS = [
   { href: "/", label: "الرئيسية" },
@@ -28,8 +29,8 @@ export function Header() {
             <Car className="h-5 w-5" />
           </span>
           <span className="flex flex-col leading-none">
-            <span className="text-base font-extrabold text-brand-950">المعرض الذكي</span>
-            <span className="text-[11px] font-medium text-neutral-500">سيارتك بثقة وسرعة</span>
+            <span className="text-base font-extrabold text-brand-950">{site.name}</span>
+            <span className="text-[11px] font-medium text-neutral-500">{site.tagline}</span>
           </span>
         </Link>
 
@@ -55,11 +56,11 @@ export function Header() {
 
         <div className="flex items-center gap-1.5 sm:gap-2">
           <a
-            href="tel:+9647701234567"
+            href={phoneHref}
             className="hidden items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-neutral-600 hover:bg-surface hover:text-brand-900 lg:flex"
           >
             <Phone className="h-4 w-4" />
-            <span dir="ltr">+964 770 123 4567</span>
+            <span dir="ltr">{site.phone}</span>
           </a>
 
           <Link
@@ -127,11 +128,11 @@ export function Header() {
               تسجيل الدخول
             </Link>
             <a
-              href="tel:+9647701234567"
+              href={phoneHref}
               className="mt-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-neutral-600"
             >
               <Phone className="h-4 w-4" />
-              <span dir="ltr">+964 770 123 4567</span>
+              <span dir="ltr">{site.phone}</span>
             </a>
           </nav>
         </div>

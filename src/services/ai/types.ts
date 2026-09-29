@@ -2,6 +2,12 @@ import type { Car } from "@/types/car";
 
 export type ChatRole = "user" | "assistant";
 
+export interface ChatAction {
+  label: string;
+  href: string;
+  kind: "whatsapp" | "phone";
+}
+
 export interface ChatMessage {
   id: string;
   role: ChatRole;
@@ -9,6 +15,7 @@ export interface ChatMessage {
   timestamp: string;
   cars?: Car[];
   quickReplies?: string[];
+  actions?: ChatAction[];
 }
 
 export interface AIService {

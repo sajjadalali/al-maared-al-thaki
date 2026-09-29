@@ -32,7 +32,7 @@ export function CarImage({ src, alt, className, sizes, priority }: CarImageProps
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center gap-2 bg-gradient-to-br text-white/80",
+          "absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br text-white/80",
           gradientFor(alt),
           className
         )}

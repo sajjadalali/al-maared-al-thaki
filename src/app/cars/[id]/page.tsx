@@ -17,9 +17,9 @@ interface CarDetailsPageProps {
 export async function generateMetadata({ params }: CarDetailsPageProps): Promise<Metadata> {
   const { id } = await params;
   const car = getCarById(id);
-  if (!car) return { title: "السيارة غير موجودة | المعرض الذكي" };
+  if (!car) return { title: "السيارة غير موجودة" };
   return {
-    title: `${car.brand} ${car.model} ${car.year} | المعرض الذكي`,
+    title: `${car.brand} ${car.model} ${car.year}`,
     description: car.description,
   };
 }
@@ -36,7 +36,7 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
 
   if (!car) notFound();
 
-  const similar = getSimilarCars(car, 4);
+  const similar = getSimilarCars(car, 3);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">

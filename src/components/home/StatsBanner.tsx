@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { Users, Car, Award } from "lucide-react";
-
-const STATS = [
-  { icon: Users, value: "+10,000", label: "عميل سعيد" },
-  { icon: Car, value: "+500", label: "سيارة متوفرة" },
-  { icon: Award, value: "+20", label: "ماركة عالمية" },
-];
+import { Car, Award, MapPin } from "lucide-react";
+import { getCatalogStats } from "@/data/cars";
 
 export function StatsBanner() {
+  const { available, brands, cities } = getCatalogStats();
+  const stats = [
+    { icon: Car, value: available, label: "سيارة متوفرة" },
+    { icon: Award, value: brands, label: "ماركة" },
+    { icon: MapPin, value: cities, label: "محافظة" },
+  ];
+
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="flex flex-col items-center gap-8 rounded-3xl bg-brand-900 px-6 py-10 text-white sm:flex-row sm:justify-between sm:px-10">
@@ -16,7 +18,7 @@ export function StatsBanner() {
             سيارتك القادمة أقرب مما تتخيل
           </h3>
           <p className="mt-2 max-w-md text-sm text-white/70">
-            مع المعرض الذكي، رحلة البحث عن سيارتك أسهل وأسرع بمساعدة سديم.
+            تصفّح السيارات بنفسك، أو اطلب من سديم أن يرشّح لك الأنسب حسب ميزانيتك واحتياجك.
           </p>
           <Link
             href="/cars"
@@ -27,7 +29,7 @@ export function StatsBanner() {
         </div>
 
         <div className="grid grid-cols-3 gap-6 sm:gap-10">
-          {STATS.map(({ icon: Icon, value, label }) => (
+          {stats.map(({ icon: Icon, value, label }) => (
             <div key={label} className="flex flex-col items-center gap-1.5 text-center">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
                 <Icon className="h-5 w-5" />

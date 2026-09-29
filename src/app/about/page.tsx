@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { ShieldCheck, Sparkles, Users, Target } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "من نحن | المعرض الذكي",
-  description: "تعرف على المعرض الذكي، منصة السيارات الذكية الأولى في العراق.",
+  title: "من نحن",
+  description: "تعرف على المعرض الذكي، منصة سيارات ذكية تجمع المعارض والعملاء في العراق.",
 };
 
 const VALUES = [

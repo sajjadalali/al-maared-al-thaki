@@ -11,4 +11,4 @@ import type { AIService } from "./types";
  */
 export const aiService: AIService = mockAIService;
 
-export type { AIService, ChatMessage, ChatRole } from "./types";
+export type { AIService, ChatAction, ChatMessage, ChatRole } from "./types";

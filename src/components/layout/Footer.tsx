@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { Car, MapPin, Phone, Mail } from "lucide-react";
-import { FacebookIcon, InstagramIcon, YoutubeIcon } from "@/components/ui/SocialIcons";
+import {
+  FacebookIcon,
+  InstagramIcon,
+  WhatsappIcon,
+  YoutubeIcon,
+} from "@/components/ui/SocialIcons";
+import { site, phoneHref, whatsappHref } from "@/config/site";
 
 const QUICK_LINKS = [
   { href: "/", label: "الرئيسية" },
@@ -9,6 +15,13 @@ const QUICK_LINKS = [
   { href: "/about", label: "من نحن" },
   { href: "/contact", label: "تواصل معنا" },
 ];
+
+const SOCIAL = [
+  { href: whatsappHref(), label: "واتساب", Icon: WhatsappIcon },
+  { href: site.social.facebook, label: "فيسبوك", Icon: FacebookIcon },
+  { href: site.social.instagram, label: "إنستغرام", Icon: InstagramIcon },
+  { href: site.social.youtube, label: "يوتيوب", Icon: YoutubeIcon },
+].filter((s) => s.href);
 
 export function Footer() {
   return (
@@ -19,19 +32,20 @@ export function Footer() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
               <Car className="h-5 w-5" />
             </span>
-            <span className="text-lg font-extrabold">المعرض الذكي</span>
+            <span className="text-lg font-extrabold">{site.name}</span>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-7 text-white/60">
-            منصة ذكية تربط بين المعارض والعملاء في العراق، تصفّح مئات السيارات الجديدة
-            والمستعملة، وتحدث مع سديم مساعدك الذكي ليساعدك على اختيار السيارة الأنسب لك بسرعة
-            وسهولة.
+            منصة ذكية تربط بين المعارض والعملاء في العراق. تصفّح السيارات الجديدة والمستعملة،
+            وتحدث مع سديم مساعدك الذكي ليساعدك على اختيار السيارة الأنسب لك بسرعة وسهولة.
           </p>
           <div className="mt-5 flex items-center gap-3">
-            {[FacebookIcon, InstagramIcon, YoutubeIcon].map((Icon, i) => (
+            {SOCIAL.map(({ href, label, Icon }) => (
               <a
-                key={i}
-                href="#"
-                aria-label="تابعنا"
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20"
               >
                 <Icon className="h-4 w-4" />
@@ -56,17 +70,21 @@ export function Footer() {
         <div>
           <h3 className="text-sm font-bold text-white">تواصل معنا</h3>
           <ul className="mt-4 space-y-3 text-sm text-white/60">
-            <li className="flex items-center gap-2">
-              <Phone className="h-4 w-4 shrink-0" />
-              <span dir="ltr">+964 770 123 4567</span>
+            <li>
+              <a href={phoneHref} className="flex items-center gap-2 hover:text-white">
+                <Phone className="h-4 w-4 shrink-0" />
+                <span dir="ltr">{site.phone}</span>
+              </a>
             </li>
-            <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0" />
-              <span dir="ltr">info@autopro.iq</span>
+            <li>
+              <a href={`mailto:${site.email}`} className="flex items-center gap-2 hover:text-white">
+                <Mail className="h-4 w-4 shrink-0" />
+                <span dir="ltr">{site.email}</span>
+              </a>
             </li>
             <li className="flex items-center gap-2">
               <MapPin className="h-4 w-4 shrink-0" />
-              بغداد، شارع فلسطين، العراق
+              {site.address}
             </li>
           </ul>
         </div>
@@ -74,7 +92,7 @@ export function Footer() {
 
       <div className="border-t border-white/10 py-5">
         <p className="px-4 text-center text-xs text-white/50">
-          © {new Date().getFullYear()} المعرض الذكي — جميع الحقوق محفوظة
+          © {new Date().getFullYear()} {site.name} — جميع الحقوق محفوظة
         </p>
       </div>
     </footer>

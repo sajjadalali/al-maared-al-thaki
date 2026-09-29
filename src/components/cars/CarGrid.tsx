@@ -9,7 +9,7 @@ export function CarGrid({ cars }: { cars: Car[] }) {
         <SearchX className="h-10 w-10 text-neutral-300" />
         <p className="text-base font-bold text-brand-950">لا توجد سيارات مطابقة</p>
         <p className="max-w-sm text-sm text-neutral-500">
-          جرّب تعديل الفلاتر أو كلمات البحث، أو تحدث مع سديم وخلّيه يدورلك على أفضل خيار.
+          جرّب تعديل الفلاتر أو كلمات البحث، أو تحدث مع سديم ليبحث لك عن أفضل خيار.
         </p>
       </div>
     );
