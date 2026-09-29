@@ -23,7 +23,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="order-3 flex items-center gap-2 shrink-0">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-900 text-white">
             <Car className="h-5 w-5" />
           </span>
@@ -33,7 +33,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="order-2 hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map((link) => {
             const active = pathname === link.href;
             return (
@@ -53,7 +53,7 @@ export function Header() {
           })}
         </nav>
 
-        <div className="order-1 flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <a
             href="tel:+9647701234567"
             className="hidden items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-neutral-600 hover:bg-surface hover:text-brand-900 lg:flex"
