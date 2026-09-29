@@ -4,6 +4,8 @@ import { RichText } from "./RichText";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { cn } from "@/lib/cn";
 import { MAX_CHAT_CARS, type ChatMessage } from "@/services/ai";
+import { getCarById } from "@/data/cars";
+import type { Car } from "@/types/car";
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("ar-IQ-u-nu-latn", { hour: "numeric", minute: "2-digit" });
@@ -11,7 +13,12 @@ function formatTime(iso: string) {
 
 export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
-  const cars = (message.cars ?? []).slice(0, MAX_CHAT_CARS);
+  // Saved conversations hold a snapshot of each car; show today's price and
+  // status instead, and drop cars that have since been removed from the catalog.
+  const cars = (message.cars ?? [])
+    .map((car) => getCarById(car.id))
+    .filter((car): car is Car => Boolean(car))
+    .slice(0, MAX_CHAT_CARS);
 
   if (isUser) {
     return (

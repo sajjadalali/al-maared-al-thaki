@@ -16,6 +16,8 @@ interface FavoritesContextValue {
   favorites: string[];
   isFavorite: (id: string) => boolean;
   toggleFavorite: (id: string) => void;
+  /** Drops saved ids that no longer match a car (removed from the catalog). */
+  pruneFavorites: (keep: (id: string) => boolean) => void;
 }
 
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
@@ -50,11 +52,15 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const pruneFavorites = useCallback((keep: (id: string) => boolean) => {
+    setFavorites((prev) => (prev.every(keep) ? prev : prev.filter(keep)));
+  }, []);
+
   const isFavorite = useCallback((id: string) => favorites.includes(id), [favorites]);
 
   const value = useMemo(
-    () => ({ favorites, isFavorite, toggleFavorite }),
-    [favorites, isFavorite, toggleFavorite]
+    () => ({ favorites, isFavorite, toggleFavorite, pruneFavorites }),
+    [favorites, isFavorite, toggleFavorite, pruneFavorites]
   );
 
   return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;

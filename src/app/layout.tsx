@@ -10,7 +10,9 @@ import { site } from "@/config/site";
 const tajawal = Tajawal({
   variable: "--font-tajawal",
   subsets: ["arabic", "latin"],
-  weight: ["300", "400", "500", "700", "800", "900"],
+  // Only the weights the UI uses (font-semibold renders with 700). Each weight is
+  // two files (Arabic + Latin), all preloaded, so unused ones slow the first paint.
+  weight: ["400", "500", "700", "800"],
   display: "swap",
 });
 

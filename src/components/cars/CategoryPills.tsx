@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { CATEGORY_PILLS } from "@/lib/filterOptions";
 import { cn } from "@/lib/cn";

@@ -115,7 +115,7 @@ function extractBudget(text: string): number | undefined {
   if (million) return Math.round(parseFloat(million[1]) * 1_000_000 * (inDollars ? USD_TO_IQD : 1));
 
   // In the Iraqi car market "20 ألف" means twenty thousand dollars.
-  const thousand = text.match(/(\d+(?:\.\d+)?)\s*(الف|الاف|k)/);
+  const thousand = text.match(/(\d+(?:\.\d+)?)\s*(الف|الاف|k(?![\p{L}\p{N}]))/u);
   if (thousand) return Math.round(parseFloat(thousand[1]) * 1_000 * USD_TO_IQD);
 
   const raw = text.replace(/,/g, "").match(/\b(\d{7,10})\b/);

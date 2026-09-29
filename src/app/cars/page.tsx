@@ -20,6 +20,14 @@ function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+// A malformed number in a shared link (e.g. minPrice=abc) is ignored, not
+// turned into NaN, which would silently filter out every car.
+function num(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 export default async function CarsPage({ searchParams }: CarsPageProps) {
   const params = await searchParams;
 
@@ -45,10 +53,10 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
     fuel,
     transmission,
     query,
-    minPrice: minPrice ? Number(minPrice) : undefined,
-    maxPrice: maxPrice ? Number(maxPrice) : undefined,
-    minYear: minYear ? Number(minYear) : undefined,
-    maxYear: maxYear ? Number(maxYear) : undefined,
+    minPrice: num(minPrice),
+    maxPrice: num(maxPrice),
+    minYear: num(minYear),
+    maxYear: num(maxYear),
   });
 
   if (tag) {

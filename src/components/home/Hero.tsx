@@ -1,11 +1,9 @@
-"use client";
-
 import Link from "next/link";
 import { ClipboardCheck, MessageCircle, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { CarQuickSearch } from "@/components/cars/CarQuickSearch";
 import { CategoryPills } from "@/components/cars/CategoryPills";
 import { HeroChatPreview } from "@/components/home/HeroChatPreview";
-import { openSadeemChat } from "@/lib/chatBus";
+import { OpenChatButton } from "@/components/chat/OpenChatButton";
 
 const TRUST_BADGES = [
   { icon: ShieldCheck, text: "ضمان على السيارات" },
@@ -43,14 +41,10 @@ export function Hero() {
             >
               تصفح السيارات
             </Link>
-            <button
-              type="button"
-              onClick={() => openSadeemChat()}
-              className="flex items-center justify-center gap-2 rounded-xl bg-white/10 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/20 transition hover:bg-white/20"
-            >
+            <OpenChatButton className="flex items-center justify-center gap-2 rounded-xl bg-white/10 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/20 transition hover:bg-white/20">
               <MessageCircle className="h-4 w-4" />
               تحدث مع سديم
-            </button>
+            </OpenChatButton>
           </div>
 
           <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-white/75">

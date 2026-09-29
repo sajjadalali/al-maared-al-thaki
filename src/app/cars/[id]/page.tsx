@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, CheckCircle2 } from "lucide-react";
-import { getCarById, getSimilarCars } from "@/data/cars";
+import { getAllCars, getCarById, getSimilarCars } from "@/data/cars";
 import { formatIQD } from "@/lib/format";
 import { CarGallery } from "@/components/cars/CarGallery";
 import { CarSpecifications } from "@/components/cars/CarSpecifications";
@@ -12,6 +12,11 @@ import { CarGrid } from "@/components/cars/CarGrid";
 
 interface CarDetailsPageProps {
   params: Promise<{ id: string }>;
+}
+
+// Every car page is built once at build time; ids added later still render on demand.
+export function generateStaticParams() {
+  return getAllCars().map((car) => ({ id: car.id }));
 }
 
 export async function generateMetadata({ params }: CarDetailsPageProps): Promise<Metadata> {

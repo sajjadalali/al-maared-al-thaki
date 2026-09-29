@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { Heart, ArrowLeft } from "lucide-react";
 import { useFavorites } from "@/context/FavoritesContext";
@@ -7,10 +8,15 @@ import { getCarById } from "@/data/cars";
 import { CarGrid } from "@/components/cars/CarGrid";
 
 export default function FavoritesPage() {
-  const { favorites } = useFavorites();
+  const { favorites, pruneFavorites } = useFavorites();
   const cars = favorites
     .map((id) => getCarById(id))
     .filter((car): car is NonNullable<typeof car> => Boolean(car));
+
+  // Cars removed from the catalog would otherwise linger in the header count.
+  useEffect(() => {
+    pruneFavorites((id) => Boolean(getCarById(id)));
+  }, [favorites, pruneFavorites]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
