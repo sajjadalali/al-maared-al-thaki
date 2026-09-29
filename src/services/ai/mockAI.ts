@@ -365,8 +365,10 @@ function shownCarIds(history: ChatMessage[]): Set<string> {
 // The detailed car card carries the specs, so the text stays short.
 function singleCarReply(car: Car, intro?: string): ChatMessage {
   const where = car.status === "متوفرة" ? `متوفرة عدنا ب${car.city}` : `حالياً ${car.status}`;
+  const highlights = car.features.slice(0, 3).join("، ");
+  const features = highlights ? `\nمن مميزاتها: ${highlights}.` : "";
   return reply(
-    intro ?? `**${carLabel(car)}** ${where} 👌\nهاي أهم تفاصيلها، وإذا عجبتك تكدر تحجز تجربة قيادة أو تراسلنا مباشرة.`,
+    (intro ?? `**${carLabel(car)}** ${where} 👌`) + features,
     {
       cars: [car],
       quickReplies: SINGLE_CAR_QUICK_REPLIES,
