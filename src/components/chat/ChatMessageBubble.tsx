@@ -15,8 +15,8 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
 
   if (isUser) {
     return (
-      <div className="flex justify-end animate-fade-in">
-        <div className="max-w-[82%] rounded-2xl rounded-tl-md bg-brand-900 px-3.5 pb-1.5 pt-2.5 text-white shadow-sm">
+      <div className="flex justify-start animate-fade-in">
+        <div className="max-w-[82%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 pb-1.5 pt-2.5 text-white shadow-sm">
           <p className="whitespace-pre-line text-[15px] font-medium leading-7">{message.content}</p>
           <p className="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] text-white/60">
             {formatTime(message.timestamp)}
@@ -28,13 +28,13 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   }
 
   return (
-    <div className="flex items-start gap-2 animate-fade-in">
+    <div className="flex flex-row-reverse items-start gap-2 animate-fade-in">
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
         <Bot className="h-3.5 w-3.5" />
       </span>
 
-      <div className="flex min-w-0 max-w-[88%] flex-1 flex-col items-start gap-2">
-        <div className="rounded-2xl rounded-tr-md border border-black/[0.04] bg-white px-3.5 pb-1.5 pt-2.5 shadow-sm">
+      <div className="flex min-w-0 max-w-[88%] flex-1 flex-col items-end gap-2">
+        <div className="rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 pb-1.5 pt-2.5 shadow-sm">
           <div className="text-[15px] font-medium leading-7 text-neutral-800">
             <RichText text={message.content} />
           </div>

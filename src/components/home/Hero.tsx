@@ -119,22 +119,22 @@ export function Hero() {
             </div>
 
             <div className="space-y-3 bg-[#f2f5f9] p-4">
-              <div className="flex justify-end">
-                <p className="max-w-[80%] rounded-2xl rounded-tl-md bg-brand-900 px-3.5 py-2 text-[15px] font-medium leading-7 text-white shadow-sm">
+              <div className="flex justify-start">
+                <p className="max-w-[80%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 py-2 text-[15px] font-medium leading-7 text-white shadow-sm">
                   {demo.question}
                 </p>
               </div>
-              <div className="flex items-end gap-2">
+              <div className="flex flex-row-reverse items-end gap-2">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
                   <Bot className="h-3.5 w-3.5" />
                 </span>
-                <p className="max-w-[85%] rounded-2xl rounded-tr-md border border-black/[0.04] bg-white px-3.5 py-2 text-[15px] font-medium leading-7 text-neutral-800 shadow-sm">
+                <p className="max-w-[85%] rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 py-2 text-[15px] font-medium leading-7 text-neutral-800 shadow-sm">
                   {demo.answer}
                 </p>
               </div>
 
               {demo.car && (
-                <div className="ms-9 flex gap-3 overflow-hidden rounded-xl border border-black/5 bg-white p-2 shadow-sm">
+                <div className="me-9 flex gap-3 overflow-hidden rounded-xl border border-black/5 bg-white p-2 shadow-sm">
                   <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-brand-900">
                     <CarImage
                       src={demo.car.images[0]}
