@@ -147,6 +147,8 @@ function matchCars(intent: ParsedIntent): Car[] {
     results = results.filter((car) => car.seats >= 5);
   }
 
+  if (intent.isEconomical) return [...results].sort((a, b) => a.price - b.price);
+  if (intent.budget) return [...results].sort((a, b) => b.price - a.price);
   return results;
 }
 
