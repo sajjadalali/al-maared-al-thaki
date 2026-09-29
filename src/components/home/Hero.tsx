@@ -118,9 +118,9 @@ export function Hero() {
               </div>
             </div>
 
-            <div className="space-y-3 p-4">
+            <div className="space-y-3 bg-[#f2f5f9] p-4">
               <div className="flex justify-end">
-                <p className="max-w-[80%] rounded-2xl rounded-tl-sm bg-brand-900 px-3.5 py-2 text-sm leading-7 text-white">
+                <p className="max-w-[80%] rounded-2xl rounded-tl-md bg-brand-900 px-3.5 py-2 text-[15px] font-medium leading-7 text-white shadow-sm">
                   {demo.question}
                 </p>
               </div>
@@ -128,7 +128,7 @@ export function Hero() {
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
                   <Bot className="h-3.5 w-3.5" />
                 </span>
-                <p className="max-w-[85%] rounded-2xl rounded-tr-sm border border-black/5 bg-surface px-3.5 py-2 text-sm leading-7">
+                <p className="max-w-[85%] rounded-2xl rounded-tr-md border border-black/[0.04] bg-white px-3.5 py-2 text-[15px] font-medium leading-7 text-neutral-800 shadow-sm">
                   {demo.answer}
                 </p>
               </div>

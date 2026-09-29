@@ -1,8 +1,8 @@
 import { filterCars, getAllCars, getCarById, getCities, getSimilarCars } from "@/data/cars";
-import { formatIQD, formatNumber } from "@/lib/format";
+import { formatIQD } from "@/lib/format";
 import { site, phoneHref, whatsappHref } from "@/config/site";
 import type { Car, CarFilters, FuelType } from "@/types/car";
-import type { AIService, ChatAction, ChatMessage } from "./types";
+import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage } from "./types";
 
 // Approximate market rate used when a visitor states a budget in dollars
 // ("20 ألف" for a car in Iraq means $20,000).
@@ -256,21 +256,30 @@ function modelLabel(modelKey: string): string {
   return getAllCars().find((c) => c.model.toLowerCase().includes(modelKey))?.model ?? modelKey;
 }
 
-function describeIntent(intent: ParsedIntent): string {
+function formatBudget(value: number): string {
+  if (value >= 1_000_000) {
+    const millions = Math.round((value / 1_000_000) * 10) / 10;
+    return `${millions} مليون`;
+  }
+  return formatIQD(value);
+}
+
+/** Short tags describing what was understood, e.g. ["Toyota Camry", "حتى 30 مليون"]. */
+function describeIntent(intent: ParsedIntent): string[] {
   const parts: string[] = [];
   const name = [intent.filters.brand, intent.model && modelLabel(intent.model)].filter(Boolean).join(" ");
   if (name) parts.push(name);
   if (intent.filters.minYear) parts.push(`موديل ${intent.filters.minYear}`);
   if (intent.filters.bodyType) parts.push(intent.filters.bodyType);
-  if (intent.minSeats) parts.push(`${intent.minSeats} مقاعد أو أكثر`);
+  if (intent.minSeats) parts.push(`${intent.minSeats} مقاعد فأكثر`);
   if (intent.filters.fuel) parts.push(intent.filters.fuel);
   if (intent.isLuxury) parts.push("فخمة");
   if (intent.isEconomical) parts.push("اقتصادية");
   if (intent.isFamily) parts.push("عائلية");
   if (intent.filters.condition) parts.push(intent.filters.condition);
-  if (intent.filters.city) parts.push(`بـ${intent.filters.city}`);
-  if (intent.budget) parts.push(`بميزانية ${formatIQD(intent.budget)}`);
-  return parts.join(" - ");
+  if (intent.filters.city) parts.push(intent.filters.city);
+  if (intent.budget) parts.push(`حتى ${formatBudget(intent.budget)}`);
+  return parts;
 }
 
 const carLabel = (car: Car) => `${car.brand} ${car.model} ${car.year}`;
@@ -288,16 +297,22 @@ function makeId() {
   return `msg-${Date.now()}-${idCounter}`;
 }
 
-function reply(
-  content: string,
-  extras: { cars?: Car[]; quickReplies?: string[]; actions?: ChatAction[] } = {}
-): ChatMessage {
+interface ReplyExtras {
+  cars?: Car[];
+  criteria?: string[];
+  quickReplies?: string[];
+  actions?: ChatAction[];
+}
+
+function reply(content: string, extras: ReplyExtras = {}): ChatMessage {
   return {
     id: makeId(),
     role: "assistant",
     content,
     timestamp: new Date().toISOString(),
     ...extras,
+    cars: extras.cars?.slice(0, MAX_CHAT_CARS),
+    criteria: extras.criteria?.length ? extras.criteria : undefined,
   };
 }
 
@@ -315,8 +330,15 @@ const DEFAULT_QUICK_REPLIES = [
   "شنو أرخص سيارة عندكم؟",
 ];
 
-const LIST_QUICK_REPLIES = ["عرض المزيد", "شنو أرخص خيار بينهم؟", "تواصل مع مندوب المبيعات"];
 const SINGLE_CAR_QUICK_REPLIES = ["أريد حجز تجربة قيادة", "سيارات مشابهة", "تواصل مع مندوب المبيعات"];
+
+function listQuickReplies(hasMore: boolean) {
+  return [
+    ...(hasMore ? ["عرض المزيد"] : []),
+    "شنو أرخص خيار بينهم؟",
+    "تواصل مع مندوب المبيعات",
+  ];
+}
 
 // ---------- conversation context (from history) ----------
 
@@ -340,20 +362,11 @@ function shownCarIds(history: ChatMessage[]): Set<string> {
 
 // ---------- replies ----------
 
-function singleCarReply(car: Car): ChatMessage {
-  const usage =
-    car.condition === "جديدة"
-      ? car.mileage > 0
-        ? `جديدة ماشية ${formatNumber(car.mileage)} كم بس`
-        : "جديدة صفر"
-      : `مستعملة ماشية ${formatNumber(car.mileage)} كم`;
-  const status = car.status === "متوفرة" ? "متوفرة عدنا" : `حالياً ${car.status}`;
-  const highlights = car.features.slice(0, 3).join("، ");
-
+// The detailed car card carries the specs, so the text stays short.
+function singleCarReply(car: Car, intro?: string): ChatMessage {
+  const where = car.status === "متوفرة" ? `متوفرة عدنا ب${car.city}` : `حالياً ${car.status}`;
   return reply(
-    `${carLabel(car)} ${status} بـ${car.city}، سعرها ${formatIQD(car.price)}. ` +
-      `${usage}، ${car.transmission}، محرك ${car.engine}${car.engine.includes(car.fuel) ? "" : ` ${car.fuel}`}، ${car.seats} مقاعد.` +
-      (highlights ? ` من أبرز مميزاتها: ${highlights}.` : ""),
+    intro ?? `**${carLabel(car)}** ${where} 👌\nهاي أهم تفاصيلها، وإذا عجبتك تكدر تحجز تجربة قيادة أو تراسلنا مباشرة.`,
     {
       cars: [car],
       quickReplies: SINGLE_CAR_QUICK_REPLIES,
@@ -362,14 +375,22 @@ function singleCarReply(car: Car): ChatMessage {
   );
 }
 
-function listReply(intro: string, cars: Car[]): ChatMessage {
-  return reply(intro, { cars, quickReplies: LIST_QUICK_REPLIES });
+function listReply(intro: string, cars: Car[], criteria: string[] = [], total = cars.length): ChatMessage {
+  const shown = cars.slice(0, MAX_CHAT_CARS);
+  return reply(intro, {
+    cars: shown,
+    criteria,
+    quickReplies: listQuickReplies(total > shown.length),
+  });
 }
+
+const HELP_TEXT =
+  "گلّي شنو تدوّر وأني أساعدك، مثلاً:\n- ماركة أو موديل (كامري، توسان...)\n- ميزانية (بحدود 30 مليون)\n- نوع السيارة (عائلية، SUV، اقتصادية)";
 
 class MockAIService implements AIService {
   getWelcomeMessage(): ChatMessage {
     return reply(
-      `هلا وغلا 👋 أني سديم، مساعدك الذكي بـ${site.name}. گلّي شنو نوع السيارة الي تدوّرها، أو ميزانيتك، وأني أدورلك على أفضل خيار من سياراتنا المتوفرة.`,
+      `هلا وغلا 👋 أني **سديم**، مساعدك الذكي ب${site.name}.\nگلّي شنو السيارة الي تدوّرها أو ميزانيتك، وأني ألگيلك أفضل خيار من سياراتنا المتوفرة.`,
       { quickReplies: DEFAULT_QUICK_REPLIES }
     );
   }
@@ -389,15 +410,15 @@ class MockAIService implements AIService {
         });
       }
       return reply(
-        `حلو اختيارك! تجربة القيادة لـ${carLabel(focusCar)} نرتبها ويه فريق المبيعات بـ${focusCar.city}. دز رسالة على واتساب وحدد الوقت الي يناسبك، وهمه يأكدولك الموعد.`,
+        `حلو اختيارك! تجربة قيادة **${carLabel(focusCar)}** نرتبها ويه فريق المبيعات ب${focusCar.city}.\nدز رسالة على واتساب وحدد الوقت الي يناسبك، وهمه يأكدولك الموعد.`,
         { actions: contactActions(`مرحباً، أريد حجز تجربة قيادة لسيارة ${carLabel(focusCar)}`) }
       );
     }
 
     if (includesAny(text, AGENT_WORDS)) {
-      const about = focusCar ? ` بخصوص ${carLabel(focusCar)}` : "";
+      const about = focusCar ? ` بخصوص **${carLabel(focusCar)}**` : "";
       return reply(
-        `أكيد! فريق المبيعات موجود ${site.hours}. تكدر تتواصل وياهم مباشرة${about} على ${site.phone}، أو تبقى وياي وأساعدك هسه.`,
+        `أكيد! تكدر تتواصل ويا فريق المبيعات مباشرة${about}.\n- الرقم: ${site.phone}\n- الدوام: ${site.hours}`,
         {
           actions: contactActions(
             focusCar ? `مرحباً، أستفسر عن سيارة ${carLabel(focusCar)}` : "مرحباً، عندي استفسار عن سيارة"
@@ -410,11 +431,11 @@ class MockAIService implements AIService {
       if (!focusCar) {
         return reply("گلّي على أي سيارة تريد أشوفلك مثلها؟", { quickReplies: DEFAULT_QUICK_REPLIES });
       }
-      const similar = getSimilarCars(focusCar, 3);
+      const similar = getSimilarCars(focusCar, MAX_CHAT_CARS);
       if (similar.length === 0) {
-        return reply(`حالياً ما عندي سيارات قريبة من ${carLabel(focusCar)}، بس تكدر تشوف كل السيارات بصفحة السيارات.`);
+        return reply(`حالياً ما عندي سيارات قريبة من **${carLabel(focusCar)}**، بس تكدر تشوف كل السيارات بصفحة السيارات.`);
       }
-      return listReply(`هذني سيارات قريبة من ${carLabel(focusCar)}:`, similar);
+      return listReply(`هذني سيارات قريبة من **${carLabel(focusCar)}**:`, similar);
     }
 
     const wantsCheapest = includesAny(text, CHEAPEST_WORDS);
@@ -433,79 +454,75 @@ class MockAIService implements AIService {
       if (sorted.length === 0) {
         return reply("ما لگيت سيارات ضمن هذا الطلب حالياً.", { quickReplies: DEFAULT_QUICK_REPLIES });
       }
-      if (among) return singleCarReply(sorted[0]);
+      if (among) {
+        return singleCarReply(
+          sorted[0],
+          `${wantsCheapest ? "أرخص" : "أغلى"} خيار بينهم هو **${carLabel(sorted[0])}** بسعر ${formatIQD(sorted[0].price)}:`
+        );
+      }
       return listReply(
-        wantsCheapest
-          ? "زين، هذني أرخص السيارات المتوفرة ضمن طلبك:"
-          : "هذني أغلى وأفخم السيارات المتوفرة ضمن طلبك:",
-        sorted.slice(0, 3)
+        wantsCheapest ? "زين، هذني أرخص السيارات المتوفرة:" : "هذني أفخم السيارات المتوفرة عدنا:",
+        sorted,
+        describeIntent(intent),
+        MAX_CHAT_CARS
       );
     }
 
     if (includesAny(text, MORE_WORDS) && !hasAnyFilter(intent)) {
       const previous = lastSearchIntent(history);
       if (!previous) {
-        return reply("گلّي شنو تدور بالضبط وأعرضلك كل الخيارات.", { quickReplies: DEFAULT_QUICK_REPLIES });
+        return reply("گلّي شنو تدوّر بالضبط وأعرضلك الخيارات.", { quickReplies: DEFAULT_QUICK_REPLIES });
       }
       const seen = shownCarIds(history);
       const remaining = matchCars(previous).filter((c) => !seen.has(c.id));
       if (remaining.length === 0) {
-        return reply(
-          `هذني كل السيارات المتوفرة حالياً ضمن طلبك (${describeIntent(previous)}). تحب أدورلك على شي ثاني؟`,
-          { quickReplies: DEFAULT_QUICK_REPLIES }
-        );
+        return reply("هذني كل السيارات المتوفرة ضمن طلبك. تحب أدورلك على شي ثاني؟", {
+          criteria: describeIntent(previous),
+          quickReplies: DEFAULT_QUICK_REPLIES,
+        });
       }
-      return listReply("تفضل، هذني خيارات ثانية ضمن نفس طلبك:", remaining.slice(0, 4));
+      return listReply("تفضل، هذني خيارات ثانية ضمن نفس طلبك:", remaining, describeIntent(previous));
     }
 
     if (includesAny(text, THANKS_WORDS) && text.length < 40) {
-      return reply("العفو! تسعدني مساعدتك. إذا احتجت أي شي ثاني بخصوص السيارات، أني موجود 🚗");
+      return reply("العفو! تسعدني مساعدتك 🚗\nإذا احتجت أي شي ثاني بخصوص السيارات، أني موجود.");
     }
 
     if (!hasAnyFilter(intent)) {
-      if (hasAnyWord(text, GREETING_WORDS)) {
-        return reply(
-          "هلا بيك! تكدر تسألني عن ماركة أو موديل معين، ميزانية، أو نوع سيارة (سيدان، SUV، دفع رباعي...)، وأني أدورلك أفضل الخيارات المتوفرة.",
-          { quickReplies: DEFAULT_QUICK_REPLIES }
-        );
-      }
-      return reply(
-        "تكدر توضحلي أكثر؟ مثلاً گلّي الماركة أو الموديل، الميزانية التقريبية، أو نوع السيارة الي تحتاجها (سيدان، SUV، عائلية...) وراح أدورلك أفضل الخيارات.",
-        { quickReplies: DEFAULT_QUICK_REPLIES }
-      );
+      return reply(hasAnyWord(text, GREETING_WORDS) ? `هلا بيك! 👋\n${HELP_TEXT}` : `ما فهمت طلبك بالضبط 🙏\n${HELP_TEXT}`, {
+        quickReplies: DEFAULT_QUICK_REPLIES,
+      });
     }
 
-    const description = describeIntent(intent);
+    const criteria = describeIntent(intent);
 
     if (matches.length === 0) {
       // Relax the request before giving up: same model/brand without the other
-      // constraints, then cars similar to what they described.
+      // constraints, then the showroom's featured cars.
       const relaxed = intent.model
         ? matchCars({ ...intent, filters: {}, budget: undefined })
         : intent.filters.brand
           ? filterCars({ brand: intent.filters.brand })
           : [];
       if (relaxed.length > 0) {
-        return listReply(
-          `ما عندي سيارة تطابق طلبك (${description}) بالضبط حالياً، بس هذني أقرب الخيارات المتوفرة:`,
-          relaxed.slice(0, 4)
-        );
+        return listReply("ما عندي تطابق كامل لطلبك حالياً، بس هذني أقرب الخيارات:", relaxed, criteria);
       }
-      const fallback = getAllCars().filter((car) => car.featured).slice(0, 3);
+      const fallback = getAllCars().filter((car) => car.featured);
       return listReply(
-        `حالياً ما عندي سيارة تطابق طلبك (${description})، بس هذني من أفضل الخيارات المتوفرة عدنا وممكن تعجبك:`,
-        fallback
+        "حالياً ما عندي سيارة بهذي المواصفات، بس هذني من أفضل سياراتنا:",
+        fallback,
+        criteria,
+        MAX_CHAT_CARS
       );
     }
 
     if (matches.length === 1) return singleCarReply(matches[0]);
 
-    const shown = matches.slice(0, 4);
     const intro =
-      matches.length > shown.length
-        ? `زين! لگيت ${countCars(matches.length)} تناسب طلبك (${description})، هاي أبرزها:`
-        : `تمام! هاي السيارات المتوفرة عدنا ضمن طلبك (${description}):`;
-    return listReply(intro, shown);
+      matches.length > MAX_CHAT_CARS
+        ? `لگيت ${countCars(matches.length)} تناسب طلبك، هاي أفضل ${MAX_CHAT_CARS}:`
+        : `هاي ${countCars(matches.length)} متوفرة حسب طلبك:`;
+    return listReply(intro, matches, criteria);
   }
 }
 

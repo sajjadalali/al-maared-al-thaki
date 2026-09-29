@@ -2,11 +2,11 @@ import { Bot } from "lucide-react";
 
 export function TypingIndicator() {
   return (
-    <div className="flex items-end gap-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
+    <div className="flex items-start gap-2" role="status" aria-label="سديم يكتب">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
         <Bot className="h-3.5 w-3.5" />
       </span>
-      <div className="flex items-center gap-1 rounded-2xl rounded-tr-sm border border-black/5 bg-surface px-4 py-3.5">
+      <div className="flex items-center gap-1 rounded-2xl rounded-tr-md border border-black/[0.04] bg-white px-4 py-3.5 shadow-sm">
         {[0, 1, 2].map((i) => (
           <span
             key={i}

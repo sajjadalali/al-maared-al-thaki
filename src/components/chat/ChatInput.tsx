@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Paperclip, Smile, Send } from "lucide-react";
+import { Send } from "lucide-react";
 
 export function ChatInput({ onSend, disabled }: { onSend: (text: string) => void; disabled?: boolean }) {
   const [value, setValue] = useState("");
@@ -17,39 +17,26 @@ export function ChatInput({ onSend, disabled }: { onSend: (text: string) => void
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-1.5 border-t border-black/5 bg-white px-3 py-2.5"
+      className="flex items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]"
     >
-      <button
-        type="button"
-        tabIndex={-1}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-surface hover:text-neutral-600"
-        aria-hidden
-      >
-        <Paperclip className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        tabIndex={-1}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-surface hover:text-neutral-600"
-        aria-hidden
-      >
-        <Smile className="h-4 w-4" />
-      </button>
-
+      {/* 16px text: smaller inputs make iOS Safari zoom the page on focus. */}
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="اكتب رسالتك هنا..."
-        className="min-w-0 flex-1 rounded-full bg-surface px-4 py-2.5 text-sm outline-none placeholder:text-neutral-400"
+        aria-label="رسالتك إلى سديم"
+        autoComplete="off"
+        enterKeyHint="send"
+        className="min-w-0 flex-1 rounded-full border border-transparent bg-surface px-4 py-2.5 text-base outline-none transition placeholder:text-neutral-400 focus:border-brand-200 focus:bg-white"
       />
 
       <button
         type="submit"
         disabled={!value.trim() || disabled}
         aria-label="إرسال"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-brand-900/30"
       >
-        <Send className="h-4 w-4 -scale-x-100" />
+        <Send className="h-[18px] w-[18px] -scale-x-100" />
       </button>
     </form>
   );
