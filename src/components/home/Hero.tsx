@@ -1,46 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Bot,
-  ClipboardCheck,
-  Fuel,
-  Gauge,
-  MessageCircle,
-  Settings2,
-  ShieldCheck,
-  Sparkles,
-  Wallet,
-} from "lucide-react";
+import { ClipboardCheck, MessageCircle, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { CarQuickSearch } from "@/components/cars/CarQuickSearch";
 import { CategoryPills } from "@/components/cars/CategoryPills";
-import { CarImage } from "@/components/ui/CarImage";
-import { getAllCars, getFeaturedCars } from "@/data/cars";
-import { formatIQD, formatNumber } from "@/lib/format";
+import { HeroChatPreview } from "@/components/home/HeroChatPreview";
 import { openSadeemChat } from "@/lib/chatBus";
-
-const DEMO_BUDGET = 50_000_000;
-
-// A real answer from the current catalog, so the preview never shows a car the
-// showroom doesn't have.
-function demoConversation() {
-  const familyCars = getAllCars()
-    .filter((c) => c.status === "متوفرة" && c.seats >= 7 && c.price <= DEMO_BUDGET)
-    .sort((a, b) => b.price - a.price);
-  if (familyCars.length > 0) {
-    return {
-      question: "أريد سيارة عائلية 7 مقاعد بحدود 50 مليون",
-      answer: `أكيد! لگيت ${familyCars.length} سيارات عائلية ضمن ميزانيتك، هاي أفضلها:`,
-      car: familyCars[0],
-    };
-  }
-  const car = getFeaturedCars(1)[0] ?? getAllCars()[0];
-  return {
-    question: "شنو أفضل سيارة عندكم هسه؟",
-    answer: "هاي من أكثر السيارات طلباً عدنا:",
-    car,
-  };
-}
 
 const TRUST_BADGES = [
   { icon: ShieldCheck, text: "ضمان على السيارات" },
@@ -49,8 +14,6 @@ const TRUST_BADGES = [
 ];
 
 export function Hero() {
-  const demo = demoConversation();
-
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 text-white">
       <div className="pointer-events-none absolute inset-0 opacity-30">
@@ -101,76 +64,7 @@ export function Hero() {
         </div>
 
         <div className="relative hidden lg:block">
-          <button
-            type="button"
-            onClick={() => openSadeemChat()}
-            aria-label="افتح محادثة سديم"
-            className="block w-full max-w-md overflow-hidden rounded-3xl bg-white text-start text-brand-950 shadow-2xl shadow-black/30 ring-1 ring-white/10 transition hover:-translate-y-0.5 lg:ms-auto"
-          >
-            <div className="flex items-center gap-2.5 bg-brand-900 px-4 py-3 text-white">
-              <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
-                <Bot className="h-4.5 w-4.5" />
-                <span className="absolute -end-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-brand-900 bg-success" />
-              </span>
-              <div>
-                <p className="text-sm font-extrabold">سديم</p>
-                <p className="text-[11px] text-white/70">متصل الآن — مساعد المبيعات الذكي</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 bg-[#f2f5f9] p-4">
-              <div className="flex justify-start">
-                <p className="max-w-[80%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 py-2 text-[15px] font-medium leading-7 text-white shadow-sm">
-                  {demo.question}
-                </p>
-              </div>
-              <div className="flex flex-row-reverse items-end gap-2">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
-                  <Bot className="h-3.5 w-3.5" />
-                </span>
-                <p className="max-w-[85%] rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 py-2 text-[15px] font-medium leading-7 text-neutral-800 shadow-sm">
-                  {demo.answer}
-                </p>
-              </div>
-
-              {demo.car && (
-                <div className="me-9 flex gap-3 overflow-hidden rounded-xl border border-black/5 bg-white p-2 shadow-sm">
-                  <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-brand-900">
-                    <CarImage
-                      src={demo.car.images[0]}
-                      alt={`${demo.car.brand} ${demo.car.model}`}
-                      sizes="112px"
-                      className="[&_span]:hidden [&_svg]:h-7 [&_svg]:w-7"
-                    />
-                  </div>
-                  <div className="min-w-0 py-0.5">
-                    <p className="truncate text-sm font-extrabold">
-                      {demo.car.brand} {demo.car.model} {demo.car.year}
-                    </p>
-                    <p className="text-sm font-extrabold text-brand-800">{formatIQD(demo.car.price)}</p>
-                    <div className="mt-1 flex flex-wrap gap-x-2.5 text-[11px] text-neutral-500">
-                      <span className="flex items-center gap-1">
-                        <Fuel className="h-3 w-3 text-brand-600" />
-                        {demo.car.engine}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Settings2 className="h-3 w-3 text-brand-600" />
-                        {demo.car.transmission}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Gauge className="h-3 w-3 text-brand-600" />
-                        {formatNumber(demo.car.mileage)} كم
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-black/5 px-4 py-3 text-center text-sm font-bold text-brand-800">
-              جرّب سديم الآن ←
-            </div>
-          </button>
+          <HeroChatPreview />
         </div>
       </div>
 
