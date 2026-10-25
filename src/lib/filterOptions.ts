@@ -1,4 +1,5 @@
 import { getAllCars, searchCars } from "@/data/cars";
+import { originLabel } from "@/lib/format";
 import type { Car } from "@/types/car";
 
 export interface FilterOption {
@@ -54,9 +55,10 @@ const BODY_ORDER = ["سيدان", "SUV", "دفع رباعي", "هاتشباك", 
 const FUEL_ORDER = ["بنزين", "هايبرد", "كهربائي", "ديزل"];
 const TRANSMISSION_ORDER = ["أوتوماتيك", "يدوي"];
 const CONDITION_ORDER = ["جديدة", "مستعملة"];
+const ORIGIN_ORDER = ["وكالة", "خليجي", "أمريكي", "كوري", "كندي", "أوروبي", "صيني"];
 
 export type Facet =
-  | "brand" | "city" | "year" | "price" | "bodyType" | "condition" | "fuel" | "transmission";
+  | "brand" | "city" | "year" | "price" | "bodyType" | "condition" | "origin" | "fuel" | "transmission";
 
 /** What the visitor has chosen so far; `price` is a PRICE_BANDS index. */
 export type FilterSelection = Partial<Record<Facet | "query" | "tag", string>>;
@@ -67,6 +69,7 @@ const FACETS: Record<Facet, { key: (car: Car) => string; matches?: (car: Car, va
   year: { key: (c) => String(c.year) },
   bodyType: { key: (c) => c.bodyType },
   condition: { key: (c) => c.condition },
+  origin: { key: (c) => c.origin ?? "" },
   fuel: { key: (c) => c.fuel },
   transmission: { key: (c) => c.transmission },
   price: {
@@ -118,6 +121,7 @@ export interface FilterOptionSets {
   brands: FilterOption[];
   bodyTypes: FilterOption[];
   conditions: FilterOption[];
+  origins: FilterOption[];
   cities: FilterOption[];
   fuels: FilterOption[];
   transmissions: FilterOption[];
@@ -173,6 +177,7 @@ export function getFilterOptions(selection: FilterSelection = {}): FilterOptionS
     prices,
     bodyTypes: build("bodyType", inOrder(catalog("bodyType"), BODY_ORDER)),
     conditions: build("condition", inOrder(catalog("condition"), CONDITION_ORDER)),
+    origins: build("origin", inOrder(catalog("origin").filter(Boolean), ORIGIN_ORDER), originLabel),
     fuels: build("fuel", inOrder(catalog("fuel"), FUEL_ORDER)),
     transmissions: build("transmission", inOrder(catalog("transmission"), TRANSMISSION_ORDER)),
     totals,
@@ -200,6 +205,6 @@ export const CATEGORY_PILLS: CategoryPill[] = [
   { key: "سيدان", label: "سيدان" },
   { key: "هاتشباك", label: "هاتشباك" },
   { key: "دفع رباعي", label: "دفع رباعي" },
-  { key: "شاحنة", label: "شاحنات" },
+  { key: "شاحنة", label: "بيك أب" },
   { key: "كهربائية", label: "كهربائية" },
 ];

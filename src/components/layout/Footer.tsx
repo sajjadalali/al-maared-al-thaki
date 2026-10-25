@@ -1,19 +1,27 @@
 import Link from "next/link";
-import { Car, MapPin, Phone, Mail } from "lucide-react";
+import { Clock, MapPin, Phone, Mail } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
   WhatsappIcon,
   YoutubeIcon,
 } from "@/components/ui/SocialIcons";
+import { Logo } from "@/components/layout/Logo";
 import { site, phoneHref, whatsappHref } from "@/config/site";
 
-const QUICK_LINKS = [
-  { href: "/", label: "الرئيسية" },
-  { href: "/cars", label: "السيارات" },
-  { href: "/favorites", label: "المفضلة" },
+const BROWSE_LINKS = [
+  { href: "/cars", label: "كل السيارات" },
+  { href: "/cars?condition=جديدة", label: "السيارات الجديدة" },
+  { href: "/cars?condition=مستعملة", label: "السيارات المستعملة" },
+  { href: "/cars?bodyType=SUV", label: "SUV" },
+  { href: "/cars?bodyType=دفع رباعي", label: "دفع رباعي" },
+  { href: "/cars?tag=فاخرة", label: "سيارات فاخرة" },
+];
+
+const SHOWROOM_LINKS = [
   { href: "/about", label: "من نحن" },
   { href: "/contact", label: "تواصل معنا" },
+  { href: "/favorites", label: "سياراتي المفضلة" },
 ];
 
 const SOCIAL = [
@@ -23,22 +31,34 @@ const SOCIAL = [
   { href: site.social.youtube, label: "يوتيوب", Icon: YoutubeIcon },
 ].filter((s) => s.href);
 
+function LinkColumn({ title, links }: { title: string; links: { href: string; label: string }[] }) {
+  return (
+    <div>
+      <h3 className="text-sm font-bold text-white">{title}</h3>
+      <ul className="mt-4 space-y-2.5">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link href={link.href} className="text-sm text-white/55 transition hover:text-white">
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function Footer() {
   return (
-    <footer className="border-t border-black/5 bg-brand-950 text-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-4 lg:px-8">
-        <div className="md:col-span-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
-              <Car className="h-5 w-5" />
-            </span>
-            <span className="text-lg font-extrabold">{site.name}</span>
-          </div>
-          <p className="mt-4 max-w-sm text-sm leading-7 text-white/60">
-            منصة ذكية تربط بين المعارض والعملاء في العراق. تصفّح السيارات الجديدة والمستعملة،
-            وتحدث مع سديم مساعدك الذكي ليساعدك على اختيار السيارة الأنسب لك بسرعة وسهولة.
+    <footer className="bg-brand-950 text-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.5fr_1fr_1fr_1.3fr] lg:px-8">
+        <div>
+          <Logo tone="light" />
+          <p className="mt-5 max-w-xs text-sm leading-7 text-white/55">
+            معرض سيارات جديدة ومستعملة في العراق، بأسعار معلنة وفحص قبل البيع، ومساعد ذكي اسمه سديم
+            يساعدك على اختيار السيارة الأنسب.
           </p>
-          <div className="mt-5 flex items-center gap-3">
+          <div className="mt-5 flex items-center gap-2.5">
             {SOCIAL.map(({ href, label, Icon }) => (
               <a
                 key={label}
@@ -46,7 +66,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] ring-1 ring-white/10 transition hover:bg-white/15"
               >
                 <Icon className="h-4 w-4" />
               </a>
@@ -54,46 +74,43 @@ export function Footer() {
           </div>
         </div>
 
-        <div>
-          <h3 className="text-sm font-bold text-white">روابط سريعة</h3>
-          <ul className="mt-4 space-y-2.5">
-            {QUICK_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} className="text-sm text-white/60 transition hover:text-white">
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <LinkColumn title="تصفّح" links={BROWSE_LINKS} />
+        <LinkColumn title="المعرض" links={SHOWROOM_LINKS} />
 
         <div>
           <h3 className="text-sm font-bold text-white">تواصل معنا</h3>
-          <ul className="mt-4 space-y-3 text-sm text-white/60">
+          <ul className="mt-4 space-y-3 text-sm text-white/55">
             <li>
-              <a href={phoneHref} className="flex items-center gap-2 hover:text-white">
-                <Phone className="h-4 w-4 shrink-0" />
+              <a href={phoneHref} className="flex items-center gap-2.5 transition hover:text-white">
+                <Phone className="h-4 w-4 shrink-0 text-accent-300" />
                 <span dir="ltr">{site.phone}</span>
               </a>
             </li>
             <li>
-              <a href={`mailto:${site.email}`} className="flex items-center gap-2 hover:text-white">
-                <Mail className="h-4 w-4 shrink-0" />
+              <a href={`mailto:${site.email}`} className="flex items-center gap-2.5 transition hover:text-white">
+                <Mail className="h-4 w-4 shrink-0 text-accent-300" />
                 <span dir="ltr">{site.email}</span>
               </a>
             </li>
-            <li className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 shrink-0" />
+            <li className="flex items-center gap-2.5">
+              <MapPin className="h-4 w-4 shrink-0 text-accent-300" />
               {site.address}
+            </li>
+            <li className="flex items-center gap-2.5">
+              <Clock className="h-4 w-4 shrink-0 text-accent-300" />
+              {site.hours}
             </li>
           </ul>
         </div>
       </div>
 
-      <div className="border-t border-white/10 py-5">
-        <p className="px-4 text-center text-xs text-white/50">
-          © {new Date().getFullYear()} {site.name} — جميع الحقوق محفوظة
-        </p>
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-white/40 sm:flex-row sm:px-6 lg:px-8">
+          <p>
+            © {new Date().getFullYear()} {site.name} — جميع الحقوق محفوظة
+          </p>
+          <p>الأسعار بالدينار العراقي وقد تتغير حسب السوق.</p>
+        </div>
       </div>
     </footer>
   );

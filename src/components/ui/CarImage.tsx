@@ -2,47 +2,42 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Car as CarIcon } from "lucide-react";
+import { CarArt } from "@/components/ui/CarArt";
 import { cn } from "@/lib/cn";
 
 interface CarImageProps {
   src?: string;
   alt: string;
+  /** Drawn in the car's shape and colour when there is no photo (or it fails to load). */
+  bodyType: string;
+  color?: string;
   className?: string;
   sizes?: string;
   priority?: boolean;
+  /** Small "illustration" note on the drawing, for large views. */
+  showNote?: boolean;
 }
 
-const GRADIENTS = [
-  "from-brand-700 to-brand-900",
-  "from-brand-800 to-brand-950",
-  "from-brand-600 to-brand-800",
-];
-
-function gradientFor(text: string) {
-  let hash = 0;
-  for (let i = 0; i < text.length; i++) hash = (hash + text.charCodeAt(i)) % GRADIENTS.length;
-  return GRADIENTS[hash];
-}
-
-export function CarImage({ src, alt, className, sizes, priority }: CarImageProps) {
+export function CarImage({ src, alt, bodyType, color, className, sizes, priority, showNote }: CarImageProps) {
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {
     return (
       <div
         className={cn(
-          "absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br text-white/80",
-          gradientFor(alt),
+          "absolute inset-0 flex items-center justify-center overflow-hidden bg-[radial-gradient(120%_90%_at_50%_10%,#ffffff_0%,#eef0f3_55%,#e2e5ea_100%)]",
           className
         )}
         role="img"
         aria-label={alt}
       >
-        <CarIcon className="h-10 w-10 opacity-70" strokeWidth={1.5} />
-        <span className="px-3 text-center text-xs font-medium leading-snug opacity-80">
-          الصورة غير متوفرة حالياً
-        </span>
+        <div className="absolute inset-x-0 bottom-0 h-[30%] bg-gradient-to-b from-transparent to-black/[0.04]" />
+        <CarArt bodyType={bodyType} color={color} className="relative w-[84%] translate-y-[4%]" />
+        {showNote && (
+          <span className="absolute bottom-3 start-3 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-neutral-500 ring-1 ring-black/5 backdrop-blur">
+            صورة توضيحية — الصور الحقيقية قريباً
+          </span>
+        )}
       </div>
     );
   }

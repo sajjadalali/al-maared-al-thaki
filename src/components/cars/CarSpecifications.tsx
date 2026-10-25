@@ -1,43 +1,72 @@
-import {
-  Calendar,
-  Gauge,
-  Settings2,
-  Fuel,
-  Cog,
-  Users,
-  Palette,
-  MapPin,
-  BadgeCheck,
-} from "lucide-react";
-import { formatNumber } from "@/lib/format";
+import { Cog, Gauge, Users, Zap } from "lucide-react";
+import { paintFor } from "@/components/ui/CarArt";
+import { drivetrainLabel, formatCarMileage, originLabel } from "@/lib/format";
 import type { Car } from "@/types/car";
 
-export function CarSpecifications({ car }: { car: Car }) {
-  const specs = [
-    { icon: Calendar, label: "سنة الصنع", value: String(car.year) },
-    { icon: Gauge, label: "المسافة المقطوعة", value: `${formatNumber(car.mileage)} كم` },
-    { icon: Settings2, label: "ناقل الحركة", value: car.transmission },
-    { icon: Fuel, label: "نوع الوقود", value: car.fuel },
-    { icon: Cog, label: "سعة المحرك", value: car.engine },
-    { icon: Users, label: "عدد المقاعد", value: `${car.seats} مقاعد` },
-    { icon: Palette, label: "اللون", value: car.color },
-    { icon: MapPin, label: "المدينة", value: car.city },
-    { icon: BadgeCheck, label: "الحالة", value: car.condition },
-  ];
+/** The four numbers buyers compare first, as large tiles. */
+export function CarHighlights({ car }: { car: Car }) {
+  const tiles = [
+    car.horsepower && { icon: Zap, label: "القوة", value: `${car.horsepower} حصان` },
+    { icon: Cog, label: "المحرك", value: car.engine },
+    { icon: Gauge, label: "نظام الدفع", value: car.drivetrain ? drivetrainLabel(car.drivetrain) : car.transmission },
+    { icon: Users, label: "المقاعد", value: `${car.seats} مقاعد` },
+  ].filter((t): t is { icon: typeof Zap; label: string; value: string } => Boolean(t));
 
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-      {specs.map(({ icon: Icon, label, value }) => (
-        <div key={label} className="flex items-center gap-2.5 rounded-xl border border-black/5 bg-surface p-3 sm:gap-3 sm:p-3.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-700 sm:h-9 sm:w-9">
-            <Icon className="h-4.5 w-4.5" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[11px] text-neutral-500">{label}</p>
-            <p className="break-words text-sm font-bold leading-6 text-brand-950">{value}</p>
-          </div>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {tiles.map(({ icon: Icon, label, value }) => (
+        <div key={label} className="rounded-2xl bg-surface p-4">
+          <Icon className="h-5 w-5 text-brand-500" />
+          <p className="mt-3 text-xs font-medium text-neutral-500">{label}</p>
+          <p className="mt-0.5 text-[15px] font-bold leading-6 text-brand-950">
+            <bdi>{value}</bdi>
+          </p>
         </div>
       ))}
     </div>
+  );
+}
+
+export function CarSpecifications({ car }: { car: Car }) {
+  const rows: { label: string; value?: string | number; swatch?: string }[] = [
+    { label: "الماركة", value: car.brand },
+    { label: "الموديل", value: car.model },
+    { label: "الفئة", value: car.trim },
+    { label: "سنة الصنع", value: car.year },
+    { label: "الحالة", value: car.condition },
+    { label: "الوارد", value: car.origin && originLabel(car.origin) },
+    { label: "الممشى", value: formatCarMileage(car.mileage) },
+    { label: "نوع الهيكل", value: car.bodyType === "شاحنة" ? "بيك أب" : car.bodyType },
+    { label: "المحرك", value: car.engine },
+    { label: "السلندر", value: car.cylinders },
+    { label: "القوة", value: car.horsepower && `${car.horsepower} حصان` },
+    { label: "ناقل الحركة", value: car.transmission },
+    { label: "نظام الدفع", value: car.drivetrain && drivetrainLabel(car.drivetrain) },
+    { label: "الوقود", value: car.fuel },
+    { label: "المقاعد", value: car.seats },
+    { label: "اللون", value: car.color, swatch: car.color ? paintFor(car.color) : undefined },
+    { label: "المدينة", value: car.city },
+    { label: "رقم السيارة في المعرض", value: car.id.replace("car-", "#") },
+  ];
+
+  return (
+    <dl className="grid grid-cols-1 overflow-hidden rounded-2xl border border-black/[0.07] sm:grid-cols-2">
+      {rows
+        .filter((row) => row.value !== undefined && row.value !== "")
+        .map((row) => (
+          <div
+            key={row.label}
+            className="flex items-center justify-between gap-4 border-b border-black/[0.06] px-4 py-3.5 text-sm sm:odd:border-e"
+          >
+            <dt className="text-neutral-500">{row.label}</dt>
+            <dd className="flex items-center gap-2 text-end font-bold text-brand-950">
+              {row.swatch && (
+                <span className="h-3.5 w-3.5 rounded-full ring-1 ring-black/15" style={{ background: row.swatch }} />
+              )}
+              <bdi>{row.value}</bdi>
+            </dd>
+          </div>
+        ))}
+    </dl>
   );
 }

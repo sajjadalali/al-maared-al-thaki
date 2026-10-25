@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Tajawal } from "next/font/google";
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -7,12 +7,12 @@ import { FavoritesProvider } from "@/context/FavoritesContext";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { site } from "@/config/site";
 
-const tajawal = Tajawal({
-  variable: "--font-tajawal",
+const plex = IBM_Plex_Sans_Arabic({
+  variable: "--font-plex",
   subsets: ["arabic", "latin"],
-  // Only the weights the UI uses (font-semibold renders with 700). Each weight is
+  // Only the weights the UI uses (font-extrabold renders with 700). Each weight is
   // two files (Arabic + Latin), all preloaded, so unused ones slow the first paint.
-  weight: ["400", "500", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -39,9 +39,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="ar"
       dir="rtl"
-      className={`${tajawal.variable} h-full antialiased`}
+      className={`${plex.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white text-[#101828]">
+      <body className="min-h-full flex flex-col bg-white text-[#0f172a]">
         <FavoritesProvider>
           <Header />
           <main className="flex-1">{children}</main>

@@ -19,10 +19,10 @@ export function CategoryPills({ active }: { active?: string }) {
             key={pill.key}
             href={hrefFor(pill.key)}
             className={cn(
-              "shrink-0 rounded-xl border px-4 py-2.5 text-sm font-semibold transition",
+              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
               isActive
-                ? "border-brand-900 bg-brand-900 text-white"
-                : "border-black/5 bg-white text-neutral-600 hover:border-brand-200 hover:text-brand-900"
+                ? "border-brand-950 bg-brand-950 text-white"
+                : "border-black/10 bg-white text-neutral-600 hover:border-black/20 hover:text-brand-950"
             )}
           >
             {pill.label}

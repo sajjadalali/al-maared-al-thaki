@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { CarImage } from "@/components/ui/CarImage";
-import { formatIQD, formatNumber } from "@/lib/format";
+import { formatCarMileage, formatIQD, originLabel } from "@/lib/format";
 import type { Car } from "@/types/car";
 
 function Thumb({ car }: { car: Car }) {
   return (
-    <div className="relative h-14 w-[76px] shrink-0 overflow-hidden rounded-lg bg-brand-900">
+    <div className="relative h-14 w-[76px] shrink-0 overflow-hidden rounded-lg bg-surface">
       <CarImage
         src={car.images[0]}
         alt={`${car.brand} ${car.model}`}
+        bodyType={car.bodyType}
+        color={car.color}
         sizes="76px"
-        className="[&_span]:hidden [&_svg]:h-5 [&_svg]:w-5"
       />
     </div>
   );
@@ -40,7 +41,7 @@ export function CarRecommendationCard({ car }: { car: Car }) {
         <Title car={car} />
         <p className="text-[14px] font-extrabold leading-5 text-brand-800">{formatIQD(car.price)}</p>
         <p className="truncate text-[11.5px] leading-5 text-neutral-500">
-          {car.condition} · {formatNumber(car.mileage)} كم · {car.city}
+          {car.condition} · {formatCarMileage(car.mileage)} · {car.city}
         </p>
       </div>
       <ChevronLeft className="h-4 w-4 shrink-0 text-neutral-300 transition group-hover:text-brand-600" />
@@ -51,7 +52,8 @@ export function CarRecommendationCard({ car }: { car: Car }) {
 /** A reply about one specific car: the same compact row plus its key specs. */
 export function CarDetailChatCard({ car }: { car: Car }) {
   const specs = [
-    `${formatNumber(car.mileage)} كم`,
+    ...(car.origin ? [originLabel(car.origin)] : []),
+    formatCarMileage(car.mileage),
     car.transmission,
     car.engine.includes(car.fuel) ? car.engine : `${car.engine} ${car.fuel}`,
     `${car.seats} مقاعد`,

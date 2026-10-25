@@ -15,14 +15,19 @@ const HEADERS = {
   "المعرف": "id",
   "الماركة": "brand",
   "الموديل": "model",
+  "الفئة": "trim",
   "سنة الصنع": "year",
   "السعر (دينار)": "price",
   "الحالة": "condition",
+  "الوارد": "origin",
   "نوع الهيكل": "bodyType",
   "الكيلومترات": "mileage",
   "ناقل الحركة": "transmission",
   "الوقود": "fuel",
   "المحرك": "engine",
+  "السلندر": "cylinders",
+  "القوة (حصان)": "horsepower",
+  "نظام الدفع": "drivetrain",
   "المقاعد": "seats",
   "اللون": "color",
   "المدينة": "city",
@@ -38,6 +43,8 @@ const LABELS = Object.fromEntries(Object.entries(HEADERS).map(([ar, key]) => [ke
 const REQUIRED = ["brand", "model", "year", "price", "condition", "bodyType", "transmission", "fuel", "city"];
 const ENUMS = {
   condition: ["جديدة", "مستعملة"],
+  origin: ["وكالة", "خليجي", "أمريكي", "كوري", "كندي", "أوروبي", "صيني"],
+  drivetrain: ["أمامي", "خلفي", "رباعي", "كلي"],
   bodyType: ["سيدان", "SUV", "هاتشباك", "دفع رباعي", "شاحنة", "كوبيه"],
   transmission: ["أوتوماتيك", "يدوي"],
   fuel: ["بنزين", "ديزل", "هايبرد", "كهربائي"],
@@ -142,6 +149,8 @@ async function main() {
     const price = numberField("price", 0);
     const mileage = numberField("mileage", 0);
     const seats = numberField("seats", 5);
+    const cylinders = numberField("cylinders", undefined);
+    const horsepower = numberField("horsepower", undefined);
     if (raw.year && year && (year < 1990 || year > 2030)) fail("year", "سنة غير منطقية");
     if (raw.price && toNumber(raw.price) === 0) fail("price", "السعر لا يمكن أن يكون صفراً");
 
@@ -188,15 +197,20 @@ async function main() {
       id,
       brand: raw.brand,
       model: raw.model,
+      trim: raw.trim || undefined,
       year,
       price,
       currency: "IQD",
       condition,
+      origin: raw.origin || undefined,
       bodyType: raw.bodyType,
       mileage,
       transmission: raw.transmission,
       fuel: raw.fuel,
       engine: raw.engine ?? "",
+      cylinders,
+      horsepower,
+      drivetrain: raw.drivetrain || undefined,
       seats,
       color: raw.color ?? "",
       city: raw.city,

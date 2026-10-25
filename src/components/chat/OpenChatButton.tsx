@@ -1,12 +1,27 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { openSadeemChat } from "@/lib/chatBus";
+import { askSadeem, openSadeemChat } from "@/lib/chatBus";
 
-/** A button that opens the Sadeem chat, usable inside server components. */
-export function OpenChatButton({ className, children }: { className?: string; children: ReactNode }) {
+/**
+ * A button that opens the Sadeem chat, usable inside server components. With
+ * `prompt`, the chat opens and sends that message straight away.
+ */
+export function OpenChatButton({
+  className,
+  children,
+  prompt,
+}: {
+  className?: string;
+  children: ReactNode;
+  prompt?: string;
+}) {
   return (
-    <button type="button" onClick={() => openSadeemChat()} className={className}>
+    <button
+      type="button"
+      onClick={() => (prompt ? askSadeem(prompt) : openSadeemChat())}
+      className={className}
+    >
       {children}
     </button>
   );

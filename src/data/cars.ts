@@ -26,7 +26,7 @@ export function searchCars(query: string): Car[] {
 
   return cars.filter((car) => {
     const haystack = normalize(
-      `${car.brand} ${car.model} ${car.year} ${car.city} ${car.color} ${car.bodyType} ${car.description}`
+      `${car.brand} ${car.model} ${car.trim ?? ""} ${car.year} ${car.city} ${car.color} ${car.bodyType} ${car.description}`
     );
     return haystack.includes(normalized);
   });
@@ -47,6 +47,9 @@ export function filterCars(filters: CarFilters): Car[] {
   }
   if (filters.condition) {
     result = result.filter((car) => car.condition === filters.condition);
+  }
+  if (filters.origin) {
+    result = result.filter((car) => car.origin === filters.origin);
   }
   if (filters.city) {
     result = result.filter((car) => car.city === filters.city);

@@ -36,7 +36,7 @@ export function CarQuickSearch() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-1 gap-1 rounded-2xl border border-black/5 bg-white p-2 shadow-xl shadow-brand-950/10 sm:grid-cols-2 sm:gap-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-center lg:gap-0"
+      className="grid grid-cols-2 gap-1 rounded-3xl bg-white p-2.5 shadow-[0_30px_60px_-30px_rgba(11,19,34,0.4)] ring-1 ring-black/5 sm:grid-cols-2 sm:gap-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-center lg:gap-0"
     >
       <Dropdown
         variant="hero"
@@ -53,7 +53,7 @@ export function CarQuickSearch() {
         variant="hero"
         className={cell}
         icon={<CarIcon className="h-3.5 w-3.5" />}
-        label="النوع"
+        label="الماركة"
         value={brand}
         onChange={setBrand}
         placeholder="جميع الماركات"
@@ -85,7 +85,7 @@ export function CarQuickSearch() {
 
       <button
         type="submit"
-        className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-brand-900 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-brand-800 sm:col-span-2 lg:col-span-1 lg:ms-2 lg:mt-0"
+        className="mt-1 flex items-center justify-center gap-2 rounded-2xl bg-brand-950 px-7 py-4 text-[15px] font-bold text-white transition hover:bg-brand-800 col-span-2 lg:col-span-1 lg:ms-2 lg:mt-0"
       >
         <Search className="h-4 w-4" />
         ابحث الآن

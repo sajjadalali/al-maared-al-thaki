@@ -7,6 +7,7 @@ export const site = {
   phone: "+964 770 123 4567",
   whatsapp: "9647701234567",
   email: "info@maared-al-thaki.iq",
+  city: "بغداد",
   address: "بغداد، شارع فلسطين، العراق",
   hours: "السبت - الخميس: 9 صباحاً - 7 مساءً",
   // Leave empty to hide the icon in the footer.
