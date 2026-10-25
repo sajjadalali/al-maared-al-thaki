@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/layout/Logo";
 import { site, phoneHref, whatsappHref } from "@/config/site";
+import { hasImageCredits } from "@/data/imageCredits";
 
 const BROWSE_LINKS = [
   { href: "/cars", label: "كل السيارات" },
@@ -22,6 +23,7 @@ const SHOWROOM_LINKS = [
   { href: "/about", label: "من نحن" },
   { href: "/contact", label: "تواصل معنا" },
   { href: "/favorites", label: "سياراتي المفضلة" },
+  ...(hasImageCredits() ? [{ href: "/credits", label: "حقوق الصور" }] : []),
 ];
 
 const SOCIAL = [
