@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check, ChevronLeft, Clock } from "lucide-react";
 import { getAllCars, getCarById, getSimilarCars } from "@/data/cars";
+import { getImageCredit } from "@/data/imageCredits";
 import { formatCarMileage, formatNumber, formatUSD, originLabel } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { site } from "@/config/site";
@@ -79,7 +80,7 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
           On desktop the price box sits beside both, sticky while scrolling. */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10">
         <div>
-          <CarGallery car={car} />
+          <CarGallery car={car} credits={car.images.map(getImageCredit)} />
         </div>
 
         <aside className="lg:col-start-2 lg:row-span-2 lg:row-start-1">

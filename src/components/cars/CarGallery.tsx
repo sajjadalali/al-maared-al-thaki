@@ -4,12 +4,17 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CarImage } from "@/components/ui/CarImage";
 import { cn } from "@/lib/cn";
+import type { ImageCredit } from "@/data/imageCredits";
 import type { Car } from "@/types/car";
 
-export function CarGallery({ car }: { car: Car }) {
+const linkClass = "underline-offset-2 hover:text-brand-900 hover:underline";
+
+// `credits` lines up with car.images: the attribution of each licensed photo.
+export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCredit | undefined)[] }) {
   const images = car.images.length > 0 ? car.images : [undefined];
   const [active, setActive] = useState(0);
   const alt = `${car.brand} ${car.model} ${car.year}`;
+  const credit = credits[active];
 
   function next() {
     setActive((i) => (i + 1) % images.length);
@@ -55,6 +60,24 @@ export function CarGallery({ car }: { car: Car }) {
           </>
         )}
       </div>
+
+      {credit && (
+        <p className="mt-2 text-[11.5px] leading-5 text-neutral-500">
+          صورة توضيحية للموديل · تصوير{" "}
+          <a href={credit.source} target="_blank" rel="noopener noreferrer" className={linkClass}>
+            <bdi>{credit.author}</bdi>
+          </a>{" "}
+          ·{" "}
+          {credit.licenseUrl ? (
+            <a href={credit.licenseUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+              <bdi>{credit.license}</bdi>
+            </a>
+          ) : (
+            <bdi>{credit.license}</bdi>
+          )}{" "}
+          · ويكيميديا كومنز
+        </p>
+      )}
 
       {images.length > 1 && (
         <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">

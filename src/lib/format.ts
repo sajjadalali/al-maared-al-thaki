@@ -1,6 +1,7 @@
-// Approximate market rate, used to show a price in dollars (how most buyers in
-// Iraq compare cars) and to read budgets stated in dollars.
-export const USD_TO_IQD = 1450;
+// Parallel-market rate (Baghdad exchanges, Oct 2026), not the official 1,510:
+// cars are priced in dollars at the market rate, so this is what buyers use to
+// compare prices and state budgets in dollars.
+export const USD_TO_IQD = 1685;
 
 export function formatIQD(price: number): string {
   return `${new Intl.NumberFormat("en-US").format(price)} د.ع`;
