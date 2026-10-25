@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { Bot, Loader2, X } from "lucide-react";
 import { onSadeemOpen, onSadeemPrompt } from "@/lib/chatBus";
+import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { CHAT_FRAME_CLASS, CHAT_HEADER_CLASS } from "./chatFrame";
 import type { ChatPrompt } from "./ChatPanel";
 
@@ -59,12 +60,12 @@ export function ChatWidget() {
           onPointerEnter={warmUp}
           onTouchStart={warmUp}
           onFocus={warmUp}
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-brand-900 py-3 pe-5 ps-3 text-white shadow-xl shadow-brand-950/30 transition hover:bg-brand-800 animate-pop-in"
+          className="fixed bottom-5 left-5 z-50 flex items-center gap-2 rounded-full bg-brand-950 py-2.5 pe-5 ps-2.5 text-white shadow-xl shadow-brand-950/30 ring-1 ring-white/10 transition hover:bg-brand-800 animate-pop-in max-lg:[body:has([data-contact-bar])_&]:bottom-24"
           aria-label="تحدث مع سديم"
         >
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
-            <Bot className="h-5 w-5" />
-            <span className="absolute -end-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-brand-900 bg-success" />
+          <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white">
+            <SadeemMascot className="h-8 w-8" />
+            <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
           </span>
           <span className="hidden text-sm font-bold sm:inline">تحدث مع سديم</span>
         </button>

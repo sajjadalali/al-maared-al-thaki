@@ -2,18 +2,19 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { PRICE_BANDS, getFilterOptions, priceBandIndex } from "@/lib/filterOptions";
-import { cn } from "@/lib/cn";
 
 // URL keys that count as a user-chosen filter (sorting doesn't).
 const FILTER_KEYS = [
-  "query", "brand", "bodyType", "condition", "city", "fuel",
+  "query", "brand", "bodyType", "condition", "origin", "city", "fuel",
   "transmission", "minPrice", "maxPrice", "minYear", "tag",
 ];
 
-export function CarFilters() {
+// The listing page renders the sidebar on desktop and the button + bottom
+// sheet on phones; both read and write the same URL.
+export function CarFilters({ resultCount, variant }: { resultCount: number; variant: "sidebar" | "drawer" }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -29,6 +30,7 @@ export function CarFilters() {
     price: priceIdx || undefined,
     bodyType: searchParams.get("bodyType") ?? undefined,
     condition: searchParams.get("condition") ?? undefined,
+    origin: searchParams.get("origin") ?? undefined,
     fuel: searchParams.get("fuel") ?? undefined,
     transmission: searchParams.get("transmission") ?? undefined,
   });
@@ -127,6 +129,14 @@ export function CarFilters() {
         placeholderCount={options.totals.condition}
       />
       <Dropdown
+        label="الوارد"
+        value={param("origin")}
+        onChange={(v) => setParams({ origin: v || null })}
+        options={options.origins}
+        placeholder="الكل"
+        placeholderCount={options.totals.origin}
+      />
+      <Dropdown
         label="المحافظة"
         value={param("city")}
         onChange={(v) => setParams({ city: v || null })}
@@ -164,47 +174,73 @@ export function CarFilters() {
     </>
   );
 
-  return (
-    <>
-      <div className="lg:hidden">
-        <button
-          type="button"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-expanded={mobileOpen}
-          className="flex w-full items-center justify-between gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-bold text-brand-900"
-        >
-          <span className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4" />
-            تصفية النتائج
-            {activeCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-900 px-1.5 text-[11px] text-white">
-                {activeCount}
-              </span>
-            )}
-          </span>
-          <ChevronDown className={cn("h-4 w-4 transition-transform", mobileOpen && "rotate-180")} />
-        </button>
-        {mobileOpen && (
-          <div className="mt-3 grid grid-cols-1 gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:grid-cols-2">
-            {fields}
-          </div>
-        )}
-      </div>
+  const badge = activeCount > 0 && (
+    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-400 px-1.5 text-[11px] font-bold text-brand-950">
+      {activeCount}
+    </span>
+  );
 
-      <aside className="hidden lg:block lg:w-72 lg:shrink-0">
-        <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-extrabold text-brand-950">
+  if (variant === "sidebar") {
+    return (
+      <aside className="w-[280px] shrink-0">
+        <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto overscroll-contain rounded-3xl border border-black/[0.07] bg-white p-5">
+          <h2 className="mb-5 flex items-center gap-2 text-[15px] font-bold text-brand-950">
             <SlidersHorizontal className="h-4 w-4" />
             تصفية النتائج
-            {activeCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-900 px-1.5 text-[11px] text-white">
-                {activeCount}
-              </span>
-            )}
+            {badge}
           </h2>
           <div className="flex flex-col gap-4">{fields}</div>
         </div>
       </aside>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setMobileOpen(true)}
+        className="flex items-center justify-center gap-2 rounded-full bg-brand-950 px-5 py-2.5 text-sm font-bold text-white lg:hidden"
+      >
+        <SlidersHorizontal className="h-4 w-4" />
+        الفلاتر
+        {badge}
+      </button>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="تصفية النتائج">
+          <div className="absolute inset-0 bg-black/40 animate-fade-in" onClick={() => setMobileOpen(false)} />
+          <div className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl bg-white shadow-2xl animate-fade-in">
+            <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-neutral-200" />
+            <div className="flex items-center justify-between px-5 pb-3 pt-3">
+              <p className="flex items-center gap-2 text-base font-bold text-brand-950">
+                تصفية النتائج
+                {badge}
+              </p>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                aria-label="إغلاق"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-surface"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto overscroll-contain border-y border-black/5 px-5 py-4 sm:grid-cols-2">
+              {fields}
+            </div>
+            <div className="px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="w-full rounded-2xl bg-brand-950 py-3.5 text-[15px] font-bold text-white"
+              >
+                {resultCount === 0 ? "لا توجد نتائج" : `عرض ${resultCount} سيارة`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

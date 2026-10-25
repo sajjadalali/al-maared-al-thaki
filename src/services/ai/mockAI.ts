@@ -1,12 +1,8 @@
 import { filterCars, getAllCars, getCarById, getCities, getSimilarCars } from "@/data/cars";
-import { formatIQD } from "@/lib/format";
+import { USD_TO_IQD, formatIQD, originLabel } from "@/lib/format";
 import { site, phoneHref, whatsappHref } from "@/config/site";
-import type { Car, CarFilters, FuelType } from "@/types/car";
+import type { Car, CarFilters, CarOrigin, FuelType } from "@/types/car";
 import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage } from "./types";
-
-// Approximate market rate used when a visitor states a budget in dollars
-// ("20 ألف" for a car in Iraq means $20,000).
-const USD_TO_IQD = 1450;
 
 const BRAND_ALIASES: { brand: string; aliases: string[] }[] = [
   { brand: "Toyota", aliases: ["تويوتا", "toyota"] },
@@ -21,7 +17,13 @@ const BRAND_ALIASES: { brand: string; aliases: string[] }[] = [
   { brand: "Land Rover", aliases: ["لاند روفر", "لاندروفر", "land rover"] },
   { brand: "Honda", aliases: ["هوندا", "honda"] },
   { brand: "Mitsubishi", aliases: ["ميتسوبيشي", "متسوبيشي", "mitsubishi"] },
+  { brand: "Changan", aliases: ["شانجان", "جانجان", "شانكان", "changan"] },
+  { brand: "Geely", aliases: ["جيلي", "geely"] },
+  { brand: "Haval", aliases: ["هافال", "haval"] },
+  { brand: "Chery", aliases: ["شيري", "chery"] },
 ];
+
+const CHINESE_BRANDS = ["Changan", "Geely", "Haval", "Chery", "MG", "BYD", "JAC", "Jetour"];
 
 // `model` is matched as a substring of the car's model name (lowercase).
 const MODEL_ALIASES: { model: string; aliases: string[] }[] = [
@@ -53,6 +55,21 @@ const MODEL_ALIASES: { model: string; aliases: string[] }[] = [
   { model: "defender", aliases: ["ديفندر", "defender"] },
   { model: "civic", aliases: ["سيفيك", "civic"] },
   { model: "pajero", aliases: ["باجيرو", "pajero"] },
+  { model: "santa fe", aliases: ["سنتافي", "سانتافي", "سانتا في", "santa fe", "santafe"] },
+  { model: "cs75", aliases: ["cs75", "سي اس 75", "cs 75"] },
+  { model: "coolray", aliases: ["كولراي", "كول راي", "coolray"] },
+  { model: "h6", aliases: ["h6", "اتش 6", "اج 6"] },
+  { model: "tiggo", aliases: ["تيغو", "تيجو", "تيكو", "tiggo"] },
+];
+
+// Import market as Iraqi buyers ask for it ("عندكم لاندكروزر خليجي؟").
+const ORIGIN_ALIASES: { origin: CarOrigin; aliases: string[] }[] = [
+  { origin: "خليجي", aliases: ["خليجي", "خليجيه", "خليجيات"] },
+  { origin: "أمريكي", aliases: ["امريكي", "امريكيه", "امريكا", "امريكان"] },
+  { origin: "كوري", aliases: ["كوري", "كوريه"] },
+  { origin: "كندي", aliases: ["كندي", "كنديه"] },
+  { origin: "أوروبي", aliases: ["اوروبي", "اوروبيه", "الماني", "المانيه"] },
+  { origin: "وكالة", aliases: ["وكاله", "وكالات"] },
 ];
 
 const BODY_TYPE_ALIASES: { bodyType: string; aliases: string[] }[] = [
@@ -167,6 +184,10 @@ function extractFuel(text: string): FuelType | undefined {
   return FUEL_ALIASES.find((entry) => hasAnyWord(text, entry.aliases))?.fuel;
 }
 
+function extractOrigin(text: string): CarOrigin | undefined {
+  return ORIGIN_ALIASES.find((entry) => hasAnyWord(text, entry.aliases))?.origin;
+}
+
 function extractCity(text: string): string | undefined {
   return getCities().find((city) => text.includes(normalize(city)));
 }
@@ -181,6 +202,7 @@ interface ParsedIntent {
   filters: CarFilters;
   model?: string;
   minSeats?: number;
+  isChinese: boolean;
   isFamily: boolean;
   isLuxury: boolean;
   isEconomical: boolean;
@@ -196,6 +218,7 @@ function parseIntent(rawText: string): ParsedIntent {
     city: extractCity(text),
     fuel: extractFuel(text),
     condition: extractCondition(text),
+    origin: extractOrigin(text),
   };
 
   const year = extractYear(text);
@@ -211,6 +234,7 @@ function parseIntent(rawText: string): ParsedIntent {
     filters,
     model: extractModel(text),
     minSeats: extractMinSeats(text),
+    isChinese: includesAny(text, ["صيني", "صينيه", "الصين"]),
     isFamily: includesAny(text, ["عائليه", "عائلي", "عيلتي", "للعائله", "للعيله"]),
     isLuxury: includesAny(text, ["فخمه", "فاخره", "فخم", "فاخر"]),
     isEconomical: includesAny(text, ["اقتصاديه", "اقتصادي", "توفير", "رخيصه"]),
@@ -226,6 +250,9 @@ function matchCars(intent: ParsedIntent): Car[] {
   }
   if (intent.minSeats) {
     results = results.filter((car) => car.seats >= intent.minSeats!);
+  }
+  if (intent.isChinese) {
+    results = results.filter((car) => CHINESE_BRANDS.includes(car.brand));
   }
   if (intent.isLuxury) {
     results = results.filter((car) => car.tags?.includes("فاخرة"));
@@ -247,8 +274,8 @@ function matchCars(intent: ParsedIntent): Car[] {
 function hasAnyFilter(intent: ParsedIntent): boolean {
   const f = intent.filters;
   return Boolean(
-    f.brand || f.bodyType || f.city || f.fuel || f.condition || f.minYear || intent.model || intent.minSeats ||
-      intent.budget || intent.isFamily || intent.isLuxury || intent.isEconomical
+    f.brand || f.bodyType || f.city || f.fuel || f.condition || f.origin || f.minYear || intent.model ||
+      intent.minSeats || intent.budget || intent.isChinese || intent.isFamily || intent.isLuxury || intent.isEconomical
   );
 }
 
@@ -276,7 +303,9 @@ function describeIntent(intent: ParsedIntent): string[] {
   if (intent.isLuxury) parts.push("فخمة");
   if (intent.isEconomical) parts.push("اقتصادية");
   if (intent.isFamily) parts.push("عائلية");
+  if (intent.isChinese) parts.push("صينية");
   if (intent.filters.condition) parts.push(intent.filters.condition);
+  if (intent.filters.origin) parts.push(originLabel(intent.filters.origin));
   if (intent.filters.city) parts.push(intent.filters.city);
   if (intent.budget) parts.push(`حتى ${formatBudget(intent.budget)}`);
   return parts;
@@ -364,11 +393,12 @@ function shownCarIds(history: ChatMessage[]): Set<string> {
 
 // The detailed car card carries the specs, so the text stays short.
 function singleCarReply(car: Car, intro?: string): ChatMessage {
+  const origin = car.origin ? ` ${originLabel(car.origin)}` : "";
   const where = car.status === "متوفرة" ? `متوفرة عدنا ب${car.city}` : `حالياً ${car.status}`;
   const highlights = car.features.slice(0, 3).join("، ");
   const features = highlights ? `\nمن مميزاتها: ${highlights}.` : "";
   return reply(
-    (intro ?? `**${carLabel(car)}** ${where} 👌`) + features,
+    (intro ?? `**${carLabel(car)}**${origin} ${where} 👌`) + features,
     {
       cars: [car],
       quickReplies: SINGLE_CAR_QUICK_REPLIES,

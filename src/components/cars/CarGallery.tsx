@@ -20,8 +20,16 @@ export function CarGallery({ car }: { car: Car }) {
 
   return (
     <div>
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-brand-900 sm:aspect-[16/10]">
-        <CarImage src={images[active]} alt={alt} priority sizes="(min-width: 1024px) 60vw, 100vw" />
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-black/[0.06] bg-surface sm:aspect-[16/10]">
+        <CarImage
+          src={images[active]}
+          alt={alt}
+          bodyType={car.bodyType}
+          color={car.color}
+          priority
+          showNote
+          sizes="(min-width: 1024px) 60vw, 100vw"
+        />
 
         {images.length > 1 && (
           <>
@@ -56,11 +64,11 @@ export function CarGallery({ car }: { car: Car }) {
               type="button"
               onClick={() => setActive(i)}
               className={cn(
-                "relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-brand-900 ring-2 transition",
-                active === i ? "ring-brand-700" : "ring-transparent opacity-70 hover:opacity-100"
+                "relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-surface ring-2 transition",
+                active === i ? "ring-brand-900" : "ring-transparent opacity-70 hover:opacity-100"
               )}
             >
-              <CarImage src={src} alt={`${alt} - صورة ${i + 1}`} />
+              <CarImage src={src} alt={`${alt} - صورة ${i + 1}`} bodyType={car.bodyType} color={car.color} sizes="80px" />
             </button>
           ))}
         </div>

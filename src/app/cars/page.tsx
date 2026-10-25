@@ -5,7 +5,8 @@ import { CarGrid } from "@/components/cars/CarGrid";
 import { CarSort } from "@/components/cars/CarSort";
 import { sortCars } from "@/lib/sortCars";
 import { CategoryPills } from "@/components/cars/CategoryPills";
-import type { CarCondition, FuelType, Transmission } from "@/types/car";
+import { ActiveFilters } from "@/components/cars/ActiveFilters";
+import type { CarCondition, CarOrigin, FuelType, Transmission } from "@/types/car";
 
 export const metadata: Metadata = {
   title: "تصفح السيارات",
@@ -34,6 +35,7 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
   const brand = first(params.brand);
   const bodyType = first(params.bodyType);
   const condition = first(params.condition) as CarCondition | undefined;
+  const origin = first(params.origin) as CarOrigin | undefined;
   const city = first(params.city);
   const fuel = first(params.fuel) as FuelType | undefined;
   const transmission = first(params.transmission) as Transmission | undefined;
@@ -49,6 +51,7 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
     brand,
     bodyType,
     condition,
+    origin,
     city,
     fuel,
     transmission,
@@ -65,29 +68,46 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
 
   cars = sortCars(cars, sort);
 
+  const heading =
+    condition === "جديدة" ? "السيارات الجديدة" : condition === "مستعملة" ? "السيارات المستعملة" : "كل السيارات";
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-brand-950 sm:text-3xl">تصفح السيارات</h1>
-        <p className="mt-1.5 text-sm text-neutral-500">
-          اكتشف مجموعتنا من السيارات الجديدة والمستعملة، أو تحدث مع سديم ليبحث لك عن أفضل خيار
-          يناسبك.
-        </p>
+    <div>
+      <div className="border-b border-black/[0.06] bg-surface">
+        <div className="mx-auto max-w-7xl px-4 pb-6 pt-8 sm:px-6 lg:px-8 lg:pt-10">
+          <h1 className="text-3xl font-bold text-brand-950 sm:text-[36px]">{heading}</h1>
+          <p className="mt-2 text-[15px] text-neutral-500">
+            جديدة ومستعملة، وكالة ووارد، بأسعار معلنة بالدينار العراقي. لم تجد ما تبحث عنه؟ اسأل سديم
+            وسيبحث لك.
+          </p>
+          <div className="mt-6">
+            <CategoryPills
+              active={bodyType ?? (tag === "فاخرة" ? "فاخرة" : fuel === "كهربائي" ? "كهربائية" : "all")}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="mb-6">
-        <CategoryPills active={bodyType ?? (tag === "فاخرة" ? "فاخرة" : fuel === "كهربائي" ? "كهربائية" : "all")} />
-      </div>
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:gap-8 lg:px-8">
+        <div className="hidden lg:block">
+          <CarFilters resultCount={cars.length} variant="sidebar" />
+        </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <CarFilters />
-
-        <div className="flex-1">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-neutral-500">
-              عدد النتائج: <span className="text-brand-950">{cars.length}</span>
-            </p>
+        <div className="min-w-0 flex-1">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="lg:hidden">
+                <CarFilters resultCount={cars.length} variant="drawer" />
+              </div>
+              <p className="text-sm font-semibold text-neutral-500">
+                <span className="text-base font-bold text-brand-950">{cars.length}</span> سيارة
+              </p>
+            </div>
             <CarSort />
+          </div>
+
+          <div className="mb-5 empty:hidden">
+            <ActiveFilters />
           </div>
 
           <CarGrid cars={cars} />

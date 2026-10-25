@@ -2,7 +2,7 @@
 
 import { Check, Car as CarIcon, SendHorizontal, Sparkles, Zap } from "lucide-react";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
-import { CarIllustration } from "@/components/ui/CarIllustration";
+import { CarArt } from "@/components/ui/CarArt";
 import { getAllCars, getCatalogStats, getFeaturedCars } from "@/data/cars";
 import { formatIQD } from "@/lib/format";
 import { openSadeemChat } from "@/lib/chatBus";
@@ -115,9 +115,8 @@ export function HeroChatPreview() {
               className="me-9 flex items-stretch gap-3 overflow-hidden rounded-2xl bg-white p-2 shadow-md ring-1 ring-black/[0.04] motion-safe:animate-rise"
               style={{ animationDelay: "1.4s" }}
             >
-              <div className="relative flex w-[120px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-950">
-                <div className="absolute inset-x-3 bottom-2 h-6 rounded-full bg-brand-400/30 blur-md" />
-                <CarIllustration className="relative w-[104px]" />
+              <div className="relative flex w-[120px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[radial-gradient(120%_90%_at_50%_10%,#ffffff_0%,#eef0f3_55%,#e2e5ea_100%)]">
+                <CarArt bodyType={car.bodyType} color={car.color} className="relative w-[108px]" />
               </div>
               <div className="min-w-0 flex-1 py-1">
                 <p className="truncate text-[14px] font-extrabold leading-5">

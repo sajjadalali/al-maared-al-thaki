@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-tajawal);
+  --font-sans: var(--font-plex);
 
-  --color-brand-50: #eef4fb;
-  --color-brand-100: #d9e6f4;
-  --color-brand-200: #b3cce9;
-  --color-brand-300: #82abd9;
-  --color-brand-400: #4d84c2;
-  --color-brand-500: #2c62a3;
-  --color-brand-600: #1f4c86;
-  --color-brand-700: #193d6c;
-  --color-brand-800: #132f54;
-  --color-brand-900: #0f2540;
-  --color-brand-950: #081627;
+  /* ink navy: text, primary buttons, dark bands */
+  --color-brand-50: #f2f5f9;
+  --color-brand-100: #e3e9f1;
+  --color-brand-200: #c6d2e2;
+  --color-brand-300: #9fb1ca;
+  --color-brand-400: #7189ab;
+  --color-brand-500: #4f6789;
+  --color-brand-600: #3a5172;
+  --color-brand-700: #2b3f5e;
+  --color-brand-800: #1e2e47;
+  --color-brand-900: #142036;
+  --color-brand-950: #0b1322;
 
-  --color-surface: #f4f7fb;
-  --color-surface-muted: #eaf0f7;
+  /* amber: highlights only (badges, Sadeem's spark, accents on dark) */
+  --color-accent-50: #fff8eb;
+  --color-accent-100: #feedc7;
+  --color-accent-200: #fcd889;
+  --color-accent-300: #f9c04d;
+  --color-accent-400: #f6a723;
+  --color-accent-500: #e48b0a;
+  --color-accent-600: #bd6c06;
+  --color-accent-700: #955209;
 
-  --color-success: #1c9a5b;
-  --color-warning: #c8862a;
-  --color-danger: #c33f3f;
+  --color-surface: #f5f6f8;
+  --color-surface-muted: #eceff3;
+
+  --color-success: #15935a;
+  --color-warning: #c27c12;
+  --color-danger: #c8372d;
 
   --animate-fade-in: fade-in 0.25s ease-out;
   --animate-bounce-dot: bounce-dot 1.2s infinite ease-in-out;
@@ -88,7 +99,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #101828;
+  --foreground: #0f172a;
 }
 
 body {
