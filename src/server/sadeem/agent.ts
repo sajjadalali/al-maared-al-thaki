@@ -5,7 +5,8 @@ import { site } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
 import type { Car } from "@/types/car";
 import { systemPrompt } from "./prompt";
-import { TOOL_DEFINITIONS, fetchCars, runTool, toCar, type TurnState } from "./tools";
+import { TOOL_DEFINITIONS, fetchCars, runTool, toCar, usdOf, type TurnState } from "./tools";
+import { mentionsOverBudget, moneyFigures, unsupportedFigures, type AllowedFigures } from "./verify";
 
 // Fast and cheap with reliable tool calls; set OPENROUTER_MODEL for something else.
 export const DEFAULT_MODEL = "anthropic/claude-haiku-5.5";
@@ -72,7 +73,7 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
       messages,
       tools: TOOL_DEFINITIONS,
       tool_choice: allowTools ? "auto" : "none",
-      temperature: 0.3,
+      temperature: 0.2,
       max_tokens: 900,
       // Short sales replies don't need long thinking; low effort keeps them fast.
       reasoning: { effort: process.env.OPENROUTER_REASONING_EFFORT || "low" },
@@ -101,6 +102,30 @@ function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
   }));
 }
 
+function allowedFigures(state: TurnState, buyerTexts: string[]): AllowedFigures {
+  const prices = [...state.seenPrices.values()];
+  const iqd = [...prices, ...state.overBudget.map((c) => c.overBy)];
+  // Differences, for "أرخص بـ 4 مليون" in comparisons.
+  for (const a of prices) for (const b of prices) if (a > b) iqd.push(a - b);
+  if (state.request?.budgetMax) iqd.push(state.request.budgetMax);
+  if (state.request?.budgetMin) iqd.push(state.request.budgetMin);
+  const usd = [...prices.map(usdOf), ...state.overBudget.map((c) => usdOf(c.overBy))];
+  // Whatever the buyer wrote may be repeated back ("ميزانيتك 20 ألف دولار").
+  for (const f of buyerTexts.flatMap(moneyFigures)) (f.currency === "USD" ? usd : iqd).push(f.value);
+  return { iqd, usd };
+}
+
+function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState): string[] {
+  const problems = unsupportedFigures(reply, allowed).map((f) => `"${f}" is not a price from the tools`);
+  if (state.overBudget.length && !mentionsOverBudget(reply)) {
+    problems.push(
+      `it does not say that ${state.overBudget.map((c) => c.id).join(", ")} cost more than the budget ` +
+        `(by ${state.overBudget.map((c) => `${c.overBy.toLocaleString("en-US")} د.ع`).join(", ")})`
+    );
+  }
+  return problems;
+}
+
 export async function runSadeem(
   llm: OpenRouterEnv,
   db: SupabaseEnv,
@@ -109,6 +134,8 @@ export async function runSadeem(
 ): Promise<AgentReply> {
   const state: TurnState = {
     seenIds: new Set(history.flatMap((m) => m.cars?.map((c) => c.id) ?? [])),
+    seenPrices: new Map(),
+    overBudget: [],
     shownIds: [],
     quickReplies: [],
     leadSaved: false,
@@ -152,11 +179,36 @@ export async function runSadeem(
     content = (await complete(llm, messages, false)).content?.trim() ?? "";
   }
 
-  const rows = await fetchCars(db, state.shownIds);
+  // Prices of every car this conversation has touched, current from the database.
+  const rows = await fetchCars(db, [...state.seenIds]);
+  rows.forEach((row) => state.seenPrices.set(row.id, row.price_iqd));
   const cars = state.shownIds
     .map((id) => rows.find((row) => row.id === id))
     .filter((row) => row !== undefined)
     .map(toCar);
+
+  // Check the reply against the facts; one rewrite if it quotes a figure no
+  // tool returned or hides that a shown car is over budget.
+  if (content) {
+    const allowed = allowedFigures(state, [message, ...history.filter((m) => m.role === "user").map((m) => m.content)]);
+    const problems = replyProblems(content, allowed, state);
+    if (problems.length) {
+      state.searches.push({ verify: problems });
+      messages.push({ role: "assistant", content });
+      messages.push({
+        role: "system",
+        content:
+          `Your reply has problems: ${problems.join(" | ")}. Rewrite it in Iraqi Arabic using only figures from the tool results ` +
+          `(prices: ${[...state.seenPrices].map(([id, p]) => `${id} ${p.toLocaleString("en-US")} د.ع ≈ ${usdOf(p).toLocaleString("en-US")} $`).join("; ")}). No tools.`,
+      });
+      const fixed = (await complete(llm, messages, false)).content?.trim();
+      if (fixed) {
+        const left = replyProblems(fixed, allowed, state);
+        if (left.length) state.searches.push({ verify_after_rewrite: left });
+        content = fixed;
+      }
+    }
+  }
 
   return {
     content: content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟"),

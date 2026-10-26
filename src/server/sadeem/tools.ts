@@ -1,5 +1,6 @@
 // The tools Sadeem (the LLM) can call. Each one runs against Supabase and
 // returns compact JSON; the model never sees or invents anything else.
+import { USD_TO_IQD } from "@/lib/format";
 import { insert, rpc, select, type SupabaseEnv } from "@/server/supabase";
 import type { Car } from "@/types/car";
 
@@ -14,6 +15,35 @@ const list = (items: object, description: string) => ({ type: "array", items, de
 const str = { type: "string" };
 
 export const TOOL_DEFINITIONS = [
+  {
+    type: "function",
+    function: {
+      name: "record_request",
+      description:
+        "Step 1 of every buyer message about cars: write down what the buyer wants, before searching. The server checks the cars you show against this budget.",
+      parameters: {
+        type: "object",
+        properties: {
+          intent: {
+            type: "string",
+            enum: ["search", "details", "compare", "contact", "other"],
+            description: "search = find cars; details/compare = about cars already shown; contact = visit, test drive, call.",
+          },
+          budget_max_iqd: {
+            type: "integer",
+            description: "Price ceiling in dinars after conversion (بحدود X → X × 1.05; تحت X → X). Omit if no budget.",
+          },
+          budget_min_iqd: { type: "integer", description: "Price floor in dinars, if they gave one." },
+          budget_words: { type: "string", description: "The budget exactly as the buyer wrote it, e.g. \"3 دفاتر\"." },
+          currency: { type: "string", enum: ["IQD", "USD"], description: "The currency the buyer talks in." },
+          must_have: list(str, "Hard requirements in short Arabic, e.g. [\"7 مقاعد\", \"خليجي\"]."),
+          nice_to_have: list(str, "Preferences that may be dropped."),
+          carried_over: list(str, "Requirements kept from earlier messages because the buyer is refining the same search."),
+        },
+        required: ["intent"],
+      },
+    },
+  },
   {
     type: "function",
     function: {
@@ -182,6 +212,7 @@ function brief(row: SearchRow | FullRow) {
     id: row.id,
     name: `${row.brand} ${row.model}${row.trim_level ? ` ${row.trim_level}` : ""} ${row.year}`,
     price_iqd: row.price_iqd,
+    price_usd: usdOf(row.price_iqd),
     condition: row.condition,
     origin: row.origin,
     body: row.body_type,
@@ -198,6 +229,12 @@ function brief(row: SearchRow | FullRow) {
   };
 }
 
+/** Dinars to the dollar figure quoted to buyers, rounded to the nearest 100. */
+export const usdOf = (iqd: number) => Math.round(iqd / USD_TO_IQD / 100) * 100;
+
+const positiveInt = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.round(value) : undefined;
+
 const ids = (value: unknown, max: number) =>
   (Array.isArray(value) ? value : [])
     .filter((id): id is string => typeof id === "string" && /^[\w-]{1,40}$/.test(id))
@@ -213,9 +250,26 @@ export function fetchCars(env: SupabaseEnv, carIds: string[]): Promise<FullRow[]
 // ---------------------------------------------------------------------------
 
 /** State one reply builds up while the model calls tools. */
+export interface BuyerRequest {
+  intent: string;
+  budgetMax?: number;
+  budgetMin?: number;
+  currency?: "IQD" | "USD";
+}
+
+export interface OverBudget {
+  id: string;
+  price: number;
+  overBy: number;
+}
+
 export interface TurnState {
   /** Every car id a tool returned this turn, so show_cars can't show made-up ids. */
   seenIds: Set<string>;
+  /** Prices of those cars, to check every figure the reply quotes. */
+  seenPrices: Map<string, number>;
+  request?: BuyerRequest;
+  overBudget: OverBudget[];
   shownIds: string[];
   quickReplies: string[];
   leadSaved: boolean;
@@ -255,6 +309,20 @@ export async function runTool(
   state: TurnState
 ): Promise<unknown> {
   switch (name) {
+    case "record_request": {
+      state.request = {
+        intent: typeof args.intent === "string" ? args.intent : "other",
+        budgetMax: positiveInt(args.budget_max_iqd),
+        budgetMin: positiveInt(args.budget_min_iqd),
+        currency: args.currency === "USD" ? "USD" : args.currency === "IQD" ? "IQD" : undefined,
+      };
+      state.searches.push({ request: args });
+      const { budgetMax } = state.request;
+      return budgetMax
+        ? { ok: true, budget_max_iqd: budgetMax, budget_max_usd: usdOf(budgetMax), next: "Search with max_price = budget_max_iqd." }
+        : { ok: true };
+    }
+
     case "search_cars": {
       const params: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(args)) {
@@ -265,13 +333,19 @@ export async function runTool(
       params.p_limit = Math.min(Math.max(Number(params.p_limit) || 6, 1), 10);
       state.searches.push(args);
       const rows = await rpc<SearchRow[]>(env, "search_cars", params);
-      rows.forEach((row) => state.seenIds.add(row.id));
+      rows.forEach((row) => {
+        state.seenIds.add(row.id);
+        state.seenPrices.set(row.id, row.price_iqd);
+      });
       return { total: rows[0]?.total_count ?? 0, cars: rows.map(brief) };
     }
 
     case "get_car_details": {
       const rows = await fetchCars(env, ids(args.ids, 5));
-      rows.forEach((row) => state.seenIds.add(row.id));
+      rows.forEach((row) => {
+        state.seenIds.add(row.id);
+        state.seenPrices.set(row.id, row.price_iqd);
+      });
       return rows.map((row) => ({ ...brief(row), cylinders: row.cylinders, features: row.features, description: row.description }));
     }
 
@@ -279,9 +353,28 @@ export async function runTool(
       const wanted = ids(args.ids, MAX_SHOWN_CARS);
       const unknown = wanted.filter((id) => !state.seenIds.has(id));
       state.shownIds = wanted.filter((id) => state.seenIds.has(id));
-      return unknown.length
-        ? { shown: state.shownIds, error: `Not from a search this turn, not shown: ${unknown.join(", ")}` }
-        : { shown: state.shownIds };
+      // The budget is a ceiling: anything above it must be said out loud.
+      const ceiling = state.request?.budgetMax;
+      state.overBudget = ceiling
+        ? state.shownIds
+            .map((id) => ({ id, price: state.seenPrices.get(id) ?? 0 }))
+            .filter((car) => car.price > ceiling)
+            .map((car) => ({ ...car, overBy: car.price - ceiling }))
+        : [];
+      return {
+        shown: state.shownIds,
+        ...(unknown.length ? { error: `Not from a search this turn, not shown: ${unknown.join(", ")}` } : {}),
+        ...(state.overBudget.length
+          ? {
+              over_budget: state.overBudget.map((car) => ({
+                id: car.id,
+                over_by_iqd: car.overBy,
+                over_by_usd: usdOf(car.overBy),
+              })),
+              rule: "Your reply must say these cars are above the buyer's budget and by how much.",
+            }
+          : {}),
+      };
     }
 
     case "save_lead": {
