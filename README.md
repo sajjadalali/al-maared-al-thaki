@@ -33,14 +33,18 @@ src/
                          حتى لا ينزل ملف السيارات كاملاً مع جافاسكربت الصفحة
     image-credits.json   إسناد الصور المرخّصة (يكتبه npm run fetch-photos)
   services/ai/          طبقة الذكاء الاصطناعي القابلة للاستبدال
-    mockAI.ts            المحرك الحالي: يحلل الرسالة ويبحث في cars.json
+    remoteAI.ts          سديم الذكي: يستدعي /api/chat (OpenRouter + Supabase)
+    mockAI.ts            المحرك الاحتياطي: يحلل الرسالة ويبحث في cars.json
     index.ts             نقطة الدخول الموحدة (aiService) التي تستخدمها الواجهة
+  server/sadeem/        تعليمات سديم وأدواته وحلقة النموذج (خادم فقط)
+  app/api/chat/         الـ API الذي يستدعيه سديم
   lib/                  أدوات مشتركة: formatIQD, cn, filterOptions...
 public/cars/            صور السيارات (بصيغة webp)
 content/
   cars.xlsx             ملف السيارات الذي يقرأ منه الموقع
   research/             بحث أسعار السوق والصور المرخّصة لكل سيارة
-scripts/                import-cars (الإكسل ← الموقع)، fetch-photos (تحميل الصور المرخّصة)
+supabase/              جداول قاعدة البيانات (migrations) وبيانات السيارات (seed.sql)
+scripts/                import-cars (الإكسل ← الموقع)، fetch-photos (الصور المرخّصة)، sync-supabase
 ```
 
 ## بيانات المعرض والتواصل
@@ -114,7 +118,49 @@ npm run import-cars
   الإكسل (مثل `toyota-camry-2024-1.webp`؛ أول صورة تظهر في البطاقة). إذا كانت الصورة غير
   موجودة أو العمود فارغاً، يعرض الموقع رسماً للسيارة بشكل هيكلها (سيدان، SUV، دفع رباعي،
   بيك أب...) وبلونها الحقيقي، مع ملاحظة «صورة توضيحية» في صفحة السيارة.
-- **الذكاء الاصطناعي**: لربط سديم بنموذج حقيقي، أنشئ ملف يطبّق واجهة `AIService`
-  (انظر `src/services/ai/types.ts`) ويستدعي الـ API الخاص بك من طرف الخادم (لا
-  تضع مفاتيح API في الواجهة الأمامية)، ثم بدّل التصدير في `src/services/ai/index.ts`.
-  واجهة المحادثة نفسها لا تحتاج أي تعديل.
+- **الذكاء الاصطناعي**: سديم مربوط بنموذج لغوي عبر OpenRouter وقاعدة Supabase (القسم التالي).
+
+## سديم الذكي: Supabase + OpenRouter
+
+سديم يعمل بنموذج لغوي (عبر OpenRouter) يبحث في سيارات المعرض المخزّنة في Supabase. كل
+رد يمرّ هكذا:
+
+1. المتصفح يرسل الرسالة وآخر المحادثة إلى `/api/chat` (`src/app/api/chat/route.ts`).
+2. الخادم يرسلها للنموذج مع تعليمات سديم (`src/server/sadeem/prompt.ts`): اللهجة العراقية،
+   «دفتر» و«ورقة» والميزانية بالدينار والدولار، وقائمة الماركات والموديلات المتوفرة الآن.
+3. النموذج يستدعي أدوات (`src/server/sadeem/tools.ts`): `search_cars` (فلاتر دقيقة + بحث نصي
+   يتحمّل الأخطاء الإملائية)، `get_car_details`، `show_cars` (يعرض بطاقات السيارات، ولا يقبل إلا
+   سيارات رجعت من البحث فعلاً)، `save_lead` (يحفظ رقم الزبون)، `suggest_replies`.
+4. الرد يرجع للمحادثة مع بطاقات السيارات وأزرار واتساب والاتصال.
+
+إذا لم تكن المفاتيح مضبوطة، أو تعطّل OpenRouter، يرد سديم القديم (`mockAI.ts`) تلقائياً.
+
+### قاعدة البيانات
+
+`supabase/migrations/20261026000000_catalog.sql` ينشئ الجداول: `brands` ← `models` ← `cars`
+مع `car_images` (المسار والإسناد) و`features` عبر `car_features`، و`leads` (أرقام الزبائن)
+و`chat_sessions`/`chat_messages` (المحادثات، لتحسين سديم)، والدالتين `search_cars()` و
+`catalog_overview()` والعرض `cars_full`. الكتالوج قابل للقراءة للجميع، والزبائن والمحادثات
+محمية (RLS) ولا يكتبها إلا الخادم بالمفتاح السري.
+
+للإنشاء من الصفر: افتح SQL Editor في Supabase وشغّل ملف الـ migration ثم `supabase/seed.sql`
+(السيارات الـ 34 بكل تفاصيلها وتجهيزاتها وصورها).
+
+بعد تعديل الإكسل و`npm run import-cars`، انقل التغييرات إلى Supabase:
+
+```bash
+npm run sync-supabase                    # يحتاج SUPABASE_URL و SUPABASE_SECRET_KEY
+npm run sync-supabase -- --sql supabase/seed.sql   # أو اكتبها كملف SQL
+```
+
+### متغيرات البيئة (في Coolify ← Environment Variables)
+
+| المتغير | القيمة |
+|---|---|
+| `OPENROUTER_API_KEY` | مفتاح OpenRouter |
+| `OPENROUTER_MODEL` | اختياري، الافتراضي `anthropic/claude-sonnet-5.5` (أي نموذج يدعم tools) |
+| `SUPABASE_URL` | `https://<project>.supabase.co` |
+| `SUPABASE_PUBLISHABLE_KEY` | المفتاح العام (`sb_publishable_...`) لقراءة الكتالوج |
+| `SUPABASE_SECRET_KEY` | المفتاح السري (`sb_secret_...`) لحفظ الأرقام والمحادثات؛ لا يوضع أبداً في الواجهة |
+
+كل المفاتيح تُقرأ في الخادم فقط. لكل زائر حد 30 رسالة كل 10 دقائق.

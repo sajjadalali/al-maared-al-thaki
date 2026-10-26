@@ -13,11 +13,11 @@ function formatTime(iso: string) {
 
 export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
-  // Saved conversations hold a snapshot of each car; show today's price and
-  // status instead, and drop cars that have since been removed from the catalog.
+  // Saved conversations hold a snapshot of each car; show the site's current
+  // price and status when it has the car (Sadeem's database may list cars the
+  // site's file doesn't have yet, so those keep their snapshot).
   const cars = (message.cars ?? [])
-    .map((car) => getCarById(car.id))
-    .filter((car): car is Car => Boolean(car))
+    .map((car): Car => getCarById(car.id) ?? car)
     .slice(0, MAX_CHAT_CARS);
 
   if (isUser) {
