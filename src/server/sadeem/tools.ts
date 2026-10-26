@@ -273,9 +273,24 @@ export interface TurnState {
   /** Matches of the last search (often more than the cars shown). */
   matchCount?: number;
   shownIds: string[];
+  /** Cars looked up with get_car_details, shown when show_cars isn't called. */
+  detailIds: string[];
   quickReplies: string[];
   leadSaved: boolean;
   searches: Record<string, unknown>[];
+}
+
+/** Records the cars shown and which of them cost more than the budget. */
+export function markShown(state: TurnState, shownIds: string[]) {
+  state.shownIds = shownIds;
+  // The budget is a ceiling: anything above it must be said out loud.
+  const ceiling = state.request?.budgetMax;
+  state.overBudget = ceiling
+    ? shownIds
+        .map((id) => ({ id, price: state.seenPrices.get(id) ?? 0 }))
+        .filter((car) => car.price > ceiling)
+        .map((car) => ({ ...car, overBy: car.price - ceiling }))
+    : [];
 }
 
 const SEARCH_PARAMS: Record<string, string> = {
@@ -348,22 +363,16 @@ export async function runTool(
       rows.forEach((row) => {
         state.seenIds.add(row.id);
         state.seenPrices.set(row.id, row.price_iqd);
+        if (!state.detailIds.includes(row.id)) state.detailIds.push(row.id);
       });
+      state.searches.push({ details: rows.map((row) => row.id) });
       return rows.map((row) => ({ ...brief(row), cylinders: row.cylinders, features: row.features, description: row.description }));
     }
 
     case "show_cars": {
       const wanted = ids(args.ids, MAX_SHOWN_CARS);
       const unknown = wanted.filter((id) => !state.seenIds.has(id));
-      state.shownIds = wanted.filter((id) => state.seenIds.has(id));
-      // The budget is a ceiling: anything above it must be said out loud.
-      const ceiling = state.request?.budgetMax;
-      state.overBudget = ceiling
-        ? state.shownIds
-            .map((id) => ({ id, price: state.seenPrices.get(id) ?? 0 }))
-            .filter((car) => car.price > ceiling)
-            .map((car) => ({ ...car, overBy: car.price - ceiling }))
-        : [];
+      markShown(state, wanted.filter((id) => state.seenIds.has(id)));
       return {
         shown: state.shownIds,
         ...(unknown.length ? { error: `Not from a search this turn, not shown: ${unknown.join(", ")}` } : {}),
