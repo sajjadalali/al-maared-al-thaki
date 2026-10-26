@@ -187,7 +187,8 @@ async function main() {
       updatedCars += 1;
     }
   });
-  await cars.xlsx.writeFile(CARS_FILE);
+  // Rewriting an unchanged workbook would still change its bytes.
+  if (updatedCars) await cars.xlsx.writeFile(CARS_FILE);
 
   console.log(
     `\n✓ ${ready.length} صورة جاهزة (${downloaded} تم تحميلها الآن) · تم تحديث عمود «الصور» لـ ${updatedCars} سيارة`

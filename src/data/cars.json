@@ -141,7 +141,7 @@
     "horsepower": 271,
     "drivetrain": "رباعي",
     "seats": 7,
-    "color": "فضي",
+    "color": "أبيض",
     "city": "أربيل",
     "status": "متوفرة",
     "featured": false,
@@ -149,8 +149,7 @@
     "description": "تويوتا برادو TXL 2023 خليجي بمحرك V6 سعة 4.0 لتر، آخر موديل من الجيل المعروف بالمتانة. ممشى 38 ألف كم وصيانة منتظمة، مناسبة للعوائل الكبيرة والسفر.",
     "images": [
       "/cars/car-004-1.webp",
-      "/cars/car-004-2.webp",
-      "/cars/car-004-3.webp"
+      "/cars/car-004-2.webp"
     ],
     "features": [
       "دفع رباعي",
@@ -180,7 +179,7 @@
     "horsepower": 180,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "رمادي",
+    "color": "أزرق",
     "city": "بغداد",
     "status": "متوفرة",
     "featured": true,
@@ -219,7 +218,7 @@
     "horsepower": 180,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "أسود",
+    "color": "رمادي",
     "city": "أربيل",
     "status": "متوفرة",
     "featured": true,
@@ -296,7 +295,7 @@
     "horsepower": 191,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "أسود",
+    "color": "أبيض",
     "city": "بغداد",
     "status": "متوفرة",
     "featured": false,
@@ -372,7 +371,7 @@
     "horsepower": 147,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "فضي",
+    "color": "أبيض",
     "city": "كربلاء",
     "status": "متوفرة",
     "featured": false,
@@ -606,7 +605,7 @@
     "horsepower": 302,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "أبيض",
+    "color": "فضي",
     "city": "بغداد",
     "status": "متوفرة",
     "featured": true,
@@ -616,8 +615,7 @@
     "description": "لكزس ES 350 2023 وارد أمريكي، فخامة يابانية هادئة مع عزل صوت ممتاز وراحة قيادة عالية. ممشى 24 ألف كم وصيانة منتظمة.",
     "images": [
       "/cars/car-016-1.webp",
-      "/cars/car-016-2.webp",
-      "/cars/car-016-3.webp"
+      "/cars/car-016-2.webp"
     ],
     "features": [
       "مقاعد جلد مدفأة ومهواة",
@@ -646,7 +644,7 @@
     "horsepower": 275,
     "drivetrain": "كلي",
     "seats": 5,
-    "color": "أزرق",
+    "color": "أحمر",
     "city": "أربيل",
     "status": "متوفرة",
     "featured": false,
@@ -697,8 +695,7 @@
     "description": "مرسيدس C 300 AMG Line موديل 2024 وارد أمريكي، أناقة ألمانية بتجهيزات تقنية حديثة. ممشى 18 ألف كم وحالة شبه جديدة.",
     "images": [
       "/cars/car-018-1.webp",
-      "/cars/car-018-2.webp",
-      "/cars/car-018-3.webp"
+      "/cars/car-018-2.webp"
     ],
     "features": [
       "شاشة MBUX 11.9 بوصة",
@@ -889,7 +886,7 @@
     "horsepower": 395,
     "drivetrain": "كلي",
     "seats": 5,
-    "color": "أبيض",
+    "color": "أخضر",
     "city": "أربيل",
     "status": "متوفرة",
     "featured": true,
@@ -898,9 +895,7 @@
     ],
     "description": "لاند روفر ديفندر 110 موديل 2024 خليجي، تصميم عصري بروح مغامرة وقدرات عبور استثنائية مع فخامة داخلية. ممشى 12 ألف كم.",
     "images": [
-      "/cars/car-023-1.webp",
-      "/cars/car-023-2.webp",
-      "/cars/car-023-3.webp"
+      "/cars/car-023-1.webp"
     ],
     "features": [
       "دفع كلي مع تعليق هوائي",
@@ -928,7 +923,7 @@
     "horsepower": 83,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "أحمر",
+    "color": "أبيض",
     "city": "البصرة",
     "status": "متوفرة",
     "featured": false,
@@ -966,7 +961,7 @@
     "horsepower": 320,
     "drivetrain": "كلي",
     "seats": 5,
-    "color": "أبيض",
+    "color": "رمادي",
     "city": "بغداد",
     "status": "متوفرة",
     "featured": true,
@@ -1006,7 +1001,7 @@
     "horsepower": 225,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "أسود",
+    "color": "أحمر",
     "city": "كربلاء",
     "status": "متوفرة",
     "featured": false,
@@ -1084,7 +1079,7 @@
     "horsepower": 247,
     "drivetrain": "رباعي",
     "seats": 7,
-    "color": "فضي",
+    "color": "أبيض",
     "city": "السليمانية",
     "status": "متوفرة",
     "featured": false,
@@ -1092,8 +1087,7 @@
     "description": "ميتسوبيشي باجيرو 2021 خليجي بمحرك V6 سعة 3.8 لتر، آخر سنة إنتاج للموديل. دفع رباعي قوي وموثوق للطرق الوعرة والاستخدام العائلي.",
     "images": [
       "/cars/car-028-1.webp",
-      "/cars/car-028-2.webp",
-      "/cars/car-028-3.webp"
+      "/cars/car-028-2.webp"
     ],
     "features": [
       "دفع رباعي Super Select",
@@ -1130,8 +1124,7 @@
     "description": "تويوتا هايلكس 2024 دبل قمارة خليجي بمحرك 2.7 لتر ودفع رباعي، بيكب قوي وموثوق للعمل والطرق الخارجية. ممشى 26 ألف كم.",
     "images": [
       "/cars/car-029-1.webp",
-      "/cars/car-029-2.webp",
-      "/cars/car-029-3.webp"
+      "/cars/car-029-2.webp"
     ],
     "features": [
       "دفع رباعي",
@@ -1197,7 +1190,7 @@
     "horsepower": 177,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "أحمر",
+    "color": "أبيض",
     "city": "البصرة",
     "status": "متوفرة",
     "featured": false,
@@ -1236,7 +1229,7 @@
     "horsepower": 234,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "أبيض",
+    "color": "بيج",
     "city": "أربيل",
     "status": "متوفرة",
     "featured": false,
@@ -1311,7 +1304,7 @@
     "horsepower": 254,
     "drivetrain": "كلي",
     "seats": 7,
-    "color": "فضي",
+    "color": "أبيض",
     "city": "بغداد",
     "status": "متوفرة",
     "featured": false,

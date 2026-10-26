@@ -16,9 +16,24 @@ interface CarImageProps {
   priority?: boolean;
   /** Small "illustration" note on the drawing, for large views. */
   showNote?: boolean;
+  /**
+   * "contain" (default) shows the whole car over a blurred copy of the photo, so
+   * wide shots never lose their bumpers; "cover" fills small thumbnails.
+   */
+  fit?: "contain" | "cover";
 }
 
-export function CarImage({ src, alt, bodyType, color, className, sizes, priority, showNote }: CarImageProps) {
+export function CarImage({
+  src,
+  alt,
+  bodyType,
+  color,
+  className,
+  sizes = "(min-width: 1024px) 25vw, 50vw",
+  priority,
+  showNote,
+  fit = "contain",
+}: CarImageProps) {
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {
@@ -42,15 +57,24 @@ export function CarImage({ src, alt, bodyType, color, className, sizes, priority
     );
   }
 
-  return (
+  const photo = (
     <Image
       src={src}
       alt={alt}
       fill
-      sizes={sizes ?? "(min-width: 1024px) 25vw, 50vw"}
+      sizes={sizes}
       priority={priority}
-      className={cn("object-cover", className)}
+      className={cn(fit === "cover" ? "object-cover" : "object-contain", className)}
       onError={() => setFailed(true)}
     />
+  );
+  if (fit === "cover") return photo;
+
+  return (
+    <>
+      {/* Same URL as the photo, so the browser downloads it once. */}
+      <Image src={src} alt="" aria-hidden fill sizes={sizes} className="scale-110 object-cover opacity-60 blur-2xl" />
+      {photo}
+    </>
   );
 }

@@ -1,39 +1,39 @@
 {
   "/cars/car-001-1.webp": {
-    "author": "Elise240SX",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2022_Toyota_Camry_SE_Standard_Package_in_Celestial_Silver_Metallic%2C_Front_Left.jpg"
-  },
-  "/cars/car-001-2.webp": {
-    "author": "Elise240SX",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2022_Toyota_Camry_SE_Standard_Package_in_Celestial_Silver_Metallic%2C_Rear_Left.jpg"
-  },
-  "/cars/car-001-3.webp": {
     "author": "HJUdall",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
     "source": "https://commons.wikimedia.org/wiki/File:24_Toyota_Camry_SE.jpg"
   },
-  "/cars/car-002-1.webp": {
-    "author": "Mr.choppers",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2024_Toyota_Corolla_LE_in_Classic_Silver_Metallic%2C_front_right.jpg"
+  "/cars/car-001-2.webp": {
+    "author": "Elise240SX",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:2022_Toyota_Camry_SE_Standard_Package_in_Celestial_Silver_Metallic%2C_Front_Left.jpg"
   },
-  "/cars/car-002-2.webp": {
+  "/cars/car-001-3.webp": {
+    "author": "Elise240SX",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:2022_Toyota_Camry_SE_Standard_Package_in_Celestial_Silver_Metallic%2C_Rear_Left.jpg"
+  },
+  "/cars/car-002-1.webp": {
     "author": "Rachelhoots",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2025_Toyota_Corolla_LE_ice_cap.jpg"
   },
-  "/cars/car-002-3.webp": {
+  "/cars/car-002-2.webp": {
     "author": "HJUdall",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
     "source": "https://commons.wikimedia.org/wiki/File:24_Toyota_Corolla_XSE.jpg"
+  },
+  "/cars/car-002-3.webp": {
+    "author": "Mr.choppers",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:2024_Toyota_Corolla_LE_in_Classic_Silver_Metallic%2C_front_right.jpg"
   },
   "/cars/car-003-1.webp": {
     "author": "Retired electrician",
@@ -64,12 +64,6 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Toyota_Land_Cruiser_Prado_J150_3.0_VX_2022_(1).jpg"
-  },
-  "/cars/car-004-3.webp": {
-    "author": "JamesYoung8167",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Toyota_Land_Cruiser_Prado_J150_LWB_facelift_Sanming_01_2023-02-16.jpg"
   },
   "/cars/car-005-1.webp": {
     "author": "Dinkun Chen",
@@ -192,16 +186,16 @@
     "source": "https://commons.wikimedia.org/wiki/File:2023_Nissan_Altima_interior.jpg"
   },
   "/cars/car-012-1.webp": {
-    "author": "ToyGTone",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Nissan_Patrol_2025_Y63.jpg"
-  },
-  "/cars/car-012-2.webp": {
     "author": "Ethan Llamas",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Nissan_Patrol_Y63_3.5_V6T_LE_Granite_Black_-_rear.jpg"
+  },
+  "/cars/car-012-2.webp": {
+    "author": "ToyGTone",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Nissan_Patrol_2025_Y63.jpg"
   },
   "/cars/car-012-3.webp": {
     "author": "Ethan Llamas",
@@ -210,22 +204,22 @@
     "source": "https://commons.wikimedia.org/wiki/File:Nissan_Patrol_Y63_3.5_V6T_LE_interior_view.jpg"
   },
   "/cars/car-013-1.webp": {
-    "author": "Deathpallie325",
-    "license": "CC BY 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2024_Nissan_Versa_front_view.jpg"
-  },
-  "/cars/car-013-2.webp": {
     "author": "HJUdall",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
     "source": "https://commons.wikimedia.org/wiki/File:23_Nissan_Versa_SR.jpg"
   },
-  "/cars/car-013-3.webp": {
+  "/cars/car-013-2.webp": {
     "author": "Alexander Migl",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2023_Nissan_Versa_(N18)_IMG_3105.jpg"
+  },
+  "/cars/car-013-3.webp": {
+    "author": "Deathpallie325",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:2024_Nissan_Versa_front_view.jpg"
   },
   "/cars/car-014-1.webp": {
     "author": "Elise240SX",
@@ -240,22 +234,22 @@
     "source": "https://commons.wikimedia.org/wiki/File:2024_Chevrolet_Malibu_1LT_in_Sterling_Grey_Metallic%2C_rear_right%2C_2024-03-31.jpg"
   },
   "/cars/car-015-1.webp": {
-    "author": "Kevauto",
+    "author": "Ethan Llamas",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2022_Chevrolet_Tahoe_RST%2C_front_3.7.22.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:Chevrolet_Tahoe_GMT1UC_5.3_Z71_V8_Black.jpg"
   },
   "/cars/car-015-2.webp": {
     "author": "Kevauto",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2022_Chevrolet_Tahoe_RST%2C_rear_3.7.22.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:2022_Chevrolet_Tahoe_RST%2C_front_3.7.22.jpg"
   },
   "/cars/car-015-3.webp": {
-    "author": "Ethan Llamas",
+    "author": "Kevauto",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Chevrolet_Tahoe_GMT1UC_5.3_Z71_V8_Black.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:2022_Chevrolet_Tahoe_RST%2C_rear_3.7.22.jpg"
   },
   "/cars/car-016-1.webp": {
     "author": "Wlb5V",
@@ -264,12 +258,6 @@
     "source": "https://commons.wikimedia.org/wiki/File:2024_Lexus_ES_Sedan.jpg"
   },
   "/cars/car-016-2.webp": {
-    "author": "Charles from Port Chester, New York",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Lexus_ES_300h_(2023)_(54742901894).jpg"
-  },
-  "/cars/car-016-3.webp": {
     "author": "Wlb5V",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
@@ -294,22 +282,16 @@
     "source": "https://commons.wikimedia.org/wiki/File:23_Lexus_RX_350_Premium.jpg"
   },
   "/cars/car-018-1.webp": {
-    "author": "© M 93",
-    "license": "CC BY-SA 3.0 de",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/de/",
-    "source": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_C_300_d_AMG_Line_(W_206)_%E2%80%93_f_10032024.jpg"
+    "author": "Damian B Oh",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_W206_C_300_4MATIC_AMG_Line_Polar_White_(4).jpg"
   },
   "/cars/car-018-2.webp": {
     "author": "© M 93",
     "license": "CC BY-SA 3.0 de",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/de/",
-    "source": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_C_300_d_AMG_Line_(W_206)_%E2%80%93_h_10032024.jpg"
-  },
-  "/cars/car-018-3.webp": {
-    "author": "Damian B Oh",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_W206_C_300_4MATIC_AMG_Line_Polar_White_(4).jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_C_300_d_AMG_Line_(W_206)_%E2%80%93_f_10032024.jpg"
   },
   "/cars/car-019-1.webp": {
     "author": "© M 93",
@@ -384,22 +366,10 @@
     "source": "https://commons.wikimedia.org/wiki/File:2022_Ford_Explorer_interior.jpg"
   },
   "/cars/car-023-1.webp": {
-    "author": "Alexander-93",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Land_Rover_Defender_110_(L663)_1X7A1919.jpg"
-  },
-  "/cars/car-023-2.webp": {
     "author": "DeFacto",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Land_Rover_Defender_110_First_Edition_2020_-_rear.jpg"
-  },
-  "/cars/car-023-3.webp": {
-    "author": "Tokumeigakarinoaoshima",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Land_Rover_DEFENDER_110_S_ADVENTURE_PACK_(3BA-LE72XAA)_interior.jpg"
   },
   "/cars/car-024-1.webp": {
     "author": "Alexander Migl",
@@ -456,40 +426,34 @@
     "source": "https://commons.wikimedia.org/wiki/File:25_Toyota_Camry_LE.jpg"
   },
   "/cars/car-027-1.webp": {
-    "author": "SsmIntrigue",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2022_Honda_Civic_Sport%2C_Front_Right%2C_06-20-2021.jpg"
-  },
-  "/cars/car-027-2.webp": {
     "author": "Alexander-93",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Honda_Civic_(2021)_sedan_Sport_DSC_7057.jpg"
   },
-  "/cars/car-027-3.webp": {
+  "/cars/car-027-2.webp": {
     "author": "Alexander-93",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Honda_Civic_(2021)_sedan_Sport_DSC_7054.jpg"
   },
-  "/cars/car-028-1.webp": {
-    "author": "Tangjunwen CN",
+  "/cars/car-027-3.webp": {
+    "author": "SsmIntrigue",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Mitsubishi_Pajero_CN_Spec_V6_3.0L(After_Second_Facelift)01.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:2022_Honda_Civic_Sport%2C_Front_Right%2C_06-20-2021.jpg"
   },
-  "/cars/car-028-2.webp": {
+  "/cars/car-028-1.webp": {
     "author": "Tangjunwen CN",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Mitsubishi_Pajero_CN_Spec_V6_3.0L(After_Second_Facelift)02.jpg"
   },
-  "/cars/car-028-3.webp": {
-    "author": "マッドキラー",
+  "/cars/car-028-2.webp": {
+    "author": "Tangjunwen CN",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2019_pajero_final_edition_interior.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:Mitsubishi_Pajero_CN_Spec_V6_3.0L(After_Second_Facelift)01.jpg"
   },
   "/cars/car-029-1.webp": {
     "author": "Chanokchon",
@@ -501,31 +465,25 @@
     "author": "Captainmorlypogi1959",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Toyota_Hilux_4x2_G_2022.jpg"
-  },
-  "/cars/car-029-3.webp": {
-    "author": "Captainmorlypogi1959",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Toyota_Hilux_4x2_G_2024_(2).jpg"
   },
   "/cars/car-030-1.webp": {
-    "author": "JustAnotherCarDesigner",
+    "author": "Retired electrician",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Changan_CS75_Plus_III_001.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:Moscow%2C_Changan_CS75_plus_grey%2C_May_2026_02.jpg"
   },
   "/cars/car-030-2.webp": {
     "author": "JustAnotherCarDesigner",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Changan_CS75_Plus_III_002.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:Changan_CS75_Plus_III_001.jpg"
   },
   "/cars/car-030-3.webp": {
-    "author": "Retired electrician",
+    "author": "JustAnotherCarDesigner",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Moscow%2C_Changan_CS75_plus_grey%2C_May_2026_02.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:Changan_CS75_Plus_III_002.jpg"
   },
   "/cars/car-031-1.webp": {
     "author": "JustAnotherCarDesigner",
@@ -549,13 +507,13 @@
     "author": "JustAnotherCarDesigner",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Haval_H6_III_facelift_002.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:Haval_H6_III_facelift_001.jpg"
   },
   "/cars/car-032-2.webp": {
     "author": "JustAnotherCarDesigner",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Haval_H6_III_facelift_001.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File:Haval_H6_III_facelift_002.jpg"
   },
   "/cars/car-033-1.webp": {
     "author": "Mr.choppers",

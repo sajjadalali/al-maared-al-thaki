@@ -91,7 +91,14 @@ export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCr
                 active === i ? "ring-brand-900" : "ring-transparent opacity-70 hover:opacity-100"
               )}
             >
-              <CarImage src={src} alt={`${alt} - صورة ${i + 1}`} bodyType={car.bodyType} color={car.color} sizes="80px" />
+              <CarImage
+                src={src}
+                alt={`${alt} - صورة ${i + 1}`}
+                bodyType={car.bodyType}
+                color={car.color}
+                sizes="80px"
+                fit="cover"
+              />
             </button>
           ))}
         </div>

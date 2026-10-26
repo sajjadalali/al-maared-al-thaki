@@ -13,6 +13,7 @@ function Thumb({ car }: { car: Car }) {
         bodyType={car.bodyType}
         color={car.color}
         sizes="76px"
+        fit="cover"
       />
     </div>
   );
