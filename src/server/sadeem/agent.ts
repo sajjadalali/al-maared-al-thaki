@@ -146,6 +146,12 @@ export async function runSadeem(
     });
   }
 
+  if (!content) {
+    // Some models end a tool turn with no text at all; ask once for the reply itself.
+    messages.push({ role: "system", content: "Now write your reply to the buyer in Iraqi Arabic. No tools." });
+    content = (await complete(llm, messages, false)).content?.trim() ?? "";
+  }
+
   const rows = await fetchCars(db, state.shownIds);
   const cars = state.shownIds
     .map((id) => rows.find((row) => row.id === id))
@@ -153,7 +159,7 @@ export async function runSadeem(
     .map(toCar);
 
   return {
-    content: content || "تدلل، شنو تحب أساعدك بيه؟",
+    content: content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟"),
     cars,
     quickReplies: state.quickReplies,
     leadSaved: state.leadSaved,
