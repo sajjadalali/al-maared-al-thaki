@@ -66,10 +66,20 @@ const pageUrl = (file) => `https://commons.wikimedia.org/wiki/File:${encodeURICo
 const downloadUrl = (file) =>
   `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(commonsName(file))}?width=${REQUEST_WIDTH}`;
 
+// Wikimedia answers bursts with 429/503; wait and retry before giving up.
+async function fetchWithRetry(url, attempts = 4) {
+  for (let i = 1; ; i++) {
+    const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+    if (response.ok || i === attempts || ![429, 500, 502, 503, 504].includes(response.status)) return response;
+    const retryAfter = Number(response.headers.get("retry-after"));
+    await new Promise((r) => setTimeout(r, (retryAfter > 0 ? retryAfter : 5 * i) * 1000));
+  }
+}
+
 async function download(photo) {
   const target = join(IMAGES_DIR, photo.siteName);
   if (existsSync(target) && !force) return "exists";
-  const response = await fetch(downloadUrl(photo.file), { headers: { "User-Agent": USER_AGENT } });
+  const response = await fetchWithRetry(downloadUrl(photo.file));
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   if (!response.headers.get("content-type")?.startsWith("image/")) throw new Error("الرد ليس صورة");
   const input = Buffer.from(await response.arrayBuffer());
@@ -177,7 +187,8 @@ async function main() {
       updatedCars += 1;
     }
   });
-  await cars.xlsx.writeFile(CARS_FILE);
+  // Rewriting an unchanged workbook would still change its bytes.
+  if (updatedCars) await cars.xlsx.writeFile(CARS_FILE);
 
   console.log(
     `\n✓ ${ready.length} صورة جاهزة (${downloaded} تم تحميلها الآن) · تم تحديث عمود «الصور» لـ ${updatedCars} سيارة`
