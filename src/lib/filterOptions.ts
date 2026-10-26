@@ -1,5 +1,6 @@
 // Data-free on purpose: client components import the constants and the
 // option builder without pulling the car catalog into their bundle.
+import brandLabels from "@/data/brand-labels.json";
 import { originLabel } from "@/lib/format";
 import type { Car } from "@/types/car";
 
@@ -26,33 +27,8 @@ export const PRICE_BANDS = [
   { label: "100 مليون فأكثر", min: 100_000_000, max: undefined },
 ] as const;
 
-const BRAND_LABELS: Record<string, string> = {
-  Toyota: "تويوتا",
-  Kia: "كيا",
-  Hyundai: "هيونداي",
-  Nissan: "نيسان",
-  Chevrolet: "شيفروليه",
-  Lexus: "لكزس",
-  Mercedes: "مرسيدس",
-  BMW: "بي إم دبليو",
-  Ford: "فورد",
-  "Land Rover": "لاند روفر",
-  Honda: "هوندا",
-  Mitsubishi: "ميتسوبيشي",
-  GMC: "جي إم سي",
-  Genesis: "جينيسيس",
-  Mazda: "مازدا",
-  Volkswagen: "فولكس فاغن",
-  Audi: "أودي",
-  Porsche: "بورشه",
-  Jeep: "جيب",
-  Dodge: "دودج",
-  Changan: "شانجان",
-  Geely: "جيلي",
-  Chery: "شيري",
-  MG: "إم جي",
-  Haval: "هافال",
-};
+// Arabic names of the makes (also used by the Supabase sync).
+const BRAND_LABELS: Record<string, string> = brandLabels;
 
 export function brandLabel(brand: string): string {
   return BRAND_LABELS[brand] ?? brand;
