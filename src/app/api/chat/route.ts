@@ -64,8 +64,9 @@ export async function POST(request: Request) {
       after(async () => {
         try {
           await insert(db, "chat_sessions", { id: sessionId }, true);
+          // A bulk insert needs the same keys on every row, or PostgREST answers 400.
           await insert(db, "chat_messages", [
-            { session_id: sessionId, role: "user", content: message },
+            { session_id: sessionId, role: "user", content: message, car_ids: [], tool_calls: null },
             {
               session_id: sessionId,
               role: "assistant",
