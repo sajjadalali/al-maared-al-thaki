@@ -7,7 +7,8 @@ import type { Car } from "@/types/car";
 import { systemPrompt } from "./prompt";
 import { TOOL_DEFINITIONS, fetchCars, runTool, toCar, type TurnState } from "./tools";
 
-export const DEFAULT_MODEL = "anthropic/claude-sonnet-5.5";
+// Fast and cheap with reliable tool calls; set OPENROUTER_MODEL for something else.
+export const DEFAULT_MODEL = "anthropic/claude-haiku-5.5";
 const MAX_ROUNDS = 6;
 
 export interface HistoryMessage {
@@ -36,6 +37,8 @@ interface LlmMessage {
   content: string | null;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
+  /** Thinking models (Claude, …) need their reasoning sent back with tool results. */
+  reasoning_details?: unknown;
 }
 
 export interface OpenRouterEnv {
@@ -71,6 +74,8 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
       tool_choice: allowTools ? "auto" : "none",
       temperature: 0.3,
       max_tokens: 900,
+      // Short sales replies don't need long thinking; low effort keeps them fast.
+      reasoning: { effort: process.env.OPENROUTER_REASONING_EFFORT || "low" },
     }),
     signal: AbortSignal.timeout(30_000),
   });
@@ -78,7 +83,12 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
   const data = await res.json();
   const message = data.choices?.[0]?.message;
   if (!message) throw new Error(`OpenRouter: no message (${JSON.stringify(data).slice(0, 200)})`);
-  return { role: "assistant", content: message.content ?? null, tool_calls: message.tool_calls };
+  return {
+    role: "assistant",
+    content: message.content ?? null,
+    tool_calls: message.tool_calls,
+    reasoning_details: message.reasoning_details,
+  };
 }
 
 function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
@@ -119,7 +129,7 @@ export async function runSadeem(
       content = reply.content?.trim() ?? "";
       break;
     }
-    messages.push({ role: "assistant", content: reply.content, tool_calls: calls });
+    messages.push({ role: "assistant", content: reply.content, tool_calls: calls, reasoning_details: reply.reasoning_details });
     const results = await Promise.all(
       calls.map(async (call) => {
         let args: Record<string, unknown> = {};
