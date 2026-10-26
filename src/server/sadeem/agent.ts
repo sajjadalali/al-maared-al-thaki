@@ -5,7 +5,7 @@ import { site } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
 import type { Car } from "@/types/car";
 import { systemPrompt } from "./prompt";
-import { TOOL_DEFINITIONS, fetchCars, runTool, toCar, usdOf, type TurnState } from "./tools";
+import { MAX_SHOWN_CARS, TOOL_DEFINITIONS, fetchCars, markShown, runTool, toCar, usdOf, type TurnState } from "./tools";
 import { mentionsOverBudget, moneyFigures, unsupportedFigures, type AllowedFigures } from "./verify";
 
 // Fast and cheap with reliable tool calls; set OPENROUTER_MODEL for something else.
@@ -111,6 +111,15 @@ function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
 // the reply next to show_cars and only a closing line after it).
 const ANSWER_TOOLS = new Set(["show_cars", "suggest_replies", "save_lead"]);
 
+// Drops notes the model sometimes adds for itself in English ("the reply above
+// is in the chat…"); every line meant for the buyer has Arabic in it.
+const cleanReply = (text: string) =>
+  text
+    .split("\n")
+    .filter((line) => /[\u0600-\u06FF]/.test(line) || line.includes("**") || !/([A-Za-z]+\W+){3}/.test(line))
+    .join("\n")
+    .trim();
+
 function allowedFigures(state: TurnState, buyerTexts: string[]): AllowedFigures {
   const prices = [...state.seenPrices.values()];
   const iqd = [...prices, ...state.overBudget.map((c) => c.overBy)];
@@ -146,6 +155,7 @@ export async function runSadeem(
     seenPrices: new Map(),
     overBudget: [],
     shownIds: [],
+    detailIds: [],
     quickReplies: [],
     leadSaved: false,
     searches: [],
@@ -161,7 +171,7 @@ export async function runSadeem(
     // The last round may not call tools again: it has to answer.
     const reply = await complete(llm, messages, round < MAX_ROUNDS - 1);
     const calls = reply.tool_calls ?? [];
-    const text = reply.content?.trim();
+    const text = cleanReply(reply.content ?? "");
     if (calls.length === 0) {
       if (text) parts.push(text);
       break;
@@ -188,12 +198,14 @@ export async function runSadeem(
   if (!content) {
     // Some models end a tool turn with no text at all; ask once for the reply itself.
     messages.push({ role: "system", content: "Now write your reply to the buyer in Iraqi Arabic. No tools." });
-    content = (await complete(llm, messages, false)).content?.trim() ?? "";
+    content = cleanReply((await complete(llm, messages, false)).content ?? "");
   }
 
   // Prices of every car this conversation has touched, current from the database.
   const rows = await fetchCars(db, [...state.seenIds]);
   rows.forEach((row) => state.seenPrices.set(row.id, row.price_iqd));
+  // Comparisons and details often skip show_cars; show the cars discussed.
+  if (!state.shownIds.length && state.detailIds.length) markShown(state, state.detailIds.slice(0, MAX_SHOWN_CARS));
   const cars = state.shownIds
     .map((id) => rows.find((row) => row.id === id))
     .filter((row) => row !== undefined)
@@ -213,7 +225,7 @@ export async function runSadeem(
           `Your reply has problems: ${problems.join(" | ")}. Rewrite it in Iraqi Arabic using only figures from the tool results ` +
           `(prices: ${[...state.seenPrices].map(([id, p]) => `${id} ${p.toLocaleString("en-US")} د.ع ≈ ${usdOf(p).toLocaleString("en-US")} $`).join("; ")}). No tools.`,
       });
-      const fixed = (await complete(llm, messages, false)).content?.trim();
+      const fixed = cleanReply((await complete(llm, messages, false)).content ?? "");
       if (fixed) {
         const left = replyProblems(fixed, allowed, state);
         if (left.length) state.searches.push({ verify_after_rewrite: left });
