@@ -32,6 +32,7 @@ function parseHistory(value: unknown): HistoryMessage[] {
             .filter((c: { id?: unknown; name?: unknown }) => typeof c?.id === "string" && typeof c?.name === "string")
             .slice(0, 3)
         : undefined,
+      matchCount: typeof m.matchCount === "number" ? m.matchCount : undefined,
     }));
 }
 
@@ -81,7 +82,12 @@ export async function POST(request: Request) {
       });
     }
 
-    return Response.json({ content: reply.content, cars: reply.cars, quickReplies: reply.quickReplies });
+    return Response.json({
+      content: reply.content,
+      cars: reply.cars,
+      quickReplies: reply.quickReplies,
+      matchCount: reply.matchCount,
+    });
   } catch (err) {
     console.error("[sadeem]", err);
     return Response.json({ error: "upstream_failed" }, { status: 502 });
