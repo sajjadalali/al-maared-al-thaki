@@ -270,6 +270,8 @@ export interface TurnState {
   seenPrices: Map<string, number>;
   request?: BuyerRequest;
   overBudget: OverBudget[];
+  /** Matches of the last search (often more than the cars shown). */
+  matchCount?: number;
   shownIds: string[];
   quickReplies: string[];
   leadSaved: boolean;
@@ -337,7 +339,8 @@ export async function runTool(
         state.seenIds.add(row.id);
         state.seenPrices.set(row.id, row.price_iqd);
       });
-      return { total: rows[0]?.total_count ?? 0, cars: rows.map(brief) };
+      state.matchCount = rows[0]?.total_count ?? 0;
+      return { total: state.matchCount, cars: rows.map(brief) };
     }
 
     case "get_car_details": {

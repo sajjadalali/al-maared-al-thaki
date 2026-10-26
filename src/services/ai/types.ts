@@ -18,6 +18,8 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   cars?: Car[];
+  /** How many cars matched the search behind this reply (more than the ones shown). */
+  matchCount?: number;
   /** What Sadeem understood from the request, shown as small tags. */
   criteria?: string[];
   quickReplies?: string[];

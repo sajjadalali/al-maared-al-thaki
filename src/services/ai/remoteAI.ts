@@ -1,5 +1,6 @@
 import { phoneHref, whatsappHref } from "@/config/site";
 import { carWhatsappMessage } from "@/lib/carMessages";
+import { formatIQD } from "@/lib/format";
 import type { Car } from "@/types/car";
 import { mockAIService } from "./mockAI";
 import { MAX_CHAT_CARS, type AIService, type ChatMessage } from "./types";
@@ -20,13 +21,15 @@ function sessionId(): string | undefined {
   }
 }
 
-// What the server needs from earlier messages: the text, and which cars were
-// shown, so "الثانية" or "قارنهم" can be resolved.
+// What the server needs from earlier messages: the text, which cars were shown
+// (with their prices) and how many matched, so "الثانية", "قارنهم" or "الأسعار
+// غلط" can be answered from facts instead of memory.
 function toHistory(history: ChatMessage[]) {
   return history.slice(-12).map((m) => ({
     role: m.role,
     content: m.content,
-    cars: m.cars?.map((car) => ({ id: car.id, name: `${car.brand} ${car.model} ${car.year}` })),
+    cars: m.cars?.map((car) => ({ id: car.id, name: `${car.brand} ${car.model} ${car.year} – ${formatIQD(car.price)}` })),
+    matchCount: m.matchCount,
   }));
 }
 
@@ -54,7 +57,7 @@ export const remoteAIService: AIService = {
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!res.ok) throw new Error(String(res.status));
-      const data: { content: string; cars?: Car[]; quickReplies?: string[] } = await res.json();
+      const data: { content: string; cars?: Car[]; quickReplies?: string[]; matchCount?: number } = await res.json();
       const cars = (data.cars ?? []).slice(0, MAX_CHAT_CARS);
       return {
         id: `msg-${Date.now()}`,
@@ -62,6 +65,7 @@ export const remoteAIService: AIService = {
         content: data.content,
         timestamp: new Date().toISOString(),
         cars: cars.length ? cars : undefined,
+        matchCount: data.matchCount,
         quickReplies: data.quickReplies?.length ? data.quickReplies : undefined,
         actions: cars.length === 1 ? contactActions(cars[0]) : undefined,
       };

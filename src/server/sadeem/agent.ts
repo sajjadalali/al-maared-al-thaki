@@ -17,6 +17,7 @@ export interface HistoryMessage {
   content: string;
   /** Cars shown with an assistant reply, so "الثانية" can be resolved. */
   cars?: { id: string; name: string }[];
+  matchCount?: number;
 }
 
 export interface AgentReply {
@@ -24,6 +25,7 @@ export interface AgentReply {
   cars: Car[];
   quickReplies: string[];
   leadSaved: boolean;
+  matchCount?: number;
   searches: Record<string, unknown>[];
 }
 
@@ -92,15 +94,22 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
   };
 }
 
+// Earlier replies carry a note of what they were based on (from the database),
+// so follow-ups can rely on facts the model no longer has tool results for.
 function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
-  return history.map((m) => ({
-    role: m.role,
-    content:
-      m.role === "assistant" && m.cars?.length
-        ? `${m.content}\n\n[السيارات المعروضة: ${m.cars.map((c) => `${c.id} ${c.name}`).join("، ")}]`
-        : m.content,
-  }));
+  return history.map((m) => {
+    if (m.role !== "assistant" || !m.cars?.length) return { role: m.role, content: m.content };
+    const count = m.matchCount ? ` | عدد السيارات المطابقة للبحث: ${m.matchCount}` : "";
+    return {
+      role: m.role,
+      content: `${m.content}\n\n[من قاعدة البيانات، السيارات المعروضة: ${m.cars.map((c) => `${c.id} ${c.name}`).join("؛ ")}${count}]`,
+    };
+  });
 }
+
+// Tools whose round usually carries the main answer text (models often write
+// the reply next to show_cars and only a closing line after it).
+const ANSWER_TOOLS = new Set(["show_cars", "suggest_replies", "save_lead"]);
 
 function allowedFigures(state: TurnState, buyerTexts: string[]): AllowedFigures {
   const prices = [...state.seenPrices.values()];
@@ -147,15 +156,17 @@ export async function runSadeem(
     { role: "user", content: message },
   ];
 
-  let content = "";
+  const parts: string[] = [];
   for (let round = 0; round < MAX_ROUNDS; round++) {
     // The last round may not call tools again: it has to answer.
     const reply = await complete(llm, messages, round < MAX_ROUNDS - 1);
     const calls = reply.tool_calls ?? [];
+    const text = reply.content?.trim();
     if (calls.length === 0) {
-      content = reply.content?.trim() ?? "";
+      if (text) parts.push(text);
       break;
     }
+    if (text && calls.some((call) => ANSWER_TOOLS.has(call.function.name))) parts.push(text);
     messages.push({ role: "assistant", content: reply.content, tool_calls: calls, reasoning_details: reply.reasoning_details });
     const results = await Promise.all(
       calls.map(async (call) => {
@@ -173,6 +184,7 @@ export async function runSadeem(
     });
   }
 
+  let content = [...new Set(parts)].join("\n\n");
   if (!content) {
     // Some models end a tool turn with no text at all; ask once for the reply itself.
     messages.push({ role: "system", content: "Now write your reply to the buyer in Iraqi Arabic. No tools." });
@@ -215,6 +227,7 @@ export async function runSadeem(
     cars,
     quickReplies: state.quickReplies,
     leadSaved: state.leadSaved,
+    matchCount: cars.length ? state.matchCount : undefined,
     searches: state.searches,
   };
 }
