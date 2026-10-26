@@ -1,5 +1,15 @@
 import rawCars from "./cars.json";
-import { getFilterOptions, type FacetCar, type FilterSelection } from "@/lib/filterOptions";
+import { brandLabel, getFilterOptions, type FacetCar, type FilterSelection } from "@/lib/filterOptions";
+import {
+  BODY_TYPE_ALIASES,
+  BRAND_ALIASES,
+  CHINESE_BRANDS,
+  FUEL_ALIASES,
+  MODEL_ALIASES,
+  ORIGIN_ALIASES,
+  normalizeArabic,
+} from "@/lib/carAliases";
+import { originLabel } from "@/lib/format";
 import type { Car, CarFilters, CarSummary } from "@/types/car";
 
 const cars: Car[] = rawCars as Car[];
@@ -20,16 +30,88 @@ export function getFeaturedCars(limit?: number): Car[] {
   return typeof limit === "number" ? featured.slice(0, limit) : featured;
 }
 
-/** Free-text search across brand, model, city, color and description. */
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// How a buyer writes a name -> how the data writes it ("لاندكروزر" -> "land
+// cruiser", "بيك اب" -> "شاحنه"). Longest first, so a phrase is rewritten before
+// any shorter alias inside it.
+const SEARCH_ALIASES = [
+  ...BRAND_ALIASES.flatMap(({ brand, aliases }) => aliases.map((alias) => [alias, brand])),
+  ...MODEL_ALIASES.flatMap(({ model, aliases }) => aliases.map((alias) => [alias, model])),
+  ...ORIGIN_ALIASES.flatMap(({ origin, aliases }) => aliases.map((alias) => [alias, origin])),
+  ...BODY_TYPE_ALIASES.flatMap(({ bodyType, aliases }) => aliases.map((alias) => [alias, bodyType])),
+  ...FUEL_ALIASES.flatMap(({ fuel, aliases }) => aliases.map((alias) => [alias, fuel])),
+  ["صينيه", "صيني"],
+  ["صينيات", "صيني"],
+]
+  .map(([alias, name]) => [normalizeArabic(alias), normalizeArabic(name)])
+  .filter(([alias, name]) => alias !== name)
+  .sort((a, b) => b[0].length - a[0].length)
+  .map(([alias, name]) => [new RegExp(`(^|\\s)${escapeRegExp(alias)}(?=\\s|$)`, "gu"), `$1${name}`] as const);
+
+// Words a search box query adds nothing with.
+const STOP_WORDS = new Set(["سياره", "سيارات", "موديل"]);
+
+function searchWords(text: string): string[] {
+  return normalizeArabic(text)
+    .split(/[^\p{L}\p{N}.]+/u)
+    .filter(Boolean)
+    // "الموصل" / "بالبصرة" are found as "موصل" / "بصره" too
+    .map((word) => word.replace(/^(?:و|ب)?ال(?=\p{L}{2})/u, ""));
+}
+
+// What a car can be found by, built once. Names and listed attributes match
+// from the start of a word, so a half-typed "كام" finds the Camry; the
+// description and equipment list need the whole word, or "كام" would also
+// find every car with a "كاميرا".
+const searchIndex = new Map(
+  cars.map((car) => {
+    const model = car.model.toLowerCase();
+    const names = [
+      car.brand,
+      brandLabel(car.brand),
+      ...(BRAND_ALIASES.find((b) => b.brand === car.brand)?.aliases ?? []),
+      car.model,
+      ...MODEL_ALIASES.filter((m) => model.includes(m.model)).flatMap((m) => m.aliases),
+      car.trim,
+      car.year,
+      car.city,
+      car.color,
+      car.bodyType,
+      car.condition,
+      car.origin && originLabel(car.origin),
+      car.fuel,
+      car.transmission,
+      car.drivetrain,
+      CHINESE_BRANDS.includes(car.brand) && "صيني",
+      ...(car.tags ?? []),
+    ];
+    return [
+      car.id,
+      {
+        prefix: [...new Set(searchWords(names.filter(Boolean).join(" ")))],
+        exact: new Set(searchWords([car.description, ...car.features].join(" "))),
+      },
+    ];
+  })
+);
+
+/**
+ * Free-text search in Arabic or English. Every word of the query must match
+ * the car ("كام 2024" finds a 2024 Camry), after Arabic spellings are mapped
+ * to the catalog's names ("لاندكروزر خليجي", "تويوتا كامري هايبرد").
+ */
 export function searchCars(query: string): Car[] {
-  const normalized = normalize(query);
-  if (!normalized) return cars;
+  let text = normalizeArabic(query);
+  for (const [pattern, name] of SEARCH_ALIASES) text = text.replace(pattern, name);
+  const terms = searchWords(text).filter((word) => !STOP_WORDS.has(word));
+  if (terms.length === 0) return cars;
 
   return cars.filter((car) => {
-    const haystack = normalize(
-      `${car.brand} ${car.model} ${car.trim ?? ""} ${car.year} ${car.city} ${car.color} ${car.bodyType} ${car.description}`
-    );
-    return haystack.includes(normalized);
+    const { prefix, exact } = searchIndex.get(car.id)!;
+    return terms.every((term) => exact.has(term) || prefix.some((word) => word.startsWith(term)));
   });
 }
 
@@ -142,8 +224,4 @@ const arabicOrder = new Intl.Collator("ar").compare;
 
 function uniqueSorted(values: string[]): string[] {
   return Array.from(new Set(values)).sort(arabicOrder);
-}
-
-function normalize(text: string): string {
-  return text.toString().trim().toLowerCase();
 }
