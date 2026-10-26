@@ -4,7 +4,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { PRICE_BANDS, getFilterOptions, priceBandIndex } from "@/lib/filterOptions";
+import { PRICE_BANDS, priceBandIndex, type FilterOptionSets } from "@/lib/filterOptions";
 
 // URL keys that count as a user-chosen filter (sorting doesn't).
 const FILTER_KEYS = [
@@ -13,27 +13,23 @@ const FILTER_KEYS = [
 ];
 
 // The listing page renders the sidebar on desktop and the button + bottom
-// sheet on phones; both read and write the same URL.
-export function CarFilters({ resultCount, variant }: { resultCount: number; variant: "sidebar" | "drawer" }) {
+// sheet on phones; both read and write the same URL. The page computes
+// `options` on the server for the current URL, so they refresh with it.
+export function CarFilters({
+  options,
+  resultCount,
+  variant,
+}: {
+  options: FilterOptionSets;
+  resultCount: number;
+  variant: "sidebar" | "drawer";
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState(searchParams.get("query") ?? "");
   const priceIdx = priceBandIndex(searchParams.get("minPrice"), searchParams.get("maxPrice"));
-  const options = getFilterOptions({
-    query: searchParams.get("query") ?? undefined,
-    tag: searchParams.get("tag") ?? undefined,
-    brand: searchParams.get("brand") ?? undefined,
-    city: searchParams.get("city") ?? undefined,
-    year: searchParams.get("minYear") ?? undefined,
-    price: priceIdx || undefined,
-    bodyType: searchParams.get("bodyType") ?? undefined,
-    condition: searchParams.get("condition") ?? undefined,
-    origin: searchParams.get("origin") ?? undefined,
-    fuel: searchParams.get("fuel") ?? undefined,
-    transmission: searchParams.get("transmission") ?? undefined,
-  });
 
   // Every change goes through one URL update, so related keys (minYear +
   // maxYear, minPrice + maxPrice) never overwrite each other.

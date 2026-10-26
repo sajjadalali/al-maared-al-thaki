@@ -10,9 +10,10 @@ import { site } from "@/config/site";
 const plex = IBM_Plex_Sans_Arabic({
   variable: "--font-plex",
   subsets: ["arabic", "latin"],
-  // Only the weights the UI uses (font-extrabold renders with 700). Each weight is
-  // two files (Arabic + Latin), all preloaded, so unused ones slow the first paint.
-  weight: ["400", "500", "600", "700"],
+  // Only the weights the UI uses (font-normal, font-semibold, font-bold). Each
+  // weight is two preloaded files (Arabic + Latin), so every extra one slows the
+  // first paint; prefer these three over adding another.
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 

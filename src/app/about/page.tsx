@@ -59,7 +59,7 @@ export default function AboutPage() {
             {stats.map((stat) => (
               <div key={stat.label} className="rounded-2xl bg-white px-3 py-5 ring-1 ring-black/[0.06]">
                 <p className="text-3xl font-bold text-brand-950">{stat.value}</p>
-                <p className="mt-1 text-xs font-medium text-neutral-500 sm:text-sm">{stat.label}</p>
+                <p className="mt-1 text-xs font-normal text-neutral-500 sm:text-sm">{stat.label}</p>
               </div>
             ))}
           </div>

@@ -49,6 +49,13 @@ export interface Car {
   features: string[];
 }
 
+/** What a car card shows: everything but the long texts (description, features). */
+export type CarSummary = Pick<
+  Car,
+  | "id" | "brand" | "model" | "trim" | "year" | "price" | "condition" | "origin" | "bodyType"
+  | "mileage" | "transmission" | "fuel" | "engine" | "color" | "city" | "status" | "images"
+>;
+
 export interface CarFilters {
   query?: string;
   brand?: string;

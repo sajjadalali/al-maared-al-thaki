@@ -3,12 +3,16 @@
 // compare prices and state budgets in dollars.
 export const USD_TO_IQD = 1685;
 
-export function formatIQD(price: number): string {
-  return `${new Intl.NumberFormat("en-US").format(price)} د.ع`;
-}
+// One formatter for the whole app: creating an Intl.NumberFormat is costly and
+// every card formats a price and a mileage.
+const numberFormat = new Intl.NumberFormat("en-US");
 
 export function formatNumber(value: number): string {
-  return new Intl.NumberFormat("en-US").format(value);
+  return numberFormat.format(value);
+}
+
+export function formatIQD(price: number): string {
+  return `${formatNumber(price)} د.ع`;
 }
 
 export function formatMileage(value: number): string {

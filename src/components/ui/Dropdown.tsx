@@ -280,7 +280,7 @@ export function Dropdown({
           <div className="relative flex max-h-[75vh] flex-col rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl animate-fade-in">
             <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-neutral-200" />
             <div className="flex items-center justify-between px-5 pb-2 pt-3">
-              <p className="text-base font-extrabold text-brand-950">{label}</p>
+              <p className="text-base font-bold text-brand-950">{label}</p>
               <button
                 type="button"
                 onClick={() => close()}

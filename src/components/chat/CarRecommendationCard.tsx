@@ -40,7 +40,7 @@ export function CarRecommendationCard({ car }: { car: Car }) {
       <Thumb car={car} />
       <div className="min-w-0 flex-1">
         <Title car={car} />
-        <p className="text-[14px] font-extrabold leading-5 text-brand-800">{formatIQD(car.price)}</p>
+        <p className="text-[14px] font-bold leading-5 text-brand-800">{formatIQD(car.price)}</p>
         <p className="truncate text-[11.5px] leading-5 text-neutral-500">
           {car.condition} · {formatCarMileage(car.mileage)} · {car.city}
         </p>
@@ -66,7 +66,7 @@ export function CarDetailChatCard({ car }: { car: Car }) {
         <Thumb car={car} />
         <div className="min-w-0 flex-1">
           <Title car={car} />
-          <p className="text-[14px] font-extrabold leading-5 text-brand-800">{formatIQD(car.price)}</p>
+          <p className="text-[14px] font-bold leading-5 text-brand-800">{formatIQD(car.price)}</p>
           <p className="truncate text-[11.5px] leading-5 text-neutral-500">
             {car.condition} · {car.city}
           </p>

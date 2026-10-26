@@ -105,7 +105,7 @@ export default function ChatPanel({
             <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-900 bg-success" />
           </span>
           <div>
-            <p className="flex items-center gap-1.5 text-base font-extrabold leading-6">
+            <p className="flex items-center gap-1.5 text-base font-bold leading-6">
               سديم
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </p>

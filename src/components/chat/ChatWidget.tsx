@@ -21,7 +21,7 @@ function PanelLoading() {
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15">
             <Bot className="h-5 w-5" />
           </span>
-          <p className="text-base font-extrabold">سديم</p>
+          <p className="text-base font-bold">سديم</p>
         </div>
         <X className="h-5 w-5 text-white/40" />
       </div>

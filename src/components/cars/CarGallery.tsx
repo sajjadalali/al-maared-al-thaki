@@ -31,7 +31,7 @@ export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCr
           alt={alt}
           bodyType={car.bodyType}
           color={car.color}
-          priority
+          eager
           showNote
           sizes="(min-width: 1024px) 60vw, 100vw"
         />

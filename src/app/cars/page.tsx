@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { filterCars } from "@/data/cars";
+import { filterCars, getCatalogFilterOptions } from "@/data/cars";
+import { priceBandIndex } from "@/lib/filterOptions";
 import { CarFilters } from "@/components/cars/CarFilters";
 import { CarGrid } from "@/components/cars/CarGrid";
 import { CarSort } from "@/components/cars/CarSort";
@@ -68,6 +69,22 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
 
   cars = sortCars(cars, sort);
 
+  const filterOptions = getCatalogFilterOptions(
+    {
+      tag,
+      brand,
+      city,
+      year: minYear,
+      price: priceBandIndex(minPrice ?? null, maxPrice ?? null) || undefined,
+      bodyType,
+      condition,
+      origin,
+      fuel,
+      transmission,
+    },
+    query
+  );
+
   const heading =
     condition === "جديدة" ? "السيارات الجديدة" : condition === "مستعملة" ? "السيارات المستعملة" : "كل السيارات";
 
@@ -90,14 +107,14 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
 
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:gap-8 lg:px-8">
         <div className="hidden lg:block">
-          <CarFilters resultCount={cars.length} variant="sidebar" />
+          <CarFilters options={filterOptions} resultCount={cars.length} variant="sidebar" />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="lg:hidden">
-                <CarFilters resultCount={cars.length} variant="drawer" />
+                <CarFilters options={filterOptions} resultCount={cars.length} variant="drawer" />
               </div>
               <p className="text-sm font-semibold text-neutral-500">
                 <span className="text-base font-bold text-brand-950">{cars.length}</span> سيارة
@@ -110,7 +127,7 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
             <ActiveFilters />
           </div>
 
-          <CarGrid cars={cars} />
+          <CarGrid cars={cars} eagerCount={2} />
         </div>
       </div>
     </div>

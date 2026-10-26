@@ -1,11 +1,9 @@
-"use client";
-
 import { Check, Car as CarIcon, SendHorizontal, Sparkles, Zap } from "lucide-react";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { CarArt } from "@/components/ui/CarArt";
 import { getAllCars, getCatalogStats, getFeaturedCars } from "@/data/cars";
 import { formatIQD } from "@/lib/format";
-import { openSadeemChat } from "@/lib/chatBus";
+import { OpenChatButton } from "@/components/chat/OpenChatButton";
 import type { Car } from "@/types/car";
 
 const DEMO_BUDGET = 50_000_000;
@@ -61,14 +59,12 @@ export function HeroChatPreview() {
       <div className="absolute left-0 top-0 z-20 flex flex-row-reverse items-end gap-1 motion-safe:animate-float">
         <SadeemMascot className="h-24 w-24 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)]" />
         <div className="mb-10 rounded-2xl rounded-bl-md bg-white px-3.5 py-2 text-brand-950 shadow-xl">
-          <p className="text-sm font-extrabold leading-5">أنا سديم 👋</p>
-          <p className="text-[11px] font-medium text-neutral-500">موظف مبيعاتك الذكي</p>
+          <p className="text-sm font-bold leading-5">أنا سديم 👋</p>
+          <p className="text-[11px] font-normal text-neutral-500">موظف مبيعاتك الذكي</p>
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => openSadeemChat()}
+      <OpenChatButton
         aria-label="افتح محادثة سديم"
         className="relative z-10 block w-full overflow-hidden rounded-[28px] bg-white text-start text-brand-950 shadow-2xl shadow-black/40 ring-1 ring-white/20 transition duration-300 hover:-translate-y-1 hover:shadow-black/50"
       >
@@ -83,7 +79,7 @@ export function HeroChatPreview() {
               </span>
             </span>
             <div>
-              <p className="flex items-center gap-1.5 text-[15px] font-extrabold leading-5">
+              <p className="flex items-center gap-1.5 text-[15px] font-bold leading-5">
                 سديم
                 <Sparkles className="h-3.5 w-3.5 text-amber-300" />
               </p>
@@ -95,7 +91,7 @@ export function HeroChatPreview() {
         {/* conversation */}
         <div className="space-y-3 bg-[#f2f5f9] px-4 pb-4 pt-4">
           <div className="flex justify-start motion-safe:animate-rise" style={{ animationDelay: "0.2s" }}>
-            <p className="max-w-[82%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 py-2 text-[14.5px] font-medium leading-7 text-white shadow-sm">
+            <p className="max-w-[82%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 py-2 text-[14.5px] font-normal leading-7 text-white shadow-sm">
               {demo.question}
             </p>
           </div>
@@ -105,7 +101,7 @@ export function HeroChatPreview() {
             style={{ animationDelay: "0.8s" }}
           >
             <MiniAvatar />
-            <p className="max-w-[82%] rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 py-2 text-[14.5px] font-medium leading-7 text-neutral-800 shadow-sm">
+            <p className="max-w-[82%] rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 py-2 text-[14.5px] font-normal leading-7 text-neutral-800 shadow-sm">
               {demo.answer}
             </p>
           </div>
@@ -119,13 +115,13 @@ export function HeroChatPreview() {
                 <CarArt bodyType={car.bodyType} color={car.color} className="relative w-[108px]" />
               </div>
               <div className="min-w-0 flex-1 py-1">
-                <p className="truncate text-[14px] font-extrabold leading-5">
+                <p className="truncate text-[14px] font-bold leading-5">
                   <bdi>
                     {car.brand} {car.model}
                   </bdi>{" "}
                   <span className="font-semibold text-neutral-500">{car.year}</span>
                 </p>
-                <p className="mt-0.5 text-[15px] font-extrabold text-brand-800">{formatIQD(car.price)}</p>
+                <p className="mt-0.5 text-[15px] font-bold text-brand-800">{formatIQD(car.price)}</p>
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {demo.withinBudget && (
                     <span className="flex items-center gap-1 rounded-md bg-success/10 px-1.5 py-0.5 text-[10.5px] font-bold text-success">
@@ -170,7 +166,7 @@ export function HeroChatPreview() {
             <SendHorizontal className="h-4 w-4 -scale-x-100" />
           </span>
         </div>
-      </button>
+      </OpenChatButton>
 
       {/* floating facts */}
       <div className="absolute right-2 top-3 z-20 flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-brand-950 shadow-xl motion-safe:animate-float-slow">
@@ -187,7 +183,7 @@ export function HeroChatPreview() {
           <CarIcon className="h-4 w-4" />
         </span>
         <span className="text-[12px] font-bold">
-          <span className="text-[15px] font-extrabold text-brand-800">{available}</span> سيارة متوفرة الآن
+          <span className="text-[15px] font-bold text-brand-800">{available}</span> سيارة متوفرة الآن
         </span>
       </div>
     </div>

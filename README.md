@@ -28,7 +28,9 @@ src/
   context/             FavoritesContext (المفضلة عبر localStorage)
   data/
     cars.json           بيانات السيارات التجريبية
-    cars.ts              طبقة الوصول للبيانات (getAllCars, filterCars, searchCars...)
+    cars.ts              طبقة الوصول للبيانات (getAllCars, filterCars, searchCars...)؛ تُستدعى من
+                         مكونات الخادم فقط، ومكونات العميل تأخذ نسخاً مختصرة (toCarSummary, toFacetCar)
+                         حتى لا ينزل ملف السيارات كاملاً مع جافاسكربت الصفحة
     image-credits.json   إسناد الصور المرخّصة (يكتبه npm run fetch-photos)
   services/ai/          طبقة الذكاء الاصطناعي القابلة للاستبدال
     mockAI.ts            المحرك الحالي: يحلل الرسالة ويبحث في cars.json

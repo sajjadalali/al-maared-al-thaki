@@ -21,7 +21,7 @@ export default function ContactPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-10 text-center">
-        <h1 className="text-3xl font-extrabold text-brand-950 sm:text-4xl">تواصل معنا</h1>
+        <h1 className="text-3xl font-bold text-brand-950 sm:text-4xl">تواصل معنا</h1>
         <p className="mx-auto mt-3 max-w-xl text-sm text-neutral-600 sm:text-base">
           لديك استفسار أو تحتاج مساعدة في اختيار سيارتك؟ فريقنا جاهز لخدمتك، ويمكنك أيضاً التحدث
           مع سديم مساعدنا الذكي في أي وقت.

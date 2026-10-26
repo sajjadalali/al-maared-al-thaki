@@ -1,6 +1,13 @@
-import { getAllCars, searchCars } from "@/data/cars";
+// Data-free on purpose: client components import the constants and the
+// option builder without pulling the car catalog into their bundle.
 import { originLabel } from "@/lib/format";
 import type { Car } from "@/types/car";
+
+/** The fields filters look at; enough to compute options and counts. */
+export type FacetCar = Pick<
+  Car,
+  "id" | "brand" | "city" | "year" | "price" | "bodyType" | "condition" | "origin" | "fuel" | "transmission" | "status" | "tags"
+>;
 
 export interface FilterOption {
   value: string;
@@ -61,9 +68,9 @@ export type Facet =
   | "brand" | "city" | "year" | "price" | "bodyType" | "condition" | "origin" | "fuel" | "transmission";
 
 /** What the visitor has chosen so far; `price` is a PRICE_BANDS index. */
-export type FilterSelection = Partial<Record<Facet | "query" | "tag", string>>;
+export type FilterSelection = Partial<Record<Facet | "tag", string>>;
 
-const FACETS: Record<Facet, { key: (car: Car) => string; matches?: (car: Car, value: string) => boolean }> = {
+const FACETS: Record<Facet, { key: (car: FacetCar) => string; matches?: (car: FacetCar, value: string) => boolean }> = {
   brand: { key: (c) => c.brand },
   city: { key: (c) => c.city },
   year: { key: (c) => String(c.year) },
@@ -81,17 +88,21 @@ const FACETS: Record<Facet, { key: (car: Car) => string; matches?: (car: Car, va
   },
 };
 
-function matchesFacet(car: Car, facet: Facet, value: string) {
+function matchesFacet(car: FacetCar, facet: Facet, value: string) {
   const def = FACETS[facet];
   return def.matches ? def.matches(car, value) : def.key(car) === value;
 }
 
 // Cars that satisfy every chosen filter except `except` — the classic faceted
 // search rule, so each list shows what is still reachable from the others.
-function narrowed(cars: Car[], selection: FilterSelection, except?: Facet): Car[] {
-  const queryIds = selection.query ? new Set(searchCars(selection.query).map((c) => c.id)) : null;
+function narrowed(
+  cars: FacetCar[],
+  selection: FilterSelection,
+  matchesQuery: ((id: string) => boolean) | undefined,
+  except?: Facet
+): FacetCar[] {
   return cars.filter((car) => {
-    if (queryIds && !queryIds.has(car.id)) return false;
+    if (matchesQuery && !matchesQuery(car.id)) return false;
     if (selection.tag && !car.tags?.includes(selection.tag)) return false;
     return (Object.keys(FACETS) as Facet[]).every((facet) => {
       const value = selection[facet];
@@ -100,7 +111,7 @@ function narrowed(cars: Car[], selection: FilterSelection, except?: Facet): Car[
   });
 }
 
-function countsFor(cars: Car[], facet: Facet) {
+function countsFor(cars: FacetCar[], facet: Facet) {
   const map = new Map<string, number>();
   for (const car of cars) {
     const key = FACETS[facet].key(car);
@@ -109,11 +120,14 @@ function countsFor(cars: Car[], facet: Facet) {
   return map;
 }
 
+// localeCompare(…, "ar") builds a collator on every call; this one is shared.
+const arabicOrder = new Intl.Collator("ar").compare;
+
 // Known values keep a fixed, logical order; anything new added through the
 // Excel sheet is appended after them.
 function inOrder(values: string[], order: string[]): string[] {
   const known = order.filter((v) => values.includes(v));
-  const extra = values.filter((v) => !order.includes(v)).sort((a, b) => a.localeCompare(b, "ar"));
+  const extra = values.filter((v) => !order.includes(v)).sort(arabicOrder);
   return [...known, ...extra];
 }
 
@@ -135,12 +149,22 @@ export interface FilterOptionSets {
  * Options for every filter list. Values come from the stocked catalog (sold
  * cars excluded, values with no cars at all never listed); counts reflect the
  * visitor's other choices, and a 0 count marks an option that would lead to
- * an empty page.
+ * an empty page. `matchesQuery` applies a free-text search, which needs the
+ * full car texts and so runs where the catalog is (the server).
  */
-export function getFilterOptions(selection: FilterSelection = {}): FilterOptionSets {
-  const stock = getAllCars().filter((car) => car.status !== "مباعة");
+export function getFilterOptions(
+  cars: FacetCar[],
+  selection: FilterSelection = {},
+  matchesQuery?: (id: string) => boolean
+): FilterOptionSets {
+  const stock = cars.filter((car) => car.status !== "مباعة");
   const catalog = (facet: Facet) => [...new Set(stock.map(FACETS[facet].key))];
-  const pool = (facet: Facet) => narrowed(stock, selection, facet);
+  // Each facet's pool feeds both its counts and its total; work it out once.
+  const pools = new Map<Facet, FacetCar[]>();
+  const pool = (facet: Facet) => {
+    if (!pools.has(facet)) pools.set(facet, narrowed(stock, selection, matchesQuery, facet));
+    return pools.get(facet)!;
+  };
 
   const build = (facet: Facet, values: string[], label: (v: string) => string = (v) => v): FilterOption[] => {
     const counts = countsFor(pool(facet), facet);
@@ -149,12 +173,12 @@ export function getFilterOptions(selection: FilterSelection = {}): FilterOptionS
 
   const brands = build("brand", catalog("brand"), brandLabel)
     .map((o) => ({ ...o, hint: o.label === o.value ? undefined : o.value }))
-    .sort((a, b) => a.label.localeCompare(b.label, "ar"));
+    .sort((a, b) => arabicOrder(a.label, b.label));
 
   // Most-stocked governorates first — Baghdad usually leads.
   const cityStock = countsFor(stock, "city");
   const cities = build("city", catalog("city")).sort(
-    (a, b) => cityStock.get(b.value)! - cityStock.get(a.value)! || a.label.localeCompare(b.label, "ar")
+    (a, b) => cityStock.get(b.value)! - cityStock.get(a.value)! || arabicOrder(a.label, b.label)
   );
 
   const years = build("year", catalog("year").sort((a, b) => Number(b) - Number(a)));

@@ -4,7 +4,7 @@ import { CarQuickSearch } from "@/components/cars/CarQuickSearch";
 import { OpenChatButton } from "@/components/chat/OpenChatButton";
 import { CarArt } from "@/components/ui/CarArt";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
-import { getCatalogStats, getFeaturedCars } from "@/data/cars";
+import { getAllCars, getCatalogStats, getFeaturedCars, toFacetCar } from "@/data/cars";
 import { formatNumber, originLabel } from "@/lib/format";
 
 const TRUST = [
@@ -140,7 +140,7 @@ export function Hero() {
       </div>
 
       <div className="relative mx-auto -mt-16 max-w-7xl px-4 pb-4 sm:px-6 lg:-mt-20 lg:px-8">
-        <CarQuickSearch />
+        <CarQuickSearch cars={getAllCars().map(toFacetCar)} />
       </div>
     </section>
   );

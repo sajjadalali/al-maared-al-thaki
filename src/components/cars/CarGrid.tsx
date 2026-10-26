@@ -1,10 +1,19 @@
 import { SearchX } from "lucide-react";
 import { CarCard } from "@/components/cars/CarCard";
-import type { Car } from "@/types/car";
+import type { CarSummary } from "@/types/car";
 import { cn } from "@/lib/cn";
 
 // Default columns suit the listing page, which has a filters sidebar beside it.
-export function CarGrid({ cars, className }: { cars: Car[]; className?: string }) {
+// `eagerCount`: photos to load right away, for a grid at the top of the page.
+export function CarGrid({
+  cars,
+  eagerCount = 0,
+  className,
+}: {
+  cars: CarSummary[];
+  eagerCount?: number;
+  className?: string;
+}) {
   if (cars.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-black/10 bg-white py-20 text-center">
@@ -19,8 +28,8 @@ export function CarGrid({ cars, className }: { cars: Car[]; className?: string }
 
   return (
     <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3", className)}>
-      {cars.map((car) => (
-        <CarCard key={car.id} car={car} />
+      {cars.map((car, i) => (
+        <CarCard key={car.id} car={car} eager={i < eagerCount} />
       ))}
     </div>
   );

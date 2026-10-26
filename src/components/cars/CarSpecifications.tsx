@@ -17,7 +17,7 @@ export function CarHighlights({ car }: { car: Car }) {
       {tiles.map(({ icon: Icon, label, value }) => (
         <div key={label} className="rounded-2xl bg-surface p-4">
           <Icon className="h-5 w-5 text-brand-500" />
-          <p className="mt-3 text-xs font-medium text-neutral-500">{label}</p>
+          <p className="mt-3 text-xs font-normal text-neutral-500">{label}</p>
           <p className="mt-0.5 text-[15px] font-bold leading-6 text-brand-950">
             <bdi>{value}</bdi>
           </p>
