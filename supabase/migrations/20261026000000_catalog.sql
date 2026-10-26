@@ -358,3 +358,12 @@ create policy "catalog is public" on public.car_images for select to anon, authe
 -- leads, chat_sessions, chat_messages: no policies, server (secret key) only.
 
 revoke execute on function public.touch_updated_at() from anon, authenticated;
+
+-- Explicit grants, for projects where new tables aren't exposed to the API by default.
+grant usage on schema public to anon, authenticated, service_role;
+grant select on public.brands, public.models, public.cars, public.features,
+  public.car_features, public.car_images, public.cars_full to anon, authenticated;
+grant execute on function public.search_cars, public.catalog_overview, public.normalize_ar
+  to anon, authenticated, service_role;
+grant all on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;
