@@ -7,7 +7,7 @@ export default function NotFound() {
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
         <SearchX className="h-6 w-6" />
       </span>
-      <h1 className="mt-5 text-xl font-extrabold text-brand-950">الصفحة غير موجودة</h1>
+      <h1 className="mt-5 text-xl font-bold text-brand-950">الصفحة غير موجودة</h1>
       <p className="mt-2 text-sm leading-7 text-neutral-500">
         الصفحة أو السيارة التي تبحث عنها غير موجودة أو تم بيعها. تصفح السيارات المتوفرة، أو
         تحدث مع سديم ليساعدك في العثور على ما تريد.

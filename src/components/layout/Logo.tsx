@@ -32,7 +32,7 @@ export function Logo({ tone = "dark", className }: { tone?: "dark" | "light"; cl
         <span className={cn("text-[17px] font-bold", tone === "dark" ? "text-brand-950" : "text-white")}>
           {site.name}
         </span>
-        <span className={cn("mt-1 text-[11.5px] font-medium", tone === "dark" ? "text-neutral-500" : "text-white/50")}>
+        <span className={cn("mt-1 text-[11.5px] font-normal", tone === "dark" ? "text-neutral-500" : "text-white/50")}>
           {site.tagline}
         </span>
       </span>

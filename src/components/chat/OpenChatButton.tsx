@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 import { askSadeem, openSadeemChat } from "@/lib/chatBus";
 
 /**
@@ -8,21 +8,10 @@ import { askSadeem, openSadeemChat } from "@/lib/chatBus";
  * `prompt`, the chat opens and sends that message straight away.
  */
 export function OpenChatButton({
-  className,
-  children,
   prompt,
-}: {
-  className?: string;
-  children: ReactNode;
-  prompt?: string;
-}) {
+  ...props
+}: Omit<ComponentProps<"button">, "type" | "onClick"> & { prompt?: string }) {
   return (
-    <button
-      type="button"
-      onClick={() => (prompt ? askSadeem(prompt) : openSadeemChat())}
-      className={className}
-    >
-      {children}
-    </button>
+    <button {...props} type="button" onClick={() => (prompt ? askSadeem(prompt) : openSadeemChat())} />
   );
 }

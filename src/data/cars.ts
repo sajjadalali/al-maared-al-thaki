@@ -1,5 +1,6 @@
 import rawCars from "./cars.json";
-import type { Car, CarFilters } from "@/types/car";
+import { getFilterOptions, type FacetCar, type FilterSelection } from "@/lib/filterOptions";
+import type { Car, CarFilters, CarSummary } from "@/types/car";
 
 const cars: Car[] = rawCars as Car[];
 
@@ -112,13 +113,35 @@ export function getCatalogStats(): { available: number; brands: number; cities: 
   };
 }
 
-export function getMinMaxPrice(): { min: number; max: number } {
-  const prices = cars.map((car) => car.price);
-  return { min: Math.min(...prices), max: Math.max(...prices) };
+/** Filter options over the stock; the free-text search runs here, next to the texts. */
+export function getCatalogFilterOptions(selection: FilterSelection, query?: string) {
+  const ids = query ? new Set(searchCars(query).map((car) => car.id)) : undefined;
+  return getFilterOptions(cars, selection, ids && ((id) => ids.has(id)));
 }
 
+// Client components get these trimmed copies instead of importing the catalog,
+// which would put every description and feature list in their bundle.
+
+const FACET_KEYS = [
+  "id", "brand", "city", "year", "price", "bodyType", "condition", "origin", "fuel", "transmission", "status", "tags",
+] as const satisfies readonly (keyof FacetCar)[];
+
+const SUMMARY_KEYS = [
+  "id", "brand", "model", "trim", "year", "price", "condition", "origin", "bodyType",
+  "mileage", "transmission", "fuel", "engine", "color", "city", "status", "images",
+] as const satisfies readonly (keyof CarSummary)[];
+
+function pick<K extends keyof Car>(car: Car, keys: readonly K[]): Pick<Car, K> {
+  return Object.fromEntries(keys.map((key) => [key, car[key]])) as Pick<Car, K>;
+}
+
+export const toFacetCar = (car: Car): FacetCar => pick(car, FACET_KEYS);
+export const toCarSummary = (car: Car): CarSummary => pick(car, SUMMARY_KEYS);
+
+const arabicOrder = new Intl.Collator("ar").compare;
+
 function uniqueSorted(values: string[]): string[] {
-  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b, "ar"));
+  return Array.from(new Set(values)).sort(arabicOrder);
 }
 
 function normalize(text: string): string {

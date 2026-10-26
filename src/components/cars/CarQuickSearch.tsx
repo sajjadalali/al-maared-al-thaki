@@ -4,15 +4,17 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, MapPin, Coins, Calendar, Car as CarIcon } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { PRICE_BANDS, getFilterOptions } from "@/lib/filterOptions";
+import { PRICE_BANDS, getFilterOptions, type FacetCar } from "@/lib/filterOptions";
 
-export function CarQuickSearch() {
+// Counts update as the visitor picks, so the options are built here from the
+// trimmed `cars` the server passes in.
+export function CarQuickSearch({ cars }: { cars: FacetCar[] }) {
   const router = useRouter();
   const [city, setCity] = useState("");
   const [brand, setBrand] = useState("");
   const [year, setYear] = useState("");
   const [priceIdx, setPriceIdx] = useState("");
-  const options = getFilterOptions({ city, brand, year, price: priceIdx });
+  const options = getFilterOptions(cars, { city, brand, year, price: priceIdx });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

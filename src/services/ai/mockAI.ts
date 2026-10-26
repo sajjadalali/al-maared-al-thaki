@@ -111,11 +111,19 @@ function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Each message checks the same few hundred alias words; compile each pattern once.
+const wordPatterns = new Map<string, RegExp>();
+
 // Whole-word match, allowing common Arabic proclitics (و، ب، ال، بال...), so
 // "بنز" does not match inside "بنزين" and "جيب" never appears inside "جيبلي".
 function hasWord(text: string, word: string): boolean {
-  const w = escapeRegExp(normalize(word));
-  return new RegExp(`(^|[^\\p{L}\\p{N}])(?:و|ف|ب|ل|ال|بال|وال|لل)?${w}(?=$|[^\\p{L}\\p{N}])`, "u").test(text);
+  let pattern = wordPatterns.get(word);
+  if (!pattern) {
+    const w = escapeRegExp(normalize(word));
+    pattern = new RegExp(`(^|[^\\p{L}\\p{N}])(?:و|ف|ب|ل|ال|بال|وال|لل)?${w}(?=$|[^\\p{L}\\p{N}])`, "u");
+    wordPatterns.set(word, pattern);
+  }
+  return pattern.test(text);
 }
 
 function hasAnyWord(text: string, words: string[]) {

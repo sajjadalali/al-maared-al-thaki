@@ -13,7 +13,8 @@ interface CarImageProps {
   color?: string;
   className?: string;
   sizes?: string;
-  priority?: boolean;
+  /** Load right away at high priority: the page's main (LCP) photo. */
+  eager?: boolean;
   /** Small "illustration" note on the drawing, for large views. */
   showNote?: boolean;
   /**
@@ -30,7 +31,7 @@ export function CarImage({
   color,
   className,
   sizes = "(min-width: 1024px) 25vw, 50vw",
-  priority,
+  eager,
   showNote,
   fit = "contain",
 }: CarImageProps) {
@@ -63,7 +64,8 @@ export function CarImage({
       alt={alt}
       fill
       sizes={sizes}
-      priority={priority}
+      loading={eager ? "eager" : "lazy"}
+      fetchPriority={eager ? "high" : undefined}
       className={cn(fit === "cover" ? "object-cover" : "object-contain", className)}
       onError={() => setFailed(true)}
     />

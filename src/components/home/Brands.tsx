@@ -21,7 +21,7 @@ export function Brands() {
             className="group flex flex-col items-center justify-center rounded-2xl border border-black/[0.07] bg-white px-3 py-4 text-center transition hover:border-brand-200 hover:bg-surface"
           >
             <span className="text-[15px] font-bold text-brand-950">{brandLabel(brand)}</span>
-            <span className="mt-0.5 text-[11.5px] font-medium text-neutral-400" dir="ltr">
+            <span className="mt-0.5 text-[11.5px] font-normal text-neutral-400" dir="ltr">
               {brand}
             </span>
             <span className="mt-2 text-[11.5px] font-semibold text-brand-600">

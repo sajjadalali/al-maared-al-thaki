@@ -1,23 +1,20 @@
-"use client";
-
 import Link from "next/link";
-import { ArrowLeft, Fuel, Gauge, Heart, MapPin, Settings2 } from "lucide-react";
+import { ArrowLeft, Fuel, Gauge, MapPin, Settings2 } from "lucide-react";
 import { CarImage } from "@/components/ui/CarImage";
+import { CarFavoriteIcon } from "@/components/cars/CarFavoriteToggle";
 import { formatCarMileage, formatNumber, originLabel } from "@/lib/format";
-import { useFavorites } from "@/context/FavoritesContext";
-import type { Car } from "@/types/car";
+import type { CarSummary } from "@/types/car";
 import { cn } from "@/lib/cn";
 
 /** "3.5L بنزين", or just "كهربائي" — short enough for a card column. */
-export function shortPowertrain(car: Car): string {
+function shortPowertrain(car: CarSummary): string {
   if (car.fuel === "كهربائي") return "كهربائي";
   const size = car.engine.split(" ")[0];
   return /^\d/.test(size) ? `${size} ${car.fuel}` : car.fuel;
 }
 
-export function CarCard({ car, className }: { car: Car; className?: string }) {
-  const { isFavorite, toggleFavorite } = useFavorites();
-  const favorite = isFavorite(car.id);
+// Rendered on the server where possible; only the heart is interactive.
+export function CarCard({ car, eager, className }: { car: CarSummary; eager?: boolean; className?: string }) {
   const name = `${car.brand} ${car.model}`;
   const subtitle = [car.trim, car.year].filter(Boolean).join(" · ");
   const isNew = car.condition === "جديدة";
@@ -35,6 +32,7 @@ export function CarCard({ car, className }: { car: Car; className?: string }) {
           alt={`${name} ${car.year}`}
           bodyType={car.bodyType}
           color={car.color}
+          eager={eager}
           className="transition duration-500 group-hover:scale-[1.04]"
         />
 
@@ -54,15 +52,7 @@ export function CarCard({ car, className }: { car: Car; className?: string }) {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => toggleFavorite(car.id)}
-          aria-label={favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
-          aria-pressed={favorite}
-          className="absolute end-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-sm ring-1 ring-black/5 transition hover:scale-105"
-        >
-          <Heart className={cn("h-4.5 w-4.5", favorite ? "fill-danger text-danger" : "text-brand-900")} />
-        </button>
+        <CarFavoriteIcon id={car.id} />
 
         {car.status !== "متوفرة" && (
           <span

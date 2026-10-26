@@ -24,7 +24,7 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
     return (
       <div className="flex justify-start animate-fade-in">
         <div className="max-w-[82%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 pb-1.5 pt-2.5 text-white shadow-sm">
-          <p className="whitespace-pre-line text-[15px] font-medium leading-7">{message.content}</p>
+          <p className="whitespace-pre-line text-[15px] font-normal leading-7">{message.content}</p>
           <p className="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] text-white/60">
             {formatTime(message.timestamp)}
             <CheckCheck className="h-3.5 w-3.5 text-sky-300" aria-label="تمت القراءة" />
@@ -42,7 +42,7 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
 
       <div className="flex min-w-0 max-w-[88%] flex-1 flex-col items-end gap-2">
         <div className="rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 pb-1.5 pt-2.5 shadow-sm">
-          <div className="text-[15px] font-medium leading-7 text-neutral-800">
+          <div className="text-[15px] font-normal leading-7 text-neutral-800">
             <RichText text={message.content} />
           </div>
 
