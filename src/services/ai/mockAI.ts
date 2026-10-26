@@ -1,91 +1,17 @@
 import { filterCars, getAllCars, getCarById, getCities, getSimilarCars } from "@/data/cars";
 import { USD_TO_IQD, formatIQD, originLabel } from "@/lib/format";
 import { site, phoneHref, whatsappHref } from "@/config/site";
+import {
+  BODY_TYPE_ALIASES,
+  BRAND_ALIASES,
+  CHINESE_BRANDS,
+  FUEL_ALIASES,
+  MODEL_ALIASES,
+  ORIGIN_ALIASES,
+  normalizeArabic,
+} from "@/lib/carAliases";
 import type { Car, CarFilters, CarOrigin, FuelType } from "@/types/car";
 import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage } from "./types";
-
-const BRAND_ALIASES: { brand: string; aliases: string[] }[] = [
-  { brand: "Toyota", aliases: ["تويوتا", "toyota"] },
-  { brand: "Kia", aliases: ["كيا", "kia"] },
-  { brand: "Hyundai", aliases: ["هيونداي", "هونداي", "hyundai"] },
-  { brand: "Nissan", aliases: ["نيسان", "nissan"] },
-  { brand: "Chevrolet", aliases: ["شفروليه", "شيفروليه", "شفرليت", "chevrolet"] },
-  { brand: "Lexus", aliases: ["لكزس", "لكزز", "lexus"] },
-  { brand: "Mercedes", aliases: ["مرسيدس", "مرسيديس", "بنز", "mercedes"] },
-  { brand: "BMW", aliases: ["بي ام دبليو", "بي ام", "بمو", "bmw"] },
-  { brand: "Ford", aliases: ["فورد", "ford"] },
-  { brand: "Land Rover", aliases: ["لاند روفر", "لاندروفر", "land rover"] },
-  { brand: "Honda", aliases: ["هوندا", "honda"] },
-  { brand: "Mitsubishi", aliases: ["ميتسوبيشي", "متسوبيشي", "mitsubishi"] },
-  { brand: "Changan", aliases: ["شانجان", "جانجان", "شانكان", "changan"] },
-  { brand: "Geely", aliases: ["جيلي", "geely"] },
-  { brand: "Haval", aliases: ["هافال", "haval"] },
-  { brand: "Chery", aliases: ["شيري", "chery"] },
-];
-
-const CHINESE_BRANDS = ["Changan", "Geely", "Haval", "Chery", "MG", "BYD", "JAC", "Jetour"];
-
-// `model` is matched as a substring of the car's model name (lowercase).
-const MODEL_ALIASES: { model: string; aliases: string[] }[] = [
-  { model: "camry", aliases: ["كامري", "camry"] },
-  { model: "corolla", aliases: ["كورولا", "corolla"] },
-  { model: "prado", aliases: ["برادو", "prado"] },
-  { model: "land cruiser", aliases: ["لاندكروزر", "لاند كروزر", "land cruiser", "landcruiser"] },
-  { model: "hilux", aliases: ["هايلكس", "هيلوكس", "hilux"] },
-  { model: "k5", aliases: ["k5", "كي 5", "كي5"] },
-  { model: "sportage", aliases: ["سبورتاج", "سبورتج", "sportage"] },
-  { model: "sorento", aliases: ["سورينتو", "سورنتو", "sorento"] },
-  { model: "picanto", aliases: ["بيكانتو", "picanto"] },
-  { model: "ev6", aliases: ["ev6"] },
-  { model: "sonata", aliases: ["سوناتا", "sonata"] },
-  { model: "tucson", aliases: ["توسان", "tucson"] },
-  { model: "elantra", aliases: ["النترا", "الانترا", "elantra"] },
-  { model: "altima", aliases: ["التيما", "altima"] },
-  { model: "patrol", aliases: ["باترول", "patrol"] },
-  { model: "sunny", aliases: ["صني", "sunny"] },
-  { model: "malibu", aliases: ["ماليبو", "malibu"] },
-  { model: "tahoe", aliases: ["تاهو", "tahoe"] },
-  { model: "es 350", aliases: ["es 350", "es350"] },
-  { model: "rx 350", aliases: ["rx 350", "rx350"] },
-  { model: "c 300", aliases: ["c 300", "c300", "سي كلاس", "c class", "c-class"] },
-  { model: "gle", aliases: ["gle"] },
-  { model: "520i", aliases: ["520i"] },
-  { model: "x5", aliases: ["x5", "اكس 5", "اكس5"] },
-  { model: "explorer", aliases: ["اكسبلورر", "اكسبلور", "explorer"] },
-  { model: "defender", aliases: ["ديفندر", "defender"] },
-  { model: "civic", aliases: ["سيفيك", "civic"] },
-  { model: "pajero", aliases: ["باجيرو", "pajero"] },
-  { model: "santa fe", aliases: ["سنتافي", "سانتافي", "سانتا في", "santa fe", "santafe"] },
-  { model: "cs75", aliases: ["cs75", "سي اس 75", "cs 75"] },
-  { model: "coolray", aliases: ["كولراي", "كول راي", "coolray"] },
-  { model: "h6", aliases: ["h6", "اتش 6", "اج 6"] },
-  { model: "tiggo", aliases: ["تيغو", "تيجو", "تيكو", "tiggo"] },
-];
-
-// Import market as Iraqi buyers ask for it ("عندكم لاندكروزر خليجي؟").
-const ORIGIN_ALIASES: { origin: CarOrigin; aliases: string[] }[] = [
-  { origin: "خليجي", aliases: ["خليجي", "خليجيه", "خليجيات"] },
-  { origin: "أمريكي", aliases: ["امريكي", "امريكيه", "امريكا", "امريكان"] },
-  { origin: "كوري", aliases: ["كوري", "كوريه"] },
-  { origin: "كندي", aliases: ["كندي", "كنديه"] },
-  { origin: "أوروبي", aliases: ["اوروبي", "اوروبيه", "الماني", "المانيه"] },
-  { origin: "وكالة", aliases: ["وكاله", "وكالات"] },
-];
-
-const BODY_TYPE_ALIASES: { bodyType: string; aliases: string[] }[] = [
-  { bodyType: "سيدان", aliases: ["سيدان", "sedan", "صالون"] },
-  { bodyType: "SUV", aliases: ["اس يو في", "suv"] },
-  { bodyType: "دفع رباعي", aliases: ["دفع رباعي", "4x4"] },
-  { bodyType: "هاتشباك", aliases: ["هاتشباك", "hatchback"] },
-  { bodyType: "شاحنة", aliases: ["شاحنه", "بيكب", "بكب", "بيك اب", "pickup"] },
-];
-
-const FUEL_ALIASES: { fuel: FuelType; aliases: string[] }[] = [
-  { fuel: "كهربائي", aliases: ["كهربائيه", "كهربائي", "كهرباء", "electric"] },
-  { fuel: "هايبرد", aliases: ["هايبرد", "هايبريد", "hybrid"] },
-  { fuel: "ديزل", aliases: ["ديزل", "diesel"] },
-  { fuel: "بنزين", aliases: ["بنزين"] },
-];
 
 const GREETING_WORDS = ["مرحبا", "هلا", "السلام عليكم", "سلام", "صباح الخير", "مساء الخير", "هلو"];
 const THANKS_WORDS = ["شكرا", "تسلم", "مشكور", "يعطيك العافيه", "ممنون"];
@@ -97,15 +23,7 @@ const AMONG_WORDS = ["بينهم", "منهم", "بيناتهم"];
 const CHEAPEST_WORDS = ["ارخص", "اقل سعر"];
 const MOST_EXPENSIVE_WORDS = ["اغلى", "افخم"];
 
-function normalize(text: string): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
-    .replace(/[أإآ]/g, "ا")
-    .replace(/ة/g, "ه")
-    .replace(/ى/g, "ي");
-}
+const normalize = normalizeArabic;
 
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
