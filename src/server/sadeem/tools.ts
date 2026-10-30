@@ -275,6 +275,8 @@ export interface TurnState {
   shownIds: string[];
   /** Cars looked up with get_car_details, shown when show_cars isn't called. */
   detailIds: string[];
+  /** Cars the tools returned this turn, to spot the ones the reply names. */
+  found: Map<string, { model: string; year: number }>;
   quickReplies: string[];
   leadSaved: boolean;
   searches: Record<string, unknown>[];
@@ -353,6 +355,7 @@ export async function runTool(
       rows.forEach((row) => {
         state.seenIds.add(row.id);
         state.seenPrices.set(row.id, row.price_iqd);
+        state.found.set(row.id, { model: row.model, year: row.year });
       });
       state.matchCount = rows[0]?.total_count ?? 0;
       return { total: state.matchCount, cars: rows.map(brief) };
@@ -363,6 +366,7 @@ export async function runTool(
       rows.forEach((row) => {
         state.seenIds.add(row.id);
         state.seenPrices.set(row.id, row.price_iqd);
+        state.found.set(row.id, { model: row.model, year: row.year });
         if (!state.detailIds.includes(row.id)) state.detailIds.push(row.id);
       });
       state.searches.push({ details: rows.map((row) => row.id) });
