@@ -47,21 +47,32 @@ interface LlmMessage {
 export interface OpenRouterEnv {
   apiKey: string;
   model: string;
+  /** Tried by OpenRouter when `model` fails or is rate-limited. */
+  fallbackModel?: string;
   baseUrl: string;
+}
+
+interface Completion extends LlmMessage {
+  /** The model that actually answered (differs when OpenRouter fell back). */
+  model?: string;
 }
 
 export function openRouterEnv(): OpenRouterEnv | null {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
+  const model = process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+  // Free models allow only a few requests a day; fall back to the paid default.
+  const fallbackModel = process.env.OPENROUTER_FALLBACK_MODEL || (model.endsWith(":free") ? DEFAULT_MODEL : undefined);
   return {
     apiKey,
-    model: process.env.OPENROUTER_MODEL || DEFAULT_MODEL,
+    model,
+    fallbackModel: fallbackModel && fallbackModel !== model ? fallbackModel : undefined,
     // Any OpenAI-compatible endpoint works; OpenRouter by default.
     baseUrl: (process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/$/, ""),
   };
 }
 
-async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: boolean): Promise<LlmMessage> {
+async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: boolean): Promise<Completion> {
   const res = await fetch(`${env.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
@@ -71,12 +82,13 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
       "X-Title": "Al Maared Al Thaki",
     },
     body: JSON.stringify({
-      model: env.model,
+      ...(env.fallbackModel ? { models: [env.model, env.fallbackModel] } : { model: env.model }),
       messages,
       tools: TOOL_DEFINITIONS,
       tool_choice: allowTools ? "auto" : "none",
       temperature: 0.2,
-      max_tokens: 900,
+      // Room for the thinking of reasoning models on top of a short reply.
+      max_tokens: 2000,
       // Short sales replies don't need long thinking; low effort keeps them fast.
       reasoning: { effort: process.env.OPENROUTER_REASONING_EFFORT || "low" },
     }),
@@ -91,6 +103,7 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
     content: message.content ?? null,
     tool_calls: message.tool_calls,
     reasoning_details: message.reasoning_details,
+    model: data.model,
   };
 }
 
@@ -170,6 +183,10 @@ export async function runSadeem(
   for (let round = 0; round < MAX_ROUNDS; round++) {
     // The last round may not call tools again: it has to answer.
     const reply = await complete(llm, messages, round < MAX_ROUNDS - 1);
+    // Note when OpenRouter answered with the fallback, so chat reviews show it.
+    if (llm.fallbackModel && reply.model?.startsWith(llm.fallbackModel) && !state.searches.some((s) => s.fallback)) {
+      state.searches.push({ fallback: reply.model });
+    }
     const calls = reply.tool_calls ?? [];
     const text = cleanReply(reply.content ?? "");
     if (calls.length === 0) {

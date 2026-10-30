@@ -163,6 +163,7 @@ npm run sync-supabase -- --sql supabase/seed.sql   # أو اكتبها كملف 
 |---|---|
 | `OPENROUTER_API_KEY` | مفتاح OpenRouter |
 | `OPENROUTER_MODEL` | اختياري، الافتراضي `anthropic/claude-haiku-5.5` (سريع ورخيص)؛ `anthropic/claude-sonnet-5.5` أذكى وأبطأ. أي نموذج يدعم tools |
+| `OPENROUTER_FALLBACK_MODEL` | اختياري؛ يُجرَّب إذا فشل النموذج أو وصل حدّه. مع نموذج مجاني (`…:free`) الافتراضي `anthropic/claude-haiku-5.5` |
 | `OPENROUTER_REASONING_EFFORT` | اختياري، الافتراضي `low` (رد أسرع)؛ `medium` أو `high` لتفكير أعمق |
 | `SUPABASE_URL` | `https://<project>.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | المفتاح العام (`sb_publishable_...`) لقراءة الكتالوج |
