@@ -13,6 +13,31 @@ const toWestern = (text: string) =>
   text.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/٬/g, ",").replace(/٫/g, ".");
 const num = (s: string) => Number(s.replace(/,/g, ""));
 
+// Amounts written in words ("عشرين مليون", "خمسة وعشرين مليون") and Iraqi
+// money slang ("3 دفاتر", "دفترين", "دفتر ونص", "50 ورقة") turned into digits.
+const NUMBER_WORDS: [RegExp, number][] = (
+  [
+    ["واحد", 1], ["اثنين|ثنين", 2], ["ثلاث[ةه]?|تلات[ةه]?", 3], ["[اأ]ربع[ةه]?", 4], ["خمس[ةه]?", 5],
+    ["ست[ةه]?", 6], ["سبع[ةه]?", 7], ["ثمان(?:ي[ةه])?|ثمن[ةه]?", 8], ["تسع[ةه]?", 9], ["عشر[ةه]?", 10],
+    ["عشرين", 20], ["ثلاثين|تلاثين", 30], ["[اأ]ربعين", 40], ["خمسين", 50], ["ستين", 60],
+    ["سبعين", 70], ["ثمانين", 80], ["تسعين", 90], ["مي[ةه]|مئ[ةه]", 100],
+  ] as const
+).map(([word, value]) => [new RegExp(`(^|[^\\u0600-\\u06FF])([وب]?)(?:${word})(?![\\u0600-\\u06FF])`, "g"), value]);
+
+// "5 و20" → 25, "100 و50" → 150: units before tens, hundreds before the rest.
+const joinable = (a: number, b: number) => (a < 10 && b % 10 === 0 && b < 100) || (a % 100 === 0 && a < 1000 && b < 100);
+
+function spellOutNumbers(text: string): string {
+  for (const [re, value] of NUMBER_WORDS) text = text.replace(re, `$1$2${value}`);
+  return text
+    .replace(/(\d+)\s*و\s*(\d+)/g, (m, a, b) => (joinable(Number(a), Number(b)) ? String(Number(a) + Number(b)) : m))
+    .replace(/(\d+(?:\.\d+)?)?\s*(مليون|دفتر|دفاتر)\s*و\s*نص(?:ف)?/g, (_, n, unit) => `${Number(n ?? 1) + 0.5} ${unit}`)
+    .replace(/دفترين/g, "20000 دولار")
+    .replace(/(\d+(?:\.\d+)?)\s*(?:دفاتر|دفتر)/g, (_, n) => `${Math.round(Number(n) * 10_000)} دولار`)
+    .replace(/(^|[^\d\s])\s*دفتر/g, "$1 10000 دولار")
+    .replace(/(\d+)\s*(?:ورق[ةه]|ورقات)/g, (_, n) => `${Number(n) * 100} دولار`);
+}
+
 interface Figure {
   raw: string;
   value: number;
@@ -23,7 +48,7 @@ interface Figure {
 
 /** Every money figure in a text: "36,000,000 د.ع", "36 مليون", "21,400 $", "20 ألف دولار". */
 export function moneyFigures(input: string): Figure[] {
-  let text = toWestern(input);
+  let text = spellOutNumbers(toWestern(input));
   const found: Figure[] = [];
   const take = (re: RegExp, make: (m: RegExpMatchArray) => Figure | null) => {
     text = text.replace(re, (...m) => {
@@ -46,6 +71,14 @@ export function moneyFigures(input: string): Figure[] {
   }));
   take(/\d{1,3}(?:,\d{3}){2,}/g, (m) => ({ raw: m[0], value: num(m[0]), currency: "IQD", tolerance: 0.001 }));
   return found;
+}
+
+/** The one amount in the buyer's budget words, in dinars, or null when there isn't exactly one. */
+export function budgetFromWords(words: string): number | null {
+  const figures = moneyFigures(words);
+  if (figures.length !== 1) return null;
+  const [f] = figures;
+  return f.currency === "USD" ? Math.round(f.value * USD_TO_IQD) : f.value;
 }
 
 // Dollar figures are rounded to the nearest 100, so they get that much slack too.

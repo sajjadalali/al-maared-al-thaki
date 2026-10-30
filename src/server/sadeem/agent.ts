@@ -124,11 +124,21 @@ function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
 // the reply next to show_cars and only a closing line after it).
 const ANSWER_TOOLS = new Set(["show_cars", "suggest_replies", "save_lead"]);
 
+// Gulf/Levantine words models slip into, with their Iraqi equivalents.
+const IRAQI_WORDS = (
+  [
+    ["تبي|تبغى|تبغي|بدك", "تريد"], ["يبي|يبغى|يبغي|بده", "يريد"], ["الحين|دلوقتي", "هسه"],
+    ["وايد", "هواية"], ["كويس|منيح", "زين"],
+  ] as const
+).map(([words, iraqi]) => [new RegExp(`(^|[^\\u0600-\\u06FF])([وف]?)(?:${words})(?![\\u0600-\\u06FF])`, "g"), `$1$2${iraqi}`] as const);
+
+const toIraqi = (text: string) => IRAQI_WORDS.reduce((out, [re, iraqi]) => out.replace(re, iraqi), text);
+
 // Drops notes the model sometimes adds for itself: English ones ("the reply
 // above is in the chat…"; every line meant for the buyer has Arabic in it) and
 // copies of the database notes that history carries.
 const cleanReply = (text: string) =>
-  text
+  toIraqi(text)
     .replace(/\[من قاعدة البيانات[^\]]*\]/g, "")
     .split("\n")
     .filter((line) => /[\u0600-\u06FF]/.test(line) || line.includes("**") || !/([A-Za-z]+\W+){3}/.test(line))

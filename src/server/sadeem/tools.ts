@@ -2,6 +2,7 @@
 // returns compact JSON; the model never sees or invents anything else.
 import { USD_TO_IQD } from "@/lib/format";
 import { insert, rpc, select, type SupabaseEnv } from "@/server/supabase";
+import { budgetFromWords } from "./verify";
 import type { Car } from "@/types/car";
 
 export const MAX_SHOWN_CARS = 3;
@@ -282,6 +283,19 @@ export interface TurnState {
   searches: Record<string, unknown>[];
 }
 
+// Models sometimes put a wider search range in budget_max_iqd ("ب عشرين
+// مليون" recorded as 40,000,000), which hides over-budget cars from the check.
+// The buyer's own words win when they name exactly one ceiling amount.
+function checkBudget(request: BuyerRequest, words: string): { from: number; to: number } | null {
+  const amount = budgetFromWords(words);
+  if (!amount || !request.budgetMax || /فوق|أكثر|اكثر|بين/.test(words)) return null;
+  const to = Math.round(/حدود|بحد|حوالي|تقريب/.test(words) ? amount * 1.05 : amount);
+  if (request.budgetMax >= amount * 0.95 && request.budgetMax <= amount * 1.1) return null;
+  const from = request.budgetMax;
+  request.budgetMax = to;
+  return { from, to };
+}
+
 /** Records the cars shown and which of them cost more than the budget. */
 export function markShown(state: TurnState, shownIds: string[]) {
   state.shownIds = shownIds;
@@ -336,9 +350,19 @@ export async function runTool(
         currency: args.currency === "USD" ? "USD" : args.currency === "IQD" ? "IQD" : undefined,
       };
       state.searches.push({ request: args });
+      const corrected = checkBudget(state.request, typeof args.budget_words === "string" ? args.budget_words : "");
+      if (corrected) state.searches.push({ budget_corrected: corrected });
       const { budgetMax } = state.request;
       return budgetMax
-        ? { ok: true, budget_max_iqd: budgetMax, budget_max_usd: usdOf(budgetMax), next: "Search with max_price = budget_max_iqd." }
+        ? {
+            ok: true,
+            budget_max_iqd: budgetMax,
+            budget_max_usd: usdOf(budgetMax),
+            ...(corrected
+              ? { corrected: `budget_max_iqd ${corrected.from.toLocaleString("en-US")} did not match "${args.budget_words}"; the budget is ${budgetMax.toLocaleString("en-US")}.` }
+              : {}),
+            next: "Search with max_price = budget_max_iqd. This is the buyer's budget, not a search range: only relax it as Step 5 says.",
+          }
         : { ok: true };
     }
 
