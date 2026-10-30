@@ -145,6 +145,17 @@ const cleanReply = (text: string) =>
     .join("\n")
     .trim();
 
+// A whole reply lists cars in bold or runs a few lines; a closing line doesn't.
+const isFullReply = (text: string) => text.includes("**") || text.length >= 150;
+
+// The model may write the answer next to show_cars and then only a closing
+// line, or write the whole answer twice (once per round): keep one full answer.
+function joinReply(answerTexts: string[], finalText: string): string {
+  if (isFullReply(finalText)) return finalText;
+  const full = answerTexts.filter(isFullReply).at(-1);
+  return [...new Set([...(full ? [full] : answerTexts), finalText].filter(Boolean))].join("\n\n");
+}
+
 /** Cars the tools returned that the reply names (model and year on one line), in reply order. */
 function mentionedCars(reply: string, found: TurnState["found"]): string[] {
   const lines = reply.toLowerCase().split("\n");
@@ -205,7 +216,8 @@ export async function runSadeem(
     { role: "user", content: message },
   ];
 
-  const parts: string[] = [];
+  const answerTexts: string[] = [];
+  let finalText = "";
   for (let round = 0; round < MAX_ROUNDS; round++) {
     // The last round may not call tools again: it has to answer.
     const reply = await complete(llm, messages, round < MAX_ROUNDS - 1);
@@ -216,10 +228,10 @@ export async function runSadeem(
     const calls = reply.tool_calls ?? [];
     const text = cleanReply(reply.content ?? "");
     if (calls.length === 0) {
-      if (text) parts.push(text);
+      finalText = text;
       break;
     }
-    if (text && calls.some((call) => ANSWER_TOOLS.has(call.function.name))) parts.push(text);
+    if (text && calls.some((call) => ANSWER_TOOLS.has(call.function.name))) answerTexts.push(text);
     messages.push({ role: "assistant", content: reply.content, tool_calls: calls, reasoning_details: reply.reasoning_details });
     const results = await Promise.all(
       calls.map(async (call) => {
@@ -237,7 +249,7 @@ export async function runSadeem(
     });
   }
 
-  let content = [...new Set(parts)].join("\n\n");
+  let content = joinReply(answerTexts, finalText);
   if (!content) {
     // Some models end a tool turn with no text at all; ask once for the reply itself.
     messages.push({ role: "system", content: "Now write your reply to the buyer in Iraqi Arabic. No tools." });
