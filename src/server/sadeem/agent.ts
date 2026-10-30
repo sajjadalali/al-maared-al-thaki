@@ -124,16 +124,37 @@ function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
 // the reply next to show_cars and only a closing line after it).
 const ANSWER_TOOLS = new Set(["show_cars", "suggest_replies", "save_lead"]);
 
+// Gulf/Levantine words models slip into, with their Iraqi equivalents.
+const IRAQI_WORDS = (
+  [
+    ["تبي|تبغى|تبغي|بدك", "تريد"], ["يبي|يبغى|يبغي|بده", "يريد"], ["الحين|دلوقتي", "هسه"],
+    ["وايد", "هواية"], ["كويس|منيح", "زين"],
+  ] as const
+).map(([words, iraqi]) => [new RegExp(`(^|[^\\u0600-\\u06FF])([وف]?)(?:${words})(?![\\u0600-\\u06FF])`, "g"), `$1$2${iraqi}`] as const);
+
+const toIraqi = (text: string) => IRAQI_WORDS.reduce((out, [re, iraqi]) => out.replace(re, iraqi), text);
+
 // Drops notes the model sometimes adds for itself: English ones ("the reply
 // above is in the chat…"; every line meant for the buyer has Arabic in it) and
 // copies of the database notes that history carries.
 const cleanReply = (text: string) =>
-  text
+  toIraqi(text)
     .replace(/\[من قاعدة البيانات[^\]]*\]/g, "")
     .split("\n")
     .filter((line) => /[\u0600-\u06FF]/.test(line) || line.includes("**") || !/([A-Za-z]+\W+){3}/.test(line))
     .join("\n")
     .trim();
+
+// A whole reply lists cars in bold or runs a few lines; a closing line doesn't.
+const isFullReply = (text: string) => text.includes("**") || text.length >= 150;
+
+// The model may write the answer next to show_cars and then only a closing
+// line, or write the whole answer twice (once per round): keep one full answer.
+function joinReply(answerTexts: string[], finalText: string): string {
+  if (isFullReply(finalText)) return finalText;
+  const full = answerTexts.filter(isFullReply).at(-1);
+  return [...new Set([...(full ? [full] : answerTexts), finalText].filter(Boolean))].join("\n\n");
+}
 
 /** Cars the tools returned that the reply names (model and year on one line), in reply order. */
 function mentionedCars(reply: string, found: TurnState["found"]): string[] {
@@ -195,7 +216,8 @@ export async function runSadeem(
     { role: "user", content: message },
   ];
 
-  const parts: string[] = [];
+  const answerTexts: string[] = [];
+  let finalText = "";
   for (let round = 0; round < MAX_ROUNDS; round++) {
     // The last round may not call tools again: it has to answer.
     const reply = await complete(llm, messages, round < MAX_ROUNDS - 1);
@@ -206,10 +228,10 @@ export async function runSadeem(
     const calls = reply.tool_calls ?? [];
     const text = cleanReply(reply.content ?? "");
     if (calls.length === 0) {
-      if (text) parts.push(text);
+      finalText = text;
       break;
     }
-    if (text && calls.some((call) => ANSWER_TOOLS.has(call.function.name))) parts.push(text);
+    if (text && calls.some((call) => ANSWER_TOOLS.has(call.function.name))) answerTexts.push(text);
     messages.push({ role: "assistant", content: reply.content, tool_calls: calls, reasoning_details: reply.reasoning_details });
     const results = await Promise.all(
       calls.map(async (call) => {
@@ -227,7 +249,7 @@ export async function runSadeem(
     });
   }
 
-  let content = [...new Set(parts)].join("\n\n");
+  let content = joinReply(answerTexts, finalText);
   if (!content) {
     // Some models end a tool turn with no text at all; ask once for the reply itself.
     messages.push({ role: "system", content: "Now write your reply to the buyer in Iraqi Arabic. No tools." });
