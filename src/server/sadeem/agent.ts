@@ -124,14 +124,29 @@ function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
 // the reply next to show_cars and only a closing line after it).
 const ANSWER_TOOLS = new Set(["show_cars", "suggest_replies", "save_lead"]);
 
-// Drops notes the model sometimes adds for itself in English ("the reply above
-// is in the chat…"); every line meant for the buyer has Arabic in it.
+// Drops notes the model sometimes adds for itself: English ones ("the reply
+// above is in the chat…"; every line meant for the buyer has Arabic in it) and
+// copies of the database notes that history carries.
 const cleanReply = (text: string) =>
   text
+    .replace(/\[من قاعدة البيانات[^\]]*\]/g, "")
     .split("\n")
     .filter((line) => /[\u0600-\u06FF]/.test(line) || line.includes("**") || !/([A-Za-z]+\W+){3}/.test(line))
     .join("\n")
     .trim();
+
+/** Cars the tools returned that the reply names (model and year on one line), in reply order. */
+function mentionedCars(reply: string, found: TurnState["found"]): string[] {
+  const lines = reply.toLowerCase().split("\n");
+  return [...found]
+    .map(([id, car]) => ({
+      id,
+      at: lines.findIndex((line) => line.includes(car.model.toLowerCase()) && line.includes(String(car.year))),
+    }))
+    .filter((car) => car.at >= 0)
+    .sort((a, b) => a.at - b.at)
+    .map((car) => car.id);
+}
 
 function allowedFigures(state: TurnState, buyerTexts: string[]): AllowedFigures {
   const prices = [...state.seenPrices.values()];
@@ -169,6 +184,7 @@ export async function runSadeem(
     overBudget: [],
     shownIds: [],
     detailIds: [],
+    found: new Map(),
     quickReplies: [],
     leadSaved: false,
     searches: [],
@@ -221,8 +237,12 @@ export async function runSadeem(
   // Prices of every car this conversation has touched, current from the database.
   const rows = await fetchCars(db, [...state.seenIds]);
   rows.forEach((row) => state.seenPrices.set(row.id, row.price_iqd));
-  // Comparisons and details often skip show_cars; show the cars discussed.
-  if (!state.shownIds.length && state.detailIds.length) markShown(state, state.detailIds.slice(0, MAX_SHOWN_CARS));
+  // Models sometimes list cars without calling show_cars (comparisons, quick
+  // answers); show the ones the reply names, else the ones looked up in detail.
+  if (!state.shownIds.length) {
+    const named = mentionedCars(content, state.found);
+    markShown(state, (named.length ? named : state.detailIds).slice(0, MAX_SHOWN_CARS));
+  }
   const cars = state.shownIds
     .map((id) => rows.find((row) => row.id === id))
     .filter((row) => row !== undefined)
