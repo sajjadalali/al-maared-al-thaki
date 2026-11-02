@@ -233,13 +233,16 @@ function sameText(a: string, b: string): boolean {
   return shared / (wa.size + wb.size - shared || 1) > 0.6;
 }
 
-/** Cars the tools returned that the reply names (model and year on one line), in reply order. */
+/** Cars the tools returned that the reply names (Arabic or Latin model, and year, on one line), in reply order. */
 function mentionedCars(reply: string, found: TurnState["found"]): string[] {
   const lines = reply.toLowerCase().split("\n");
   return [...found]
     .map(([id, car]) => ({
       id,
-      at: lines.findIndex((line) => line.includes(car.model.toLowerCase()) && line.includes(String(car.year))),
+      at: lines.findIndex(
+        (line) =>
+          (line.includes(car.model.toLowerCase()) || line.includes(car.name.toLowerCase())) && line.includes(String(car.year))
+      ),
     }))
     .filter((car) => car.at >= 0)
     .sort((a, b) => a.at - b.at)
