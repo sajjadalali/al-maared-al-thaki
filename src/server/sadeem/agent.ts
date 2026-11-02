@@ -36,9 +36,16 @@ interface ToolCall {
   function: { name: string; arguments: string };
 }
 
+/** A text block that marks the end of a prefix providers may cache. */
+interface CachedText {
+  type: "text";
+  text: string;
+  cache_control: { type: "ephemeral" };
+}
+
 interface LlmMessage {
   role: "system" | "user" | "assistant" | "tool";
-  content: string | null;
+  content: string | null | CachedText[];
   tool_calls?: ToolCall[];
   tool_call_id?: string;
   /** Thinking models (Claude, …) need their reasoning sent back with tool results. */
@@ -50,10 +57,13 @@ export interface OpenRouterEnv {
   model: string;
   /** Tried by OpenRouter when `model` fails or is rate-limited. */
   fallbackModel?: string;
+  /** How OpenRouter picks among a model's providers ("latency", "throughput", "price"). */
+  providerSort?: string;
   baseUrl: string;
 }
 
-interface Completion extends LlmMessage {
+interface Completion extends Omit<LlmMessage, "content"> {
+  content: string | null;
   /** The model that actually answered (differs when OpenRouter fell back). */
   model?: string;
 }
@@ -68,12 +78,23 @@ export function openRouterEnv(): OpenRouterEnv | null {
     apiKey,
     model,
     fallbackModel: fallbackModel && fallbackModel !== model ? fallbackModel : undefined,
+    // A reply is a few short calls in a row, so the provider that starts
+    // answering soonest matters more than raw tokens per second.
+    providerSort: process.env.OPENROUTER_PROVIDER_SORT ?? "latency",
     // Any OpenAI-compatible endpoint works; OpenRouter by default.
     baseUrl: (process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/$/, ""),
   };
 }
 
-async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: boolean): Promise<Completion> {
+/** What one reply cost in time and tokens, logged with the chat for tuning. */
+interface TurnStats {
+  /** Keeps every call of a conversation on one provider, so its prompt cache stays warm. */
+  sessionKey: string;
+  calls: { ms: number; model?: string; prompt?: number; cached?: number }[];
+}
+
+async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: boolean, turn: TurnStats): Promise<Completion> {
+  const started = Date.now();
   const res = await fetch(`${env.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
@@ -92,6 +113,8 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
       max_tokens: 2000,
       // Short sales replies don't need long thinking; low effort keeps them fast.
       reasoning: { effort: process.env.OPENROUTER_REASONING_EFFORT || "low" },
+      session_id: turn.sessionKey,
+      ...(env.providerSort ? { provider: { sort: env.providerSort } } : {}),
     }),
     signal: AbortSignal.timeout(30_000),
   });
@@ -99,6 +122,12 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
   const data = await res.json();
   const message = data.choices?.[0]?.message;
   if (!message) throw new Error(`OpenRouter: no message (${JSON.stringify(data).slice(0, 200)})`);
+  turn.calls.push({
+    ms: Date.now() - started,
+    model: data.model,
+    prompt: data.usage?.prompt_tokens,
+    cached: data.usage?.prompt_tokens_details?.cached_tokens,
+  });
   return {
     role: "assistant",
     content: message.content ?? null,
@@ -124,6 +153,10 @@ function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
 // Tools whose round usually carries the main answer text (models often write
 // the reply next to show_cars and only a closing line after it).
 const ANSWER_TOOLS = new Set(["show_cars", "suggest_replies", "save_lead"]);
+
+// A round that only shows cars and suggestions next to a full written reply
+// is the answer: no need to ask the model again (one call saved per reply).
+const ENDING_TOOLS = new Set(["show_cars", "suggest_replies"]);
 
 // Gulf/Levantine words models slip into, with their Iraqi equivalents.
 const IRAQI_WORDS = (
@@ -198,8 +231,11 @@ export async function runSadeem(
   llm: OpenRouterEnv,
   db: SupabaseEnv,
   history: HistoryMessage[],
-  message: string
+  message: string,
+  sessionId?: string
 ): Promise<AgentReply> {
+  const started = Date.now();
+  const turn: TurnStats = { sessionKey: sessionId ?? crypto.randomUUID(), calls: [] };
   const state: TurnState = {
     seenIds: new Set(history.flatMap((m) => m.cars?.map((c) => c.id) ?? [])),
     seenPrices: new Map(),
@@ -212,7 +248,10 @@ export async function runSadeem(
     searches: [],
   };
   const messages: LlmMessage[] = [
-    { role: "system", content: await systemPrompt(db) },
+    // The tools and these instructions are the same for every call: providers
+    // that cache (Anthropic and Gemini on this marker, OpenAI, DeepSeek and
+    // others on their own) then read them back instead of processing them again.
+    { role: "system", content: [{ type: "text", text: await systemPrompt(db), cache_control: { type: "ephemeral" } }] },
     ...historyToMessages(history),
     { role: "user", content: message },
   ];
@@ -221,7 +260,7 @@ export async function runSadeem(
   let finalText = "";
   for (let round = 0; round < MAX_ROUNDS; round++) {
     // The last round may not call tools again: it has to answer.
-    const reply = await complete(llm, messages, round < MAX_ROUNDS - 1);
+    const reply = await complete(llm, messages, round < MAX_ROUNDS - 1, turn);
     // Note when OpenRouter answered with the fallback, so chat reviews show it.
     if (llm.fallbackModel && reply.model?.startsWith(llm.fallbackModel) && !state.searches.some((s) => s.fallback)) {
       state.searches.push({ fallback: reply.model });
@@ -248,13 +287,15 @@ export async function runSadeem(
     calls.forEach((call, i) => {
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(results[i]) });
     });
+    const failed = results.some((result) => result && typeof result === "object" && "error" in result);
+    if (isFullReply(text) && !failed && calls.every((call) => ENDING_TOOLS.has(call.function.name))) break;
   }
 
   let content = joinReply(answerTexts, finalText);
   if (!content) {
     // Some models end a tool turn with no text at all; ask once for the reply itself.
     messages.push({ role: "system", content: "Now write your reply to the buyer in Iraqi Arabic. No tools." });
-    content = cleanReply((await complete(llm, messages, false)).content ?? "");
+    content = cleanReply((await complete(llm, messages, false, turn)).content ?? "");
   }
 
   // Prices of every car this conversation has touched, current from the database.
@@ -285,7 +326,7 @@ export async function runSadeem(
           `Your reply has problems: ${problems.join(" | ")}. Rewrite it in Iraqi Arabic using only figures from the tool results ` +
           `(prices: ${[...state.seenPrices].map(([id, p]) => `${id} ${p.toLocaleString("en-US")} د.ع ≈ ${usdOf(p).toLocaleString("en-US")} $`).join("; ")}). No tools.`,
       });
-      const fixed = cleanReply((await complete(llm, messages, false)).content ?? "");
+      const fixed = cleanReply((await complete(llm, messages, false, turn)).content ?? "");
       if (fixed) {
         const left = replyProblems(fixed, allowed, state);
         if (left.length) state.searches.push({ verify_after_rewrite: left });
@@ -293,6 +334,8 @@ export async function runSadeem(
       }
     }
   }
+
+  state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
 
   return {
     content: content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟"),
