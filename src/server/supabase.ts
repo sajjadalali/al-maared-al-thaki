@@ -26,12 +26,18 @@ function headers(key: string, extra?: Record<string, string>): Record<string, st
   };
 }
 
-async function request<T>(env: SupabaseEnv, key: string, path: string, init: RequestInit): Promise<T> {
+/** Lets Next.js keep a GET's result for `revalidate` seconds, refreshable by tag. */
+export interface CacheFor {
+  revalidate: number;
+  tags: string[];
+}
+
+async function request<T>(env: SupabaseEnv, key: string, path: string, init: RequestInit, cacheFor?: CacheFor): Promise<T> {
   const res = await fetch(`${env.url}/rest/v1/${path}`, {
     ...init,
     headers: headers(key, init.headers as Record<string, string>),
     signal: AbortSignal.timeout(10_000),
-    cache: "no-store",
+    ...(cacheFor ? { next: cacheFor } : { cache: "no-store" }),
   });
   if (!res.ok) throw new Error(`Supabase ${init.method ?? "GET"} ${path.split("?")[0]}: ${res.status} ${await res.text()}`);
   // Inserts with return=minimal answer 201 with an empty body.
@@ -45,8 +51,8 @@ export function rpc<T>(env: SupabaseEnv, fn: string, args: Record<string, unknow
 }
 
 /** GET on a table or view, `query` being PostgREST filters ("id=in.(car-001)&select=*"). */
-export function select<T>(env: SupabaseEnv, table: string, query: string): Promise<T> {
-  return request<T>(env, env.readKey, `${table}?${query}`, { method: "GET" });
+export function select<T>(env: SupabaseEnv, table: string, query: string, cacheFor?: CacheFor): Promise<T> {
+  return request<T>(env, env.readKey, `${table}?${query}`, { method: "GET" }, cacheFor);
 }
 
 /** Inserts rows with the secret key; resolves to false when no secret key is configured. */

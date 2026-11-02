@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check, ChevronLeft, Clock } from "lucide-react";
-import { getAllCars, getCarById, getSimilarCars } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { getImageCredit } from "@/data/imageCredits";
 import { formatCarMileage, formatNumber, formatUSD, originLabel } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -18,14 +18,15 @@ interface CarDetailsPageProps {
   params: Promise<{ id: string }>;
 }
 
-// Every car page is built once at build time; ids added later still render on demand.
-export function generateStaticParams() {
-  return getAllCars().map((car) => ({ id: car.id }));
+// Every car page is built once at build time and refreshed with the catalog;
+// ids added later still render on demand.
+export async function generateStaticParams() {
+  return (await getCatalog()).getAllCars().map((car) => ({ id: car.id }));
 }
 
 export async function generateMetadata({ params }: CarDetailsPageProps): Promise<Metadata> {
   const { id } = await params;
-  const car = getCarById(id);
+  const car = (await getCatalog()).getCarById(id);
   if (!car) return { title: "السيارة غير موجودة" };
   return {
     title: `${car.brand} ${car.model} ${car.trim ? `${car.trim} ` : ""}${car.year}`,
@@ -50,11 +51,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
   const { id } = await params;
-  const car = getCarById(id);
+  const catalog = await getCatalog();
+  const car = catalog.getCarById(id);
 
   if (!car) notFound();
 
-  const similar = getSimilarCars(car, 4);
+  const similar = catalog.getSimilarCars(car, 4);
   const status = STATUS_STYLES[car.status];
   const facts = [
     { label: "سنة الصنع", value: String(car.year) },

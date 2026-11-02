@@ -5,7 +5,8 @@ import { site } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
 import type { Car } from "@/types/car";
 import { systemPrompt } from "./prompt";
-import { MAX_SHOWN_CARS, TOOL_DEFINITIONS, fetchCars, markShown, runTool, toCar, usdOf, type TurnState } from "./tools";
+import { toCar } from "@/server/catalog";
+import { MAX_SHOWN_CARS, TOOL_DEFINITIONS, fetchCars, markShown, runTool, usdOf, type TurnState } from "./tools";
 import { mentionsOverBudget, moneyFigures, unsupportedFigures, type AllowedFigures } from "./verify";
 
 // Fast and cheap with reliable tool calls; set OPENROUTER_MODEL for something else.

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { filterCars, getCatalogFilterOptions } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { priceBandIndex } from "@/lib/filterOptions";
 import { CarFilters } from "@/components/cars/CarFilters";
 import { CarGrid } from "@/components/cars/CarGrid";
@@ -32,6 +32,7 @@ function num(value: string | undefined): number | undefined {
 
 export default async function CarsPage({ searchParams }: CarsPageProps) {
   const params = await searchParams;
+  const { filterCars, getCatalogFilterOptions } = await getCatalog();
 
   const brand = first(params.brand);
   const bodyType = first(params.bodyType);

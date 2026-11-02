@@ -1,14 +1,15 @@
 import type { MetadataRoute } from "next";
-import { getAllCars } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { site } from "@/config/site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages = ["", "/cars", "/about", "/contact"].map((path) => ({
     url: `${site.url}${path}`,
     changeFrequency: "weekly" as const,
     priority: path === "" ? 1 : 0.7,
   }));
-  const cars = getAllCars()
+  const cars = (await getCatalog())
+    .getAllCars()
     .filter((car) => car.status !== "مباعة")
     .map((car) => ({
       url: `${site.url}/cars/${car.id}`,

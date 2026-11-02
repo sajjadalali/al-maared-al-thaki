@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ShieldCheck, Sparkles, Users, Target } from "lucide-react";
-import { getAllCars, getCatalogStats } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { site } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -32,9 +32,10 @@ const VALUES = [
   },
 ];
 
-export default function AboutPage() {
-  const { available, brands } = getCatalogStats();
-  const fresh = getAllCars().filter((car) => car.condition === "جديدة" && car.status !== "مباعة").length;
+export default async function AboutPage() {
+  const catalog = await getCatalog();
+  const { available, brands } = catalog.getCatalogStats();
+  const fresh = catalog.getAllCars().filter((car) => car.condition === "جديدة" && car.status !== "مباعة").length;
   const stats = [
     { value: available, label: "سيارة متوفرة الآن" },
     { value: brands, label: "ماركة في المعرض" },

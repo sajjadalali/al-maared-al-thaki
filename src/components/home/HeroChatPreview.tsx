@@ -1,7 +1,8 @@
 import { Check, Car as CarIcon, SendHorizontal, Sparkles, Zap } from "lucide-react";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { CarArt } from "@/components/ui/CarArt";
-import { getAllCars, getCatalogStats, getFeaturedCars } from "@/data/cars";
+import type { Catalog } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { formatIQD } from "@/lib/format";
 import { OpenChatButton } from "@/components/chat/OpenChatButton";
 import type { Car } from "@/types/car";
@@ -10,7 +11,7 @@ const DEMO_BUDGET = 50_000_000;
 
 // A real answer from the current catalog, so the preview never shows a car the
 // showroom doesn't have.
-function demoConversation(): { question: string; answer: string; car?: Car; withinBudget: boolean } {
+function demoConversation({ getAllCars, getFeaturedCars }: Catalog): { question: string; answer: string; car?: Car; withinBudget: boolean } {
   const familyCars = getAllCars()
     .filter((c) => c.status === "متوفرة" && c.seats >= 7 && c.price <= DEMO_BUDGET)
     .sort((a, b) => b.price - a.price);
@@ -38,9 +39,10 @@ function MiniAvatar() {
   );
 }
 
-export function HeroChatPreview() {
-  const demo = demoConversation();
-  const { available } = getCatalogStats();
+export async function HeroChatPreview() {
+  const catalog = await getCatalog();
+  const demo = demoConversation(catalog);
+  const { available } = catalog.getCatalogStats();
   const car = demo.car;
 
   return (

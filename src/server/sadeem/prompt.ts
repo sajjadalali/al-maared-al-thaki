@@ -1,15 +1,17 @@
 // Sadeem's system prompt: a fixed procedure the model follows for every
 // message (understand → search → check → show → answer → self-check), the
 // rules it may never break, how Iraqi buyers talk, and what is in stock right
-// now (catalog_overview(), refreshed every few minutes). The server enforces
+// now (catalog_overview(), refreshed every minute). The server enforces
 // the critical rules again in verify.ts, so a slip is caught, not trusted.
 import { site } from "@/config/site";
 import { USD_TO_IQD } from "@/lib/format";
+import { CATALOG_REVALIDATE } from "@/server/catalog";
 import { rpc, type SupabaseEnv } from "@/server/supabase";
 import { MAX_SHOWN_CARS } from "./tools";
 
 let overviewCache: { at: number; value: string } | null = null;
-const OVERVIEW_TTL_MS = 5 * 60_000;
+// Same freshness as the pages, so Sadeem's stock list matches what they show.
+const OVERVIEW_TTL_MS = CATALOG_REVALIDATE * 1000;
 
 async function catalogOverview(env: SupabaseEnv): Promise<string> {
   if (overviewCache && Date.now() - overviewCache.at < OVERVIEW_TTL_MS) return overviewCache.value;

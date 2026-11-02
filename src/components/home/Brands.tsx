@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { getAllCars } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { brandLabel } from "@/lib/filterOptions";
 import { SectionHeading } from "@/components/home/SectionHeading";
 
-export function Brands() {
-  const stock = getAllCars().filter((car) => car.status !== "مباعة");
+export async function Brands() {
+  const stock = (await getCatalog()).getAllCars().filter((car) => car.status !== "مباعة");
   const counts = new Map<string, number>();
   for (const car of stock) counts.set(car.brand, (counts.get(car.brand) ?? 0) + 1);
   const brands = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));

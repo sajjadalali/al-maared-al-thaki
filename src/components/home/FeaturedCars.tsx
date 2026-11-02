@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getFeaturedCars } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { CarCard } from "@/components/cars/CarCard";
 import { SectionHeading } from "@/components/home/SectionHeading";
 
-export function FeaturedCars() {
-  const cars = getFeaturedCars(8);
+export async function FeaturedCars() {
+  const cars = (await getCatalog()).getFeaturedCars(8);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

@@ -4,7 +4,8 @@ import { CarQuickSearch } from "@/components/cars/CarQuickSearch";
 import { OpenChatButton } from "@/components/chat/OpenChatButton";
 import { CarArt } from "@/components/ui/CarArt";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
-import { getAllCars, getCatalogStats, getFeaturedCars, toFacetCar } from "@/data/cars";
+import { toFacetCar, type Catalog } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { formatNumber, originLabel } from "@/lib/format";
 
 const TRUST = [
@@ -15,14 +16,15 @@ const TRUST = [
 
 // The showcase is a real car from the stock: the first featured 4x4, the
 // segment Iraqi buyers ask for most, or any featured car.
-function showcaseCar() {
+function showcaseCar({ getFeaturedCars }: Catalog) {
   const featured = getFeaturedCars().filter((car) => car.status === "متوفرة");
   return featured.find((car) => car.bodyType === "دفع رباعي") ?? featured[0];
 }
 
-export function Hero() {
-  const { available } = getCatalogStats();
-  const car = showcaseCar();
+export async function Hero() {
+  const catalog = await getCatalog();
+  const { available } = catalog.getCatalogStats();
+  const car = showcaseCar(catalog);
 
   return (
     <section className="relative overflow-hidden bg-surface">
@@ -140,7 +142,7 @@ export function Hero() {
       </div>
 
       <div className="relative mx-auto -mt-16 max-w-7xl px-4 pb-4 sm:px-6 lg:-mt-20 lg:px-8">
-        <CarQuickSearch cars={getAllCars().map(toFacetCar)} />
+        <CarQuickSearch cars={catalog.getAllCars().map(toFacetCar)} />
       </div>
     </section>
   );
