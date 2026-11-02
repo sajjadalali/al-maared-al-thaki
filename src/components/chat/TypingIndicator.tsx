@@ -1,8 +1,9 @@
 import { Bot } from "lucide-react";
 
-export function TypingIndicator() {
+/** Sadeem is working; `label` says on what ("سديم يدوّر بالسيارات…"). */
+export function TypingIndicator({ label }: { label?: string }) {
   return (
-    <div className="flex flex-row-reverse items-start justify-start gap-2" role="status" aria-label="سديم يكتب">
+    <div className="flex flex-row-reverse items-start justify-start gap-2" role="status" aria-label={label ?? "سديم يكتب"}>
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
         <Bot className="h-3.5 w-3.5" />
       </span>
@@ -14,6 +15,7 @@ export function TypingIndicator() {
             style={{ animationDelay: `${i * 0.15}s` }}
           />
         ))}
+        {label && <span className="ms-2 text-[13px] text-neutral-500">{label}</span>}
       </div>
     </div>
   );

@@ -26,9 +26,18 @@ export interface ChatMessage {
   actions?: ChatAction[];
 }
 
+/** The reply while it is being made: what Sadeem is doing, then the text so far. */
+export interface ReplyProgress {
+  status?: string;
+  text?: string;
+}
+
 export interface AIService {
-  /** Sends a user message and the recent conversation history, returns Sadeem's reply. */
-  sendMessage(message: string, history: ChatMessage[]): Promise<ChatMessage>;
+  /**
+   * Sends a user message and the recent conversation history, returns Sadeem's
+   * reply. onProgress gets the reply as it is written, before it resolves.
+   */
+  sendMessage(message: string, history: ChatMessage[], onProgress?: (progress: ReplyProgress) => void): Promise<ChatMessage>;
   /** The opening message shown when the chat is first opened. */
   getWelcomeMessage(): ChatMessage;
 }

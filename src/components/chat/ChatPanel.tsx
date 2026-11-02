@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, X, Sparkles } from "lucide-react";
-import { aiService, type ChatMessage } from "@/services/ai";
+import { aiService, type ChatMessage, type ReplyProgress } from "@/services/ai";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
 import { QuickActions } from "./QuickActions";
@@ -61,6 +61,8 @@ export default function ChatPanel({
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const [typing, setTyping] = useState(false);
+  // The reply while Sadeem writes it: a status first, then the text so far.
+  const [draft, setDraft] = useState<ReplyProgress>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef(messages);
   const onReplyRef = useRef(onReply);
@@ -80,7 +82,7 @@ export default function ChatPanel({
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, typing]);
+  }, [messages, typing, draft.text]);
 
   // Back from a car page: open at the latest message.
   useEffect(() => {
@@ -97,12 +99,16 @@ export default function ChatPanel({
     };
     setMessages((prev) => [...prev, userMessage]);
     setTyping(true);
+    setDraft({});
     try {
-      const response = await aiService.sendMessage(text, history);
+      const response = await aiService.sendMessage(text, history, (progress) =>
+        setDraft((prev) => ({ ...prev, ...progress }))
+      );
       setMessages((prev) => [...prev, response]);
       onReplyRef.current();
     } finally {
       setTyping(false);
+      setDraft({});
     }
   }, []);
 
@@ -169,7 +175,15 @@ export default function ChatPanel({
             </div>
           );
         })}
-        {typing && <TypingIndicator />}
+        {typing &&
+          (draft.text ? (
+            // The cards and suggestions come with the finished reply.
+            <ChatMessageBubble
+              message={{ id: "draft", role: "assistant", content: draft.text, timestamp: messages.at(-1)!.timestamp }}
+            />
+          ) : (
+            <TypingIndicator label={draft.status} />
+          ))}
       </div>
 
       {!typing && lastAssistantMessage?.quickReplies && (

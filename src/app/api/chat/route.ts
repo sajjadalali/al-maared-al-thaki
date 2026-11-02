@@ -1,7 +1,7 @@
 import { after } from "next/server";
-import { insert, supabaseEnv } from "@/server/supabase";
+import { insert, supabaseEnv, type SupabaseEnv } from "@/server/supabase";
 import { getCatalog } from "@/server/catalog";
-import { openRouterEnv, runSadeem, type HistoryMessage } from "@/server/sadeem/agent";
+import { openRouterEnv, runSadeem, type HistoryMessage, type SadeemEvent } from "@/server/sadeem/agent";
 import { rulesReply } from "@/server/sadeem/rules";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
@@ -65,13 +65,60 @@ async function rulesFallback(message: string, history: HistoryMessage[]): Promis
   };
 }
 
+// The LLM Sadeem when it is configured and works, else the rule-based one.
+async function answer(
+  message: string,
+  history: HistoryMessage[],
+  onEvent?: (event: SadeemEvent) => void
+): Promise<Reply> {
+  const llm = openRouterEnv();
+  const db = supabaseEnv();
+  try {
+    return llm && db ? await runSadeem(llm, db, history, message, onEvent) : await rulesFallback(message, history);
+  } catch (err) {
+    console.error("[sadeem] LLM failed, answering with the rules:", err);
+    return rulesFallback(message, history);
+  }
+}
+
+// Keeps the conversation for tuning Sadeem.
+async function logChat(db: SupabaseEnv, sessionId: string, message: string, reply: Reply) {
+  try {
+    await insert(db, "chat_sessions", { id: sessionId }, true);
+    // A bulk insert needs the same keys on every row, or PostgREST answers 400.
+    await insert(db, "chat_messages", [
+      { session_id: sessionId, role: "user", content: message, car_ids: [], tool_calls: null },
+      {
+        session_id: sessionId,
+        role: "assistant",
+        content: reply.content,
+        car_ids: reply.cars.map((c) => c.id),
+        tool_calls: reply.searches.length ? reply.searches : null,
+      },
+    ]);
+  } catch (err) {
+    console.error("[sadeem] chat log not saved:", err);
+  }
+}
+
+// What the browser gets: the reply without the internal search log.
+const publicReply = (reply: Reply) => ({
+  content: reply.content,
+  cars: reply.cars,
+  quickReplies: reply.quickReplies,
+  matchCount: reply.matchCount,
+  criteria: reply.criteria,
+  actions: reply.actions,
+});
+
 /**
- * POST { message, history, sessionId } → { content, cars, quickReplies, … }.
- * The LLM Sadeem answers when OpenRouter and Supabase are configured; the
- * rule-based one answers when they aren't or the LLM fails.
+ * POST { message, history, sessionId, stream? } → { content, cars, quickReplies, … }.
+ * With stream: true the answer comes as NDJSON lines while it is made:
+ * {type:"status"} while Sadeem searches, {type:"text"} with the reply so far,
+ * then {type:"done", …the reply}. The LLM Sadeem answers when OpenRouter and
+ * Supabase are configured; the rule-based one when they aren't or the LLM fails.
  */
 export async function POST(request: Request) {
-  const llm = openRouterEnv();
   const db = supabaseEnv();
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
@@ -82,43 +129,41 @@ export async function POST(request: Request) {
   if (!message) return Response.json({ error: "empty_message" }, { status: 400 });
   const history = parseHistory(body?.history);
   const sessionId = typeof body?.sessionId === "string" && UUID.test(body.sessionId) ? body.sessionId : null;
+  const keepLog = sessionId && db?.writeKey ? (reply: Reply) => logChat(db, sessionId, message, reply) : null;
 
-  let reply: Reply;
-  try {
-    reply = llm && db ? await runSadeem(llm, db, history, message) : await rulesFallback(message, history);
-  } catch (err) {
-    console.error("[sadeem] LLM failed, answering with the rules:", err);
-    reply = await rulesFallback(message, history);
+  if (body?.stream !== true) {
+    const reply = await answer(message, history);
+    if (keepLog) after(() => keepLog(reply));
+    return Response.json(publicReply(reply));
   }
 
-  // Keep the conversation for tuning Sadeem, after the reply is sent.
-  if (sessionId && db?.writeKey) {
-    after(async () => {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: object) => {
+        try {
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        } catch {
+          // the visitor closed the chat or the page: finish the reply for the log anyway
+        }
+      };
+      const reply = await answer(message, history, send);
+      send({ type: "done", ...publicReply(reply) });
+      // The buyer already has the reply; the log is written before the stream closes.
+      await keepLog?.(reply);
       try {
-        await insert(db, "chat_sessions", { id: sessionId }, true);
-        // A bulk insert needs the same keys on every row, or PostgREST answers 400.
-        await insert(db, "chat_messages", [
-          { session_id: sessionId, role: "user", content: message, car_ids: [], tool_calls: null },
-          {
-            session_id: sessionId,
-            role: "assistant",
-            content: reply.content,
-            car_ids: reply.cars.map((c) => c.id),
-            tool_calls: reply.searches.length ? reply.searches : null,
-          },
-        ]);
-      } catch (err) {
-        console.error("[sadeem] chat log not saved:", err);
+        controller.close();
+      } catch {
+        // already closed by the visitor
       }
-    });
-  }
-
-  return Response.json({
-    content: reply.content,
-    cars: reply.cars,
-    quickReplies: reply.quickReplies,
-    matchCount: reply.matchCount,
-    criteria: reply.criteria,
-    actions: reply.actions,
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      // no-transform: Next.js compression would otherwise hold the lines back.
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    },
   });
 }
