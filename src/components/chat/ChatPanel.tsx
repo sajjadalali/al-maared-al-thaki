@@ -40,13 +40,22 @@ function dayLabel(iso: string) {
 }
 
 // Loaded on demand by ChatWidget (client-only), so reading localStorage while
-// initialising state is safe here.
+// initialising state is safe here. Once opened it stays mounted and is only
+// hidden while minimised, so a reply still on its way isn't lost.
 export default function ChatPanel({
+  hidden,
   onClose,
+  onNavigate,
+  onReply,
   prompt,
   onPromptHandled,
 }: {
+  hidden: boolean;
   onClose: () => void;
+  /** A link in the chat (a car card) was followed: minimise so the page shows. */
+  onNavigate: () => void;
+  /** Sadeem answered (the widget flags it when the chat is minimised). */
+  onReply: () => void;
   prompt: ChatPrompt | null;
   onPromptHandled: () => void;
 }) {
@@ -54,6 +63,11 @@ export default function ChatPanel({
   const [typing, setTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef(messages);
+  const onReplyRef = useRef(onReply);
+
+  useEffect(() => {
+    onReplyRef.current = onReply;
+  }, [onReply]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -68,6 +82,11 @@ export default function ChatPanel({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, typing]);
 
+  // Back from a car page: open at the latest message.
+  useEffect(() => {
+    if (!hidden) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [hidden]);
+
   const handleSend = useCallback(async (text: string) => {
     const history = messagesRef.current;
     const userMessage: ChatMessage = {
@@ -81,6 +100,7 @@ export default function ChatPanel({
     try {
       const response = await aiService.sendMessage(text, history);
       setMessages((prev) => [...prev, response]);
+      onReplyRef.current();
     } finally {
       setTyping(false);
     }
@@ -97,7 +117,17 @@ export default function ChatPanel({
   const lastAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
 
   return (
-    <div role="dialog" aria-label="محادثة سديم" className={CHAT_FRAME_CLASS}>
+    <div
+      role="dialog"
+      aria-label="محادثة سديم"
+      hidden={hidden}
+      className={CHAT_FRAME_CLASS}
+      onClickCapture={(e) => {
+        // Any link to a page of the site (car cards, links in a reply), not WhatsApp or phone.
+        const link = (e.target as Element).closest("a");
+        if (link && link.origin === window.location.origin) onNavigate();
+      }}
+    >
       <div className={CHAT_HEADER_CLASS}>
         <div className="flex items-center gap-3">
           <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white/15 ring-2 ring-white/10">
