@@ -1,8 +1,9 @@
 // One Sadeem reply: the LLM (via OpenRouter) reads the conversation, calls the
 // catalog tools as often as it needs, then answers. Returns the text plus the
 // cars it chose to show, loaded fresh from the database.
-import { site } from "@/config/site";
+import { phoneHref, site, whatsappHref } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
+import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
 import { systemPrompt } from "./prompt";
 import { readCompletionStream } from "./stream";
@@ -35,6 +36,8 @@ export interface AgentReply {
   quickReplies: string[];
   leadSaved: boolean;
   matchCount?: number;
+  /** WhatsApp and call buttons, when the reply gives the contact details. */
+  actions?: ChatAction[];
   searches: Record<string, unknown>[];
 }
 
@@ -189,7 +192,7 @@ const ENDING_TOOLS = new Set(["show_cars", "suggest_replies"]);
 const IRAQI_WORDS = (
   [
     ["تبي|تبغى|تبغي|بدك", "تريد"], ["يبي|يبغى|يبغي|بده", "يريد"], ["الحين|دلوقتي", "هسه"],
-    ["وايد", "هواية"], ["كويس|منيح", "زين"],
+    ["وايد", "هواية"], ["كويس|منيح", "زين"], ["تكدر", "تگدر"], ["يكدر", "يگدر"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^\\u0600-\\u06FF])([وف]?)(?:${words})(?![\\u0600-\\u06FF])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -214,7 +217,20 @@ const isFullReply = (text: string) => text.includes("**") || text.length >= 150;
 function joinReply(answerTexts: string[], finalText: string): string {
   if (isFullReply(finalText)) return finalText;
   const full = answerTexts.filter(isFullReply).at(-1);
-  return [...new Set([...(full ? [full] : answerTexts), finalText].filter(Boolean))].join("\n\n");
+  const parts = [...(full ? [full] : answerTexts), finalText].filter(Boolean);
+  // The same short answer written twice (once per round, worded a little
+  // differently) is kept once: the later version.
+  return parts.filter((part, i) => !parts.slice(i + 1).some((later) => sameText(part, later))).join("\n\n");
+}
+
+const words = (text: string) => new Set(text.split(/[^\p{L}\p{N}]+/u).filter(Boolean));
+
+// Mostly the same words (Jaccard over 0.6): one answer written twice.
+function sameText(a: string, b: string): boolean {
+  const wa = words(a);
+  const wb = words(b);
+  const shared = [...wa].filter((w) => wb.has(w)).length;
+  return shared / (wa.size + wb.size - shared || 1) > 0.6;
 }
 
 /** Cars the tools returned that the reply names (model and year on one line), in reply order. */
@@ -228,6 +244,26 @@ function mentionedCars(reply: string, found: TurnState["found"]): string[] {
     .filter((car) => car.at >= 0)
     .sort((a, b) => a.at - b.at)
     .map((car) => car.id);
+}
+
+// The showroom's number as the reply writes it, digits only ("7838548091").
+const SHOWROOM_DIGITS = site.whatsapp.replace(/^964/, "");
+
+// A reply that hands the buyer to the team gets WhatsApp and call buttons
+// under it, with a WhatsApp message about the car they were looking at.
+function contactActions(reply: string, state: TurnState, cars: Car[], history: HistoryMessage[]): ChatAction[] | undefined {
+  const givesContact = reply.replace(/\D/g, "").includes(SHOWROOM_DIGITS) || state.request?.intent === "contact";
+  if (!givesContact) return undefined;
+  const lastShown = [...history].reverse().find((m) => m.role === "assistant" && m.cars?.length)?.cars?.[0];
+  const car = cars.length === 1 ? `${cars[0].brand} ${cars[0].model} ${cars[0].year}` : lastShown?.name.split(" – ")[0];
+  return [
+    {
+      kind: "whatsapp",
+      label: "راسلنا واتساب",
+      href: whatsappHref(car ? `مرحباً، أستفسر عن سيارة ${car}` : "مرحباً، عندي استفسار عن سيارة"),
+    },
+    { kind: "phone", label: "اتصل بنا", href: phoneHref },
+  ];
 }
 
 function allowedFigures(state: TurnState, buyerTexts: string[]): AllowedFigures {
@@ -350,7 +386,9 @@ export async function runSadeem(
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(results[i]) });
     });
     const failed = results.some((result) => result && typeof result === "object" && "error" in result);
-    if (isFullReply(text) && !failed && calls.every((call) => ENDING_TOOLS.has(call.function.name))) break;
+    // Also a short answer with only suggestions ("شنو رقم موبايلك؟"): nothing left to do.
+    const onlySuggestions = calls.every((call) => call.function.name === "suggest_replies");
+    if ((isFullReply(text) || (text && onlySuggestions)) && !failed && calls.every((call) => ENDING_TOOLS.has(call.function.name))) break;
   }
 
   let content = joinReply(answerTexts, finalText);
@@ -400,13 +438,15 @@ export async function runSadeem(
   }
 
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
+  const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {
-    content: content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟"),
+    content: finalContent,
     cars,
     quickReplies: state.quickReplies,
     leadSaved: state.leadSaved,
     matchCount: cars.length ? state.matchCount : undefined,
+    actions: contactActions(finalContent, state, cars, history),
     searches: state.searches,
   };
 }

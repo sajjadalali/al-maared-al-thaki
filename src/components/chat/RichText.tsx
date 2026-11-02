@@ -1,16 +1,40 @@
 import { Fragment, type ReactNode } from "react";
 
-// Minimal, safe formatting for chat replies: **bold** and "- " bullet lines.
-// Everything is rendered as React text, so no HTML from a reply is ever injected.
+// An Iraqi mobile number as replies write it: "0783 854 8091", "07838548091",
+// "+964 783 854 8091".
+const PHONE = /((?:\+964|0)\s?7\d{2}[\s-]?\d{3}[\s-]?\d{4})/g;
+
+// Phone numbers read left to right (in Arabic text the browser would show
+// "8091 854 0783") and can be tapped to call.
+function withPhones(text: string, key: number): ReactNode[] {
+  return text.split(PHONE).map((part, i) =>
+    i % 2 ? (
+      <a
+        key={`${key}-${i}`}
+        href={`tel:${part.replace(/[\s-]/g, "").replace(/^0/, "+964")}`}
+        dir="ltr"
+        className="inline-block font-bold text-brand-800 underline decoration-brand-200 underline-offset-4"
+      >
+        {part}
+      </a>
+    ) : (
+      <Fragment key={`${key}-${i}`}>{part}</Fragment>
+    )
+  );
+}
+
+// Minimal, safe formatting for chat replies: **bold**, "- " bullet lines and
+// phone numbers. Everything is rendered as React text, so no HTML from a
+// reply is ever injected.
 function inline(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+  return text.split(/(\*\*[^*]+\*\*)/g).flatMap((part, i) =>
     part.startsWith("**") && part.endsWith("**") ? (
       <strong key={i} className="font-bold text-brand-950">
         {/* <bdi> keeps a Latin car name from reordering the Arabic around it */}
         <bdi>{part.slice(2, -2)}</bdi>
       </strong>
     ) : (
-      <Fragment key={i}>{part}</Fragment>
+      withPhones(part, i)
     )
   );
 }
