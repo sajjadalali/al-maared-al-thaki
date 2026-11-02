@@ -85,7 +85,7 @@ export async function POST(request: Request) {
 
   let reply: Reply;
   try {
-    reply = llm && db ? await runSadeem(llm, db, history, message, sessionId ?? undefined) : await rulesFallback(message, history);
+    reply = llm && db ? await runSadeem(llm, db, history, message) : await rulesFallback(message, history);
   } catch (err) {
     console.error("[sadeem] LLM failed, answering with the rules:", err);
     reply = await rulesFallback(message, history);
