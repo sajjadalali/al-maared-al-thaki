@@ -93,7 +93,8 @@ async function logChat(db: SupabaseEnv, sessionId: string, message: string, repl
         role: "assistant",
         content: reply.content,
         car_ids: reply.cars.map((c) => c.id),
-        tool_calls: reply.searches.length ? reply.searches : null,
+        // What the buyer saw besides the text, to review the suggestions and buttons too.
+        tool_calls: [...reply.searches, { shown: { quick: reply.quickReplies, actions: reply.actions?.map((a) => a.kind) ?? [] } }],
       },
     ]);
   } catch (err) {
