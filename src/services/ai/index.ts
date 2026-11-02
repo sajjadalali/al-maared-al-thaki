@@ -10,5 +10,5 @@ import type { AIService } from "./types";
  */
 export const aiService: AIService = remoteAIService;
 
-export type { AIService, ChatAction, ChatMessage, ChatRole } from "./types";
+export type { AIService, ChatAction, ChatMessage, ChatRole, ReplyProgress } from "./types";
 export { MAX_CHAT_CARS } from "./types";

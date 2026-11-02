@@ -5,6 +5,7 @@ import { site } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
 import type { Car } from "@/types/car";
 import { systemPrompt } from "./prompt";
+import { readCompletionStream } from "./stream";
 import { toCar } from "@/server/catalog";
 import { MAX_SHOWN_CARS, TOOL_DEFINITIONS, fetchCars, markShown, runTool, usdOf, type TurnState } from "./tools";
 import { mentionsOverBudget, moneyFigures, unsupportedFigures, type AllowedFigures } from "./verify";
@@ -20,6 +21,13 @@ export interface HistoryMessage {
   cars?: { id: string; name: string }[];
   matchCount?: number;
 }
+
+/** What the buyer sees while the reply is being made. */
+export type SadeemEvent =
+  /** What Sadeem is doing, while no text is written yet ("يدوّر بالسيارات…"). */
+  | { type: "status"; text: string }
+  /** The reply so far (the whole text each time, already cleaned). */
+  | { type: "text"; text: string };
 
 export interface AgentReply {
   content: string;
@@ -93,7 +101,15 @@ interface TurnStats {
   calls: { ms: number; model?: string; prompt?: number; cached?: number }[];
 }
 
-async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: boolean, turn: TurnStats): Promise<Completion> {
+// With onText the call is streamed and every piece of text is passed on as it
+// arrives; the result is the same either way.
+async function complete(
+  env: OpenRouterEnv,
+  messages: LlmMessage[],
+  allowTools: boolean,
+  turn: TurnStats,
+  onText?: (delta: string) => void
+): Promise<Completion> {
   const started = Date.now();
   const res = await fetch(`${env.baseUrl}/chat/completions`, {
     method: "POST",
@@ -115,12 +131,13 @@ async function complete(env: OpenRouterEnv, messages: LlmMessage[], allowTools: 
       reasoning: { effort: process.env.OPENROUTER_REASONING_EFFORT || "low" },
       session_id: turn.sessionKey,
       ...(env.providerSort ? { provider: { sort: env.providerSort } } : {}),
+      ...(onText ? { stream: true } : {}),
     }),
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = await res.json();
-  const message = data.choices?.[0]?.message;
+  const data = onText ? await readCompletionStream(res, onText) : await res.json();
+  const message = onText ? data.message : data.choices?.[0]?.message;
   if (!message) throw new Error(`OpenRouter: no message (${JSON.stringify(data).slice(0, 200)})`);
   turn.calls.push({
     ms: Date.now() - started,
@@ -153,6 +170,16 @@ function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
 // Tools whose round usually carries the main answer text (models often write
 // the reply next to show_cars and only a closing line after it).
 const ANSWER_TOOLS = new Set(["show_cars", "suggest_replies", "save_lead"]);
+
+const PREVIEW_MS = 80;
+
+// What the buyer is told while tools run and nothing is written yet.
+function statusOf(tools: string[]): string | undefined {
+  if (tools.includes("search_cars")) return "سديم يدوّر بالسيارات…";
+  if (tools.includes("get_car_details")) return "سديم يجيب التفاصيل…";
+  if (tools.includes("save_lead")) return "سديم يسجّل رقمك…";
+  return undefined;
+}
 
 // A round that only shows cars and suggestions next to a full written reply
 // is the answer: no need to ask the model again (one call saved per reply).
@@ -231,7 +258,8 @@ export async function runSadeem(
   llm: OpenRouterEnv,
   db: SupabaseEnv,
   history: HistoryMessage[],
-  message: string
+  message: string,
+  onEvent?: (event: SadeemEvent) => void
 ): Promise<AgentReply> {
   const started = Date.now();
   // One key for every visitor: the instructions are the same for all of them,
@@ -264,9 +292,35 @@ export async function runSadeem(
 
   const answerTexts: string[] = [];
   let finalText = "";
+  // The text shown while it is written: earlier answer rounds plus the round
+  // being streamed, sent at most every PREVIEW_MS (and once more at its end).
+  let roundText = "";
+  let shown = "";
+  let shownAt = 0;
+  const preview = (force = false) => {
+    if (!onEvent || (!force && Date.now() - shownAt < PREVIEW_MS)) return;
+    let text = cleanReply([...answerTexts, roundText].filter(Boolean).join("\n\n"))
+      // half an emoji, when a piece ends inside one
+      .replace(/[\uD800-\uDBFF]$/, "");
+    // a car name still being written: close its bold so no stray ** shows
+    if ((text.match(/\*\*/g) ?? []).length % 2) text += "**";
+    if (!text || text === shown) return;
+    shown = text;
+    shownAt = Date.now();
+    onEvent({ type: "text", text });
+  };
+  const streamText = onEvent
+    ? (delta: string) => {
+        roundText += delta;
+        preview();
+      }
+    : undefined;
+
   for (let round = 0; round < MAX_ROUNDS; round++) {
+    roundText = "";
     // The last round may not call tools again: it has to answer.
-    const reply = await complete(llm, messages, round < MAX_ROUNDS - 1, turn);
+    const reply = await complete(llm, messages, round < MAX_ROUNDS - 1, turn, streamText);
+    preview(true);
     // Note when OpenRouter answered with the fallback, so chat reviews show it.
     if (llm.fallbackModel && reply.model?.startsWith(llm.fallbackModel) && !state.searches.some((s) => s.fallback)) {
       state.searches.push({ fallback: reply.model });
@@ -278,6 +332,8 @@ export async function runSadeem(
       break;
     }
     if (text && calls.some((call) => ANSWER_TOOLS.has(call.function.name))) answerTexts.push(text);
+    const status = statusOf(calls.map((call) => call.function.name));
+    if (status && !shown) onEvent?.({ type: "status", text: status });
     messages.push({ role: "assistant", content: reply.content, tool_calls: calls, reasoning_details: reply.reasoning_details });
     const results = await Promise.all(
       calls.map(async (call) => {
@@ -301,7 +357,8 @@ export async function runSadeem(
   if (!content) {
     // Some models end a tool turn with no text at all; ask once for the reply itself.
     messages.push({ role: "system", content: "Now write your reply to the buyer in Iraqi Arabic. No tools." });
-    content = cleanReply((await complete(llm, messages, false, turn)).content ?? "");
+    roundText = "";
+    content = cleanReply((await complete(llm, messages, false, turn, streamText)).content ?? "");
   }
 
   // Prices of every car this conversation has touched, current from the database.
@@ -332,6 +389,7 @@ export async function runSadeem(
           `Your reply has problems: ${problems.join(" | ")}. Rewrite it in Iraqi Arabic using only figures from the tool results ` +
           `(prices: ${[...state.seenPrices].map(([id, p]) => `${id} ${p.toLocaleString("en-US")} د.ع ≈ ${usdOf(p).toLocaleString("en-US")} $`).join("; ")}). No tools.`,
       });
+      onEvent?.({ type: "status", text: "سديم يراجع الأسعار…" });
       const fixed = cleanReply((await complete(llm, messages, false, turn)).content ?? "");
       if (fixed) {
         const left = replyProblems(fixed, allowed, state);

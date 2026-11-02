@@ -2,7 +2,7 @@ import { phoneHref, whatsappHref } from "@/config/site";
 import { carWhatsappMessage } from "@/lib/carMessages";
 import { formatIQD } from "@/lib/format";
 import type { Car } from "@/types/car";
-import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage } from "./types";
+import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage, type ReplyProgress } from "./types";
 import { offlineMessage, welcomeMessage } from "./welcome";
 
 const SESSION_KEY = "autopro:chat-session";
@@ -33,6 +33,37 @@ function toHistory(history: ChatMessage[]) {
   }));
 }
 
+interface ReplyData {
+  content: string;
+  cars?: Car[];
+  quickReplies?: string[];
+  matchCount?: number;
+  criteria?: string[];
+  actions?: ChatAction[];
+}
+
+// The route answers in NDJSON lines: {type:"status"} and {type:"text"} while
+// the reply is made, then {type:"done", …the reply}.
+async function readReply(res: Response, onProgress?: (progress: ReplyProgress) => void): Promise<ReplyData> {
+  if (!res.body || !res.headers.get("content-type")?.includes("ndjson")) return res.json();
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (value) buffer += value;
+    const lines = buffer.split("\n");
+    buffer = done ? "" : (lines.pop() ?? "");
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const event = JSON.parse(line);
+      if (event.type === "done") return event as ReplyData;
+      if (event.type === "status") onProgress?.({ status: event.text });
+      if (event.type === "text") onProgress?.({ text: event.text });
+    }
+    if (done) throw new Error("stream ended without a reply");
+  }
+}
+
 function contactActions(car: Car): ChatMessage["actions"] {
   return [
     { label: "استفسر على واتساب", href: whatsappHref(carWhatsappMessage(car)), kind: "whatsapp" },
@@ -48,24 +79,17 @@ function contactActions(car: Car): ChatMessage["actions"] {
 export const remoteAIService: AIService = {
   getWelcomeMessage: welcomeMessage,
 
-  async sendMessage(message, history) {
+  async sendMessage(message, history, onProgress) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history: toHistory(history), sessionId: sessionId() }),
+        body: JSON.stringify({ message, history: toHistory(history), sessionId: sessionId(), stream: true }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (res.status === 429) return offlineMessage(true);
       if (!res.ok) throw new Error(String(res.status));
-      const data: {
-        content: string;
-        cars?: Car[];
-        quickReplies?: string[];
-        matchCount?: number;
-        criteria?: string[];
-        actions?: ChatAction[];
-      } = await res.json();
+      const data = await readReply(res, onProgress);
       const cars = (data.cars ?? []).slice(0, MAX_CHAT_CARS);
       return {
         id: `msg-${Date.now()}`,
