@@ -113,7 +113,7 @@ const publicReply = (reply: Reply) => ({
 
 /**
  * POST { message, history, sessionId, stream? } → { content, cars, quickReplies, … }.
- * With stream: true the answer comes as NDJSON lines while it is made:
+ * With stream: true the answer comes as server-sent events while it is made:
  * {type:"status"} while Sadeem searches, {type:"text"} with the reply so far,
  * then {type:"done", …the reply}. The LLM Sadeem answers when OpenRouter and
  * Supabase are configured; the rule-based one when they aren't or the LLM fails.
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
     async start(controller) {
       const send = (event: object) => {
         try {
-          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
         } catch {
           // the visitor closed the chat or the page: finish the reply for the log anyway
         }
@@ -160,8 +160,11 @@ export async function POST(request: Request) {
   });
   return new Response(stream, {
     headers: {
-      "Content-Type": "application/x-ndjson; charset=utf-8",
-      // no-transform: Next.js compression would otherwise hold the lines back.
+      // Server-sent events: proxies leave this type uncompressed and unbuffered
+      // (Traefik, in front of the app on Coolify, gzips other types and holds
+      // the lines back until the whole reply is there).
+      "Content-Type": "text/event-stream; charset=utf-8",
+      // no-transform: Next.js compression would otherwise hold the lines back too.
       "Cache-Control": "no-cache, no-transform",
       "X-Accel-Buffering": "no",
     },

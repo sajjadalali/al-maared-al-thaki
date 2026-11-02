@@ -42,10 +42,10 @@ interface ReplyData {
   actions?: ChatAction[];
 }
 
-// The route answers in NDJSON lines: {type:"status"} and {type:"text"} while
-// the reply is made, then {type:"done", …the reply}.
+// The route answers in server-sent events ("data: {…}"): {type:"status"} and
+// {type:"text"} while the reply is made, then {type:"done", …the reply}.
 async function readReply(res: Response, onProgress?: (progress: ReplyProgress) => void): Promise<ReplyData> {
-  if (!res.body || !res.headers.get("content-type")?.includes("ndjson")) return res.json();
+  if (!res.body || !res.headers.get("content-type")?.includes("event-stream")) return res.json();
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
   for (;;) {
@@ -54,8 +54,8 @@ async function readReply(res: Response, onProgress?: (progress: ReplyProgress) =
     const lines = buffer.split("\n");
     buffer = done ? "" : (lines.pop() ?? "");
     for (const line of lines) {
-      if (!line.trim()) continue;
-      const event = JSON.parse(line);
+      if (!line.startsWith("data:")) continue;
+      const event = JSON.parse(line.slice(5));
       if (event.type === "done") return event as ReplyData;
       if (event.type === "status") onProgress?.({ status: event.text });
       if (event.type === "text") onProgress?.({ text: event.text });
