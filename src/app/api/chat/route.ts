@@ -161,10 +161,12 @@ export async function POST(request: Request) {
   });
   return new Response(stream, {
     headers: {
-      // Server-sent events: proxies leave this type uncompressed and unbuffered
-      // (Traefik, in front of the app on Coolify, gzips other types and holds
-      // the lines back until the whole reply is there).
       "Content-Type": "text/event-stream; charset=utf-8",
+      // Traefik (in front of the app on Coolify) compresses responses that
+      // have no Content-Encoding yet, and its brotli/zstd encoders hold the
+      // events back until the reply is complete, even for text/event-stream.
+      // Declaring the encoding ("identity": none) makes it pass them through.
+      "Content-Encoding": "identity",
       // no-transform: Next.js compression would otherwise hold the lines back too.
       "Cache-Control": "no-cache, no-transform",
       "X-Accel-Buffering": "no",
