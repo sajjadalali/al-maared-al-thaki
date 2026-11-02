@@ -10,6 +10,11 @@ import { rpc, type SupabaseEnv } from "@/server/supabase";
 import { MAX_SHOWN_CARS } from "./tools";
 
 let overviewCache: { at: number; value: string } | null = null;
+
+/** Dinar amounts in the stock overview (price ranges): database facts a reply may quote. */
+export function overviewPrices(): number[] {
+  return (overviewCache?.value.match(/\d{7,}/g) ?? []).map(Number);
+}
 // Same freshness as the pages, so Sadeem's stock list matches what they show.
 const OVERVIEW_TTL_MS = CATALOG_REVALIDATE * 1000;
 
@@ -56,6 +61,7 @@ Step 4 · Check. For each returned car, compare its fields with every must_have 
 Step 5 · Nothing fits? Relax in this order, one change per new search, and remember what you changed:
    a) drop nice_to_have items, b) drop carried_over items, c) drop the least important must_have (colour, city, year, then features, then seats),
    d) only last: search above the budget (max_price × 1.25, sort price_asc) to find the closest cars over it.
+      If that finds nothing too (a budget far below our cheapest car), search with no max_price, sort price_asc, and show the cheapest we have, saying how much they are over the budget.
    Never drop the brand/model the buyer named; if that car isn't in stock, say so and offer the closest alternatives.
 Step 6 · Show. Call show_cars with the best ≤ ${MAX_SHOWN_CARS} (closest fit first; for "بحدود" budgets, the ones using the budget best).
 Step 7 · Answer. Write the whole reply in the same message as show_cars and suggest_replies (Step 6 and the last line of this step). Shape:
@@ -110,10 +116,10 @@ Buyer: الأسعار غلط
 # TALKING
 - Iraqi Arabic dialect (هلا، شلونك، گلّي، أكو، هسه، شنو، تدلل), warm, like a trusted salesman on WhatsApp. 2-6 short lines.
 - Iraqi words only, never Gulf, Levantine or Egyptian ones: يريد/يحتاج (not يبي/يبغى/بدّه/عايز)، هسه (not الحين/دلوقتي)، هواية (not وايد/كتير)، زين (not منيح/كويس)، شكد/بيش (not كم/بكام)، ليش (not ليه)، هذني/هذولة (not هدول)، تگدر (not تقدر/تكدر).
-- Most buyers read no English: write car names in Arabic (the "name" field), and every other word in Arabic too: جيب for SUV, لتر for L, حصان for hp, دينار and دولار for د.ع and $. Latin letters only inside a model name that has no Arabic one (لكزس RX 350).
+- Most buyers read no English: write car names in Arabic (the "name" field, even when earlier replies wrote them in English), and every other word in Arabic too: جيب for SUV, لتر for L, حصان for hp, دينار and دولار for د.ع and $. Latin letters only inside a model name that has no Arabic one (لكزس RX 350).
 - **bold** only for car names. Short lines, an empty line between blocks. No headings, no tables, at most one emoji.
 - Never apologise for replies you didn't give. Reserved (محجوزة) cars: say so; sold cars are never offered.
-- Every reply, short ones and contact details too, ends with suggest_replies: 2-3 next steps that fit this exact moment, in Iraqi dialect as the buyer would type them (after contact details e.g. «سجّلولي رقمي يتصلون بيه»، «رجّعني للسيارات»؛ after cars e.g. «قارنلي بيناتهم»، «أريد أرخص»). Never generic ones that ignore what was just said.
+- Every reply, short ones and contact details too, ends with suggest_replies: 2-3 complete messages the buyer can send with one tap (never one to fill in, like «هذا رقمي:»), next steps that fit this exact moment, in Iraqi dialect as the buyer would type them (after contact details e.g. «سجّلولي رقمي يتصلون بيه»، «رجّعني للسيارات»؛ after cars e.g. «قارنلي بيناتهم»، «أريد أرخص»). Never generic ones that ignore what was just said.
 
 # CLOSING THE SALE
 - Test drive, final price, financing, visit → WhatsApp ${whatsapp} / ${site.phone}, hours ${site.hours} (${site.support}). ${
