@@ -40,7 +40,7 @@ interface ToolCall {
 interface CachedText {
   type: "text";
   text: string;
-  cache_control: { type: "ephemeral" };
+  cache_control: { type: "ephemeral"; ttl?: "1h" };
 }
 
 interface LlmMessage {
@@ -88,7 +88,7 @@ export function openRouterEnv(): OpenRouterEnv | null {
 
 /** What one reply cost in time and tokens, logged with the chat for tuning. */
 interface TurnStats {
-  /** Keeps every call of a conversation on one provider, so its prompt cache stays warm. */
+  /** Keeps calls on one provider, so its prompt cache stays warm. */
   sessionKey: string;
   calls: { ms: number; model?: string; prompt?: number; cached?: number }[];
 }
@@ -231,11 +231,13 @@ export async function runSadeem(
   llm: OpenRouterEnv,
   db: SupabaseEnv,
   history: HistoryMessage[],
-  message: string,
-  sessionId?: string
+  message: string
 ): Promise<AgentReply> {
   const started = Date.now();
-  const turn: TurnStats = { sessionKey: sessionId ?? crypto.randomUUID(), calls: [] };
+  // One key for every visitor: the instructions are the same for all of them,
+  // so routing everyone to the same provider lets a new visitor's first
+  // message read the cache an earlier visitor wrote.
+  const turn: TurnStats = { sessionKey: "sadeem", calls: [] };
   const state: TurnState = {
     seenIds: new Set(history.flatMap((m) => m.cars?.map((c) => c.id) ?? [])),
     seenPrices: new Map(),
@@ -251,7 +253,11 @@ export async function runSadeem(
     // The tools and these instructions are the same for every call: providers
     // that cache (Anthropic and Gemini on this marker, OpenAI, DeepSeek and
     // others on their own) then read them back instead of processing them again.
-    { role: "system", content: [{ type: "text", text: await systemPrompt(db), cache_control: { type: "ephemeral" } }] },
+    // An hour, not the default 5 minutes, so the cache outlives quiet spells.
+    {
+      role: "system",
+      content: [{ type: "text", text: await systemPrompt(db), cache_control: { type: "ephemeral", ttl: "1h" } }],
+    },
     ...historyToMessages(history),
     { role: "user", content: message },
   ];
