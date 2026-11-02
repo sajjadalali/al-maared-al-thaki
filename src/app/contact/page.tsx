@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 
 const INFO = [
   { icon: Phone, label: "الهاتف", value: site.phone, href: phoneHref, dir: "ltr" as const },
-  { icon: WhatsappIcon, label: "واتساب", value: site.phone, href: whatsappHref(), dir: "ltr" as const },
+  { icon: WhatsappIcon, label: "واتساب", value: `+${site.whatsapp.replace(/^964(\d{3})(\d{3})(\d{4})$/, "964 $1 $2 $3")}`, href: whatsappHref(), dir: "ltr" as const },
   { icon: Mail, label: "البريد الإلكتروني", value: site.email, href: `mailto:${site.email}`, dir: "ltr" as const },
   { icon: MapPin, label: "العنوان", value: site.address },
-  { icon: Clock, label: "أوقات العمل", value: site.hours },
+  { icon: Clock, label: "أوقات العمل", value: `${site.hours}، ${site.support}` },
 ];
 
 export default function ContactPage() {

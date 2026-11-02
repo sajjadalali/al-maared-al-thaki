@@ -100,7 +100,11 @@ export function Footer() {
             </li>
             <li className="flex items-center gap-2.5">
               <Clock className="h-4 w-4 shrink-0 text-accent-300" />
-              {site.hours}
+              <span>
+                {site.hours}
+                <br />
+                {site.support}
+              </span>
             </li>
           </ul>
         </div>
