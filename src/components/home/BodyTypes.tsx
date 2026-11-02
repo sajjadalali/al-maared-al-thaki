@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllCars } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { CarArt } from "@/components/ui/CarArt";
 import { SectionHeading } from "@/components/home/SectionHeading";
 
@@ -13,8 +13,8 @@ const BODY_TYPES = [
   { value: "كوبيه", label: "كوبيه", hint: "رياضية" },
 ];
 
-export function BodyTypes() {
-  const stock = getAllCars().filter((car) => car.status !== "مباعة");
+export async function BodyTypes() {
+  const stock = (await getCatalog()).getAllCars().filter((car) => car.status !== "مباعة");
   const types = BODY_TYPES.map((type) => ({
     ...type,
     count: stock.filter((car) => car.bodyType === type.value).length,

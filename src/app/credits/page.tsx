@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllCars } from "@/data/cars";
+import { getCatalog } from "@/server/catalog";
 import { getImageCredit } from "@/data/imageCredits";
 
 export const metadata: Metadata = {
@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description: "مصادر صور السيارات المعروضة في الموقع وأسماء المصوّرين ورخص الاستخدام.",
 };
 
-export default function CreditsPage() {
-  const rows = getAllCars().flatMap((car) =>
+export default async function CreditsPage() {
+  const rows = (await getCatalog()).getAllCars().flatMap((car) =>
     car.images.flatMap((src, i) => {
       const credit = getImageCredit(src);
       return credit ? [{ car, src, n: i + 1, credit }] : [];

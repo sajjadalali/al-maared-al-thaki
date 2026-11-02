@@ -17,6 +17,10 @@ const plex = IBM_Plex_Sans_Arabic({
   display: "swap",
 });
 
+// Pages show the stock from Supabase; refresh them at least this often (seconds,
+// same as CATALOG_REVALIDATE in src/server/catalog.ts).
+export const revalidate = 60;
+
 const description = `${site.name} — تصفح السيارات الجديدة والمستعملة في العراق، قارن الأسعار، واحصل على مساعدة فورية من سديم، مساعد المبيعات الذكي.`;
 
 export const metadata: Metadata = {

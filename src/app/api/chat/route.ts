@@ -1,6 +1,10 @@
 import { after } from "next/server";
 import { insert, supabaseEnv } from "@/server/supabase";
+import { getCatalog } from "@/server/catalog";
 import { openRouterEnv, runSadeem, type HistoryMessage } from "@/server/sadeem/agent";
+import { rulesReply } from "@/server/sadeem/rules";
+import type { ChatAction } from "@/services/ai/types";
+import type { Car } from "@/types/car";
 
 const MAX_MESSAGE = 1000;
 const MAX_HISTORY = 12;
@@ -38,15 +42,37 @@ function parseHistory(value: unknown): HistoryMessage[] {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+interface Reply {
+  content: string;
+  cars: Car[];
+  quickReplies: string[];
+  matchCount?: number;
+  criteria?: string[];
+  actions?: ChatAction[];
+  searches: Record<string, unknown>[];
+}
+
+// The keyword-rules Sadeem, over the same catalog the pages show.
+async function rulesFallback(message: string, history: HistoryMessage[]): Promise<Reply> {
+  const reply = rulesReply(await getCatalog(), message, history);
+  return {
+    content: reply.content,
+    cars: reply.cars ?? [],
+    quickReplies: reply.quickReplies ?? [],
+    criteria: reply.criteria,
+    actions: reply.actions,
+    searches: [{ rules: true }],
+  };
+}
+
 /**
- * POST { message, history, sessionId } → { content, cars, quickReplies }.
- * 503 when OpenRouter or Supabase isn't configured: the chat then falls back
- * to the built-in rule-based Sadeem.
+ * POST { message, history, sessionId } → { content, cars, quickReplies, … }.
+ * The LLM Sadeem answers when OpenRouter and Supabase are configured; the
+ * rule-based one answers when they aren't or the LLM fails.
  */
 export async function POST(request: Request) {
   const llm = openRouterEnv();
   const db = supabaseEnv();
-  if (!llm || !db) return Response.json({ error: "not_configured" }, { status: 503 });
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
   if (rateLimited(ip)) return Response.json({ error: "rate_limited" }, { status: 429 });
@@ -57,39 +83,42 @@ export async function POST(request: Request) {
   const history = parseHistory(body?.history);
   const sessionId = typeof body?.sessionId === "string" && UUID.test(body.sessionId) ? body.sessionId : null;
 
+  let reply: Reply;
   try {
-    const reply = await runSadeem(llm, db, history, message);
-
-    // Keep the conversation for tuning Sadeem, after the reply is sent.
-    if (sessionId && db.writeKey) {
-      after(async () => {
-        try {
-          await insert(db, "chat_sessions", { id: sessionId }, true);
-          // A bulk insert needs the same keys on every row, or PostgREST answers 400.
-          await insert(db, "chat_messages", [
-            { session_id: sessionId, role: "user", content: message, car_ids: [], tool_calls: null },
-            {
-              session_id: sessionId,
-              role: "assistant",
-              content: reply.content,
-              car_ids: reply.cars.map((c) => c.id),
-              tool_calls: reply.searches.length ? reply.searches : null,
-            },
-          ]);
-        } catch (err) {
-          console.error("[sadeem] chat log not saved:", err);
-        }
-      });
-    }
-
-    return Response.json({
-      content: reply.content,
-      cars: reply.cars,
-      quickReplies: reply.quickReplies,
-      matchCount: reply.matchCount,
-    });
+    reply = llm && db ? await runSadeem(llm, db, history, message) : await rulesFallback(message, history);
   } catch (err) {
-    console.error("[sadeem]", err);
-    return Response.json({ error: "upstream_failed" }, { status: 502 });
+    console.error("[sadeem] LLM failed, answering with the rules:", err);
+    reply = await rulesFallback(message, history);
   }
+
+  // Keep the conversation for tuning Sadeem, after the reply is sent.
+  if (sessionId && db?.writeKey) {
+    after(async () => {
+      try {
+        await insert(db, "chat_sessions", { id: sessionId }, true);
+        // A bulk insert needs the same keys on every row, or PostgREST answers 400.
+        await insert(db, "chat_messages", [
+          { session_id: sessionId, role: "user", content: message, car_ids: [], tool_calls: null },
+          {
+            session_id: sessionId,
+            role: "assistant",
+            content: reply.content,
+            car_ids: reply.cars.map((c) => c.id),
+            tool_calls: reply.searches.length ? reply.searches : null,
+          },
+        ]);
+      } catch (err) {
+        console.error("[sadeem] chat log not saved:", err);
+      }
+    });
+  }
+
+  return Response.json({
+    content: reply.content,
+    cars: reply.cars,
+    quickReplies: reply.quickReplies,
+    matchCount: reply.matchCount,
+    criteria: reply.criteria,
+    actions: reply.actions,
+  });
 }

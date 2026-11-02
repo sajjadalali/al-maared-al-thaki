@@ -1,4 +1,4 @@
-import { filterCars, getAllCars, getCarById, getCities, getSimilarCars } from "@/data/cars";
+import type { Catalog } from "@/data/cars";
 import { USD_TO_IQD, formatIQD, originLabel } from "@/lib/format";
 import { site, phoneHref, whatsappHref } from "@/config/site";
 import {
@@ -11,7 +11,8 @@ import {
   normalizeArabic,
 } from "@/lib/carAliases";
 import type { Car, CarFilters, CarOrigin, FuelType } from "@/types/car";
-import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage } from "./types";
+import { MAX_CHAT_CARS, type ChatAction, type ChatMessage } from "@/services/ai/types";
+import { DEFAULT_QUICK_REPLIES } from "@/services/ai/welcome";
 
 const GREETING_WORDS = ["مرحبا", "هلا", "السلام عليكم", "سلام", "صباح الخير", "مساء الخير", "هلو"];
 const THANKS_WORDS = ["شكرا", "تسلم", "مشكور", "يعطيك العافيه", "ممنون"];
@@ -86,17 +87,17 @@ function extractMinSeats(text: string): number | undefined {
   return word ? SEAT_WORDS[word[1]] : undefined;
 }
 
-function extractBrand(text: string): string | undefined {
+function extractBrand(catalog: Catalog, text: string): string | undefined {
   const known = BRAND_ALIASES.find((entry) => hasAnyWord(text, entry.aliases))?.brand;
   if (known) return known;
   // Brands added later through the Excel sheet are recognised by their name.
-  return [...new Set(getAllCars().map((c) => c.brand))].find((b) => hasWord(text, b));
+  return [...new Set(catalog.getAllCars().map((c) => c.brand))].find((b) => hasWord(text, b));
 }
 
-function extractModel(text: string): string | undefined {
+function extractModel(catalog: Catalog, text: string): string | undefined {
   const known = MODEL_ALIASES.find((entry) => hasAnyWord(text, entry.aliases))?.model;
   if (known) return known;
-  const models = [...new Set(getAllCars().map((c) => c.model.toLowerCase()))].sort(
+  const models = [...new Set(catalog.getAllCars().map((c) => c.model.toLowerCase()))].sort(
     (a, b) => b.length - a.length
   );
   return models.find((m) => hasWord(text, m));
@@ -114,8 +115,8 @@ function extractOrigin(text: string): CarOrigin | undefined {
   return ORIGIN_ALIASES.find((entry) => hasAnyWord(text, entry.aliases))?.origin;
 }
 
-function extractCity(text: string): string | undefined {
-  return getCities().find((city) => text.includes(normalize(city)));
+function extractCity(catalog: Catalog, text: string): string | undefined {
+  return catalog.getCities().find((city) => text.includes(normalize(city)));
 }
 
 function extractCondition(text: string): "جديدة" | "مستعملة" | undefined {
@@ -135,13 +136,13 @@ interface ParsedIntent {
   budget?: number;
 }
 
-function parseIntent(rawText: string): ParsedIntent {
+function parseIntent(catalog: Catalog, rawText: string): ParsedIntent {
   const text = normalize(rawText);
 
   const filters: CarFilters = {
-    brand: extractBrand(text),
+    brand: extractBrand(catalog, text),
     bodyType: extractBodyType(text),
-    city: extractCity(text),
+    city: extractCity(catalog, text),
     fuel: extractFuel(text),
     condition: extractCondition(text),
     origin: extractOrigin(text),
@@ -158,7 +159,7 @@ function parseIntent(rawText: string): ParsedIntent {
 
   return {
     filters,
-    model: extractModel(text),
+    model: extractModel(catalog, text),
     minSeats: extractMinSeats(text),
     isChinese: includesAny(text, ["صيني", "صينيه", "الصين"]),
     isFamily: includesAny(text, ["عائليه", "عائلي", "عيلتي", "للعائله", "للعيله"]),
@@ -168,8 +169,8 @@ function parseIntent(rawText: string): ParsedIntent {
   };
 }
 
-function matchCars(intent: ParsedIntent): Car[] {
-  let results = filterCars(intent.filters);
+function matchCars(catalog: Catalog, intent: ParsedIntent): Car[] {
+  let results = catalog.filterCars(intent.filters);
 
   if (intent.model) {
     results = results.filter((car) => car.model.toLowerCase().includes(intent.model!));
@@ -205,8 +206,8 @@ function hasAnyFilter(intent: ParsedIntent): boolean {
   );
 }
 
-function modelLabel(modelKey: string): string {
-  return getAllCars().find((c) => c.model.toLowerCase().includes(modelKey))?.model ?? modelKey;
+function modelLabel(catalog: Catalog, modelKey: string): string {
+  return catalog.getAllCars().find((c) => c.model.toLowerCase().includes(modelKey))?.model ?? modelKey;
 }
 
 function formatBudget(value: number): string {
@@ -218,9 +219,9 @@ function formatBudget(value: number): string {
 }
 
 /** Short tags describing what was understood, e.g. ["Toyota Camry", "حتى 30 مليون"]. */
-function describeIntent(intent: ParsedIntent): string[] {
+function describeIntent(catalog: Catalog, intent: ParsedIntent): string[] {
   const parts: string[] = [];
-  const name = [intent.filters.brand, intent.model && modelLabel(intent.model)].filter(Boolean).join(" ");
+  const name = [intent.filters.brand, intent.model && modelLabel(catalog, intent.model)].filter(Boolean).join(" ");
   if (name) parts.push(name);
   if (intent.filters.minYear) parts.push(`موديل ${intent.filters.minYear}`);
   if (intent.filters.bodyType) parts.push(intent.filters.bodyType);
@@ -278,13 +279,6 @@ function contactActions(message: string): ChatAction[] {
   ];
 }
 
-const DEFAULT_QUICK_REPLIES = [
-  "أريد سيارة اقتصادية",
-  "أريد SUV عائلية",
-  "أريد سيارة فخمة",
-  "شنو أرخص سيارة عندكم؟",
-];
-
 const SINGLE_CAR_QUICK_REPLIES = ["أريد حجز تجربة قيادة", "سيارات مشابهة", "تواصل مع مندوب المبيعات"];
 
 function listQuickReplies(hasMore: boolean) {
@@ -297,21 +291,28 @@ function listQuickReplies(hasMore: boolean) {
 
 // ---------- conversation context (from history) ----------
 
-function lastShownCars(history: ChatMessage[]): Car[] {
-  const msg = [...history].reverse().find((m) => m.role === "assistant" && m.cars?.length);
-  return (msg?.cars ?? []).map((c) => getCarById(c.id)).filter((c): c is Car => Boolean(c));
+/** Earlier messages as the chat route receives them: text plus the ids of the cars shown. */
+export interface RulesHistory {
+  role: "user" | "assistant";
+  content: string;
+  cars?: { id: string }[];
 }
 
-function lastSearchIntent(history: ChatMessage[]): ParsedIntent | undefined {
+function lastShownCars(catalog: Catalog, history: RulesHistory[]): Car[] {
+  const msg = [...history].reverse().find((m) => m.role === "assistant" && m.cars?.length);
+  return (msg?.cars ?? []).map((c) => catalog.getCarById(c.id)).filter((c): c is Car => Boolean(c));
+}
+
+function lastSearchIntent(catalog: Catalog, history: RulesHistory[]): ParsedIntent | undefined {
   for (const m of [...history].reverse()) {
     if (m.role !== "user") continue;
-    const intent = parseIntent(m.content);
+    const intent = parseIntent(catalog, m.content);
     if (hasAnyFilter(intent)) return intent;
   }
   return undefined;
 }
 
-function shownCarIds(history: ChatMessage[]): Set<string> {
+function shownCarIds(history: RulesHistory[]): Set<string> {
   return new Set(history.flatMap((m) => (m.role === "assistant" ? m.cars ?? [] : [])).map((c) => c.id));
 }
 
@@ -345,147 +346,134 @@ function listReply(intro: string, cars: Car[], criteria: string[] = [], total = 
 const HELP_TEXT =
   "گلّي شنو تدوّر وأني أساعدك، مثلاً:\n- ماركة أو موديل (كامري، توسان...)\n- ميزانية (بحدود 30 مليون)\n- نوع السيارة (عائلية، SUV، اقتصادية)";
 
-class MockAIService implements AIService {
-  getWelcomeMessage(): ChatMessage {
-    return reply(
-      `هلا وغلا 👋 أني **سديم**، مساعدك الذكي ب${site.name}.\nگلّي شنو السيارة الي تدوّرها أو ميزانيتك، وأني ألگيلك أفضل خيار من سياراتنا المتوفرة.`,
-      { quickReplies: DEFAULT_QUICK_REPLIES }
-    );
-  }
+/**
+ * Sadeem without the LLM: keyword rules over the catalog. The chat route uses
+ * it when OpenRouter isn't configured or fails, so the chat never goes silent.
+ */
+export function rulesReply(catalog: Catalog, message: string, history: RulesHistory[] = []): ChatMessage {
+  const text = normalize(message);
+  const intent = parseIntent(catalog, message);
+  const matches = hasAnyFilter(intent) ? matchCars(catalog, intent) : [];
+  const focusCar = matches.length === 1 ? matches[0] : lastShownCars(catalog, history)[0];
 
-  async sendMessage(message: string, history: ChatMessage[] = []): Promise<ChatMessage> {
-    await wait(500 + Math.random() * 500);
-
-    const text = normalize(message);
-    const intent = parseIntent(message);
-    const matches = hasAnyFilter(intent) ? matchCars(intent) : [];
-    const focusCar = matches.length === 1 ? matches[0] : lastShownCars(history)[0];
-
-    if (includesAny(text, TEST_DRIVE_WORDS)) {
-      if (!focusCar) {
-        return reply("أكيد! بس گلّي أي سيارة تريد تجربها حتى أرتبلك الموضوع.", {
-          quickReplies: DEFAULT_QUICK_REPLIES,
-        });
-      }
-      return reply(
-        `حلو اختيارك! تجربة قيادة **${carLabel(focusCar)}** نرتبها ويه فريق المبيعات ب${focusCar.city}.\nدز رسالة على واتساب وحدد الوقت الي يناسبك، وهمه يأكدولك الموعد.`,
-        { actions: contactActions(`مرحباً، أريد حجز تجربة قيادة لسيارة ${carLabel(focusCar)}`) }
-      );
-    }
-
-    if (includesAny(text, AGENT_WORDS)) {
-      const about = focusCar ? ` بخصوص **${carLabel(focusCar)}**` : "";
-      return reply(
-        `أكيد! تكدر تتواصل ويا فريق المبيعات مباشرة${about}.\n- الرقم: ${site.phone}\n- الدوام: ${site.hours}`,
-        {
-          actions: contactActions(
-            focusCar ? `مرحباً، أستفسر عن سيارة ${carLabel(focusCar)}` : "مرحباً، عندي استفسار عن سيارة"
-          ),
-        }
-      );
-    }
-
-    if (includesAny(text, SIMILAR_WORDS)) {
-      if (!focusCar) {
-        return reply("گلّي على أي سيارة تريد أشوفلك مثلها؟", { quickReplies: DEFAULT_QUICK_REPLIES });
-      }
-      const similar = getSimilarCars(focusCar, MAX_CHAT_CARS);
-      if (similar.length === 0) {
-        return reply(`حالياً ما عندي سيارات قريبة من **${carLabel(focusCar)}**، بس تكدر تشوف كل السيارات بصفحة السيارات.`);
-      }
-      return listReply(`هذني سيارات قريبة من **${carLabel(focusCar)}**:`, similar);
-    }
-
-    const wantsCheapest = includesAny(text, CHEAPEST_WORDS);
-    if (wantsCheapest || includesAny(text, MOST_EXPENSIVE_WORDS)) {
-      const among = includesAny(text, AMONG_WORDS);
-      const previous = among ? lastSearchIntent(history) : undefined;
-      const pool = hasAnyFilter(intent)
-        ? matches
-        : previous
-          ? matchCars(previous)
-          : among
-            ? lastShownCars(history)
-            : getAllCars().filter((c) => c.status !== "مباعة");
-      const sorted = [...pool].sort((a, b) => (wantsCheapest ? a.price - b.price : b.price - a.price));
-
-      if (sorted.length === 0) {
-        return reply("ما لگيت سيارات ضمن هذا الطلب حالياً.", { quickReplies: DEFAULT_QUICK_REPLIES });
-      }
-      if (among) {
-        return singleCarReply(
-          sorted[0],
-          `${wantsCheapest ? "أرخص" : "أغلى"} خيار بينهم هو **${carLabel(sorted[0])}** بسعر ${formatIQD(sorted[0].price)}:`
-        );
-      }
-      return listReply(
-        wantsCheapest ? "زين، هذني أرخص السيارات المتوفرة:" : "هذني أفخم السيارات المتوفرة عدنا:",
-        sorted,
-        describeIntent(intent),
-        MAX_CHAT_CARS
-      );
-    }
-
-    if (includesAny(text, MORE_WORDS) && !hasAnyFilter(intent)) {
-      const previous = lastSearchIntent(history);
-      if (!previous) {
-        return reply("گلّي شنو تدوّر بالضبط وأعرضلك الخيارات.", { quickReplies: DEFAULT_QUICK_REPLIES });
-      }
-      const seen = shownCarIds(history);
-      const remaining = matchCars(previous).filter((c) => !seen.has(c.id));
-      if (remaining.length === 0) {
-        return reply("هذني كل السيارات المتوفرة ضمن طلبك. تحب أدورلك على شي ثاني؟", {
-          criteria: describeIntent(previous),
-          quickReplies: DEFAULT_QUICK_REPLIES,
-        });
-      }
-      return listReply("تفضل، هذني خيارات ثانية ضمن نفس طلبك:", remaining, describeIntent(previous));
-    }
-
-    if (includesAny(text, THANKS_WORDS) && text.length < 40) {
-      return reply("العفو! تسعدني مساعدتك 🚗\nإذا احتجت أي شي ثاني بخصوص السيارات، أني موجود.");
-    }
-
-    if (!hasAnyFilter(intent)) {
-      return reply(hasAnyWord(text, GREETING_WORDS) ? `هلا بيك! 👋\n${HELP_TEXT}` : `ما فهمت طلبك بالضبط 🙏\n${HELP_TEXT}`, {
+  if (includesAny(text, TEST_DRIVE_WORDS)) {
+    if (!focusCar) {
+      return reply("أكيد! بس گلّي أي سيارة تريد تجربها حتى أرتبلك الموضوع.", {
         quickReplies: DEFAULT_QUICK_REPLIES,
       });
     }
+    return reply(
+      `حلو اختيارك! تجربة قيادة **${carLabel(focusCar)}** نرتبها ويه فريق المبيعات ب${focusCar.city}.\nدز رسالة على واتساب وحدد الوقت الي يناسبك، وهمه يأكدولك الموعد.`,
+      { actions: contactActions(`مرحباً، أريد حجز تجربة قيادة لسيارة ${carLabel(focusCar)}`) }
+    );
+  }
 
-    const criteria = describeIntent(intent);
-
-    if (matches.length === 0) {
-      // Relax the request before giving up: same model/brand without the other
-      // constraints, then the showroom's featured cars.
-      const relaxed = intent.model
-        ? matchCars({ ...intent, filters: {}, budget: undefined })
-        : intent.filters.brand
-          ? filterCars({ brand: intent.filters.brand })
-          : [];
-      if (relaxed.length > 0) {
-        return listReply("ما عندي تطابق كامل لطلبك حالياً، بس هذني أقرب الخيارات:", relaxed, criteria);
+  if (includesAny(text, AGENT_WORDS)) {
+    const about = focusCar ? ` بخصوص **${carLabel(focusCar)}**` : "";
+    return reply(
+      `أكيد! تكدر تتواصل ويا فريق المبيعات مباشرة${about}.\n- الرقم: ${site.phone}\n- الدوام: ${site.hours}`,
+      {
+        actions: contactActions(
+          focusCar ? `مرحباً، أستفسر عن سيارة ${carLabel(focusCar)}` : "مرحباً، عندي استفسار عن سيارة"
+        ),
       }
-      const fallback = getAllCars().filter((car) => car.featured);
-      return listReply(
-        "حالياً ما عندي سيارة بهذي المواصفات، بس هذني من أفضل سياراتنا:",
-        fallback,
-        criteria,
-        MAX_CHAT_CARS
+    );
+  }
+
+  if (includesAny(text, SIMILAR_WORDS)) {
+    if (!focusCar) {
+      return reply("گلّي على أي سيارة تريد أشوفلك مثلها؟", { quickReplies: DEFAULT_QUICK_REPLIES });
+    }
+    const similar = catalog.getSimilarCars(focusCar, MAX_CHAT_CARS);
+    if (similar.length === 0) {
+      return reply(`حالياً ما عندي سيارات قريبة من **${carLabel(focusCar)}**، بس تكدر تشوف كل السيارات بصفحة السيارات.`);
+    }
+    return listReply(`هذني سيارات قريبة من **${carLabel(focusCar)}**:`, similar);
+  }
+
+  const wantsCheapest = includesAny(text, CHEAPEST_WORDS);
+  if (wantsCheapest || includesAny(text, MOST_EXPENSIVE_WORDS)) {
+    const among = includesAny(text, AMONG_WORDS);
+    const previous = among ? lastSearchIntent(catalog, history) : undefined;
+    const pool = hasAnyFilter(intent)
+      ? matches
+      : previous
+        ? matchCars(catalog, previous)
+        : among
+          ? lastShownCars(catalog, history)
+          : catalog.getAllCars().filter((c) => c.status !== "مباعة");
+    const sorted = [...pool].sort((a, b) => (wantsCheapest ? a.price - b.price : b.price - a.price));
+
+    if (sorted.length === 0) {
+      return reply("ما لگيت سيارات ضمن هذا الطلب حالياً.", { quickReplies: DEFAULT_QUICK_REPLIES });
+    }
+    if (among) {
+      return singleCarReply(
+        sorted[0],
+        `${wantsCheapest ? "أرخص" : "أغلى"} خيار بينهم هو **${carLabel(sorted[0])}** بسعر ${formatIQD(sorted[0].price)}:`
       );
     }
-
-    if (matches.length === 1) return singleCarReply(matches[0]);
-
-    const intro =
-      matches.length > MAX_CHAT_CARS
-        ? `لگيت ${countCars(matches.length)} تناسب طلبك، هاي أفضل ${MAX_CHAT_CARS}:`
-        : `هاي ${countCars(matches.length)} متوفرة حسب طلبك:`;
-    return listReply(intro, matches, criteria);
+    return listReply(
+      wantsCheapest ? "زين، هذني أرخص السيارات المتوفرة:" : "هذني أفخم السيارات المتوفرة عدنا:",
+      sorted,
+      describeIntent(catalog, intent),
+      MAX_CHAT_CARS
+    );
   }
-}
 
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+  if (includesAny(text, MORE_WORDS) && !hasAnyFilter(intent)) {
+    const previous = lastSearchIntent(catalog, history);
+    if (!previous) {
+      return reply("گلّي شنو تدوّر بالضبط وأعرضلك الخيارات.", { quickReplies: DEFAULT_QUICK_REPLIES });
+    }
+    const seen = shownCarIds(history);
+    const remaining = matchCars(catalog, previous).filter((c) => !seen.has(c.id));
+    if (remaining.length === 0) {
+      return reply("هذني كل السيارات المتوفرة ضمن طلبك. تحب أدورلك على شي ثاني؟", {
+        criteria: describeIntent(catalog, previous),
+        quickReplies: DEFAULT_QUICK_REPLIES,
+      });
+    }
+    return listReply("تفضل، هذني خيارات ثانية ضمن نفس طلبك:", remaining, describeIntent(catalog, previous));
+  }
 
-export const mockAIService = new MockAIService();
+  if (includesAny(text, THANKS_WORDS) && text.length < 40) {
+    return reply("العفو! تسعدني مساعدتك 🚗\nإذا احتجت أي شي ثاني بخصوص السيارات، أني موجود.");
+  }
+
+  if (!hasAnyFilter(intent)) {
+    return reply(hasAnyWord(text, GREETING_WORDS) ? `هلا بيك! 👋\n${HELP_TEXT}` : `ما فهمت طلبك بالضبط 🙏\n${HELP_TEXT}`, {
+      quickReplies: DEFAULT_QUICK_REPLIES,
+    });
+  }
+
+  const criteria = describeIntent(catalog, intent);
+
+  if (matches.length === 0) {
+    // Relax the request before giving up: same model/brand without the other
+    // constraints, then the showroom's featured cars.
+    const relaxed = intent.model
+      ? matchCars(catalog, { ...intent, filters: {}, budget: undefined })
+      : intent.filters.brand
+        ? catalog.filterCars({ brand: intent.filters.brand })
+        : [];
+    if (relaxed.length > 0) {
+      return listReply("ما عندي تطابق كامل لطلبك حالياً، بس هذني أقرب الخيارات:", relaxed, criteria);
+    }
+    const fallback = catalog.getAllCars().filter((car) => car.featured);
+    return listReply(
+      "حالياً ما عندي سيارة بهذي المواصفات، بس هذني من أفضل سياراتنا:",
+      fallback,
+      criteria,
+      MAX_CHAT_CARS
+    );
+  }
+
+  if (matches.length === 1) return singleCarReply(matches[0]);
+
+  const intro =
+    matches.length > MAX_CHAT_CARS
+      ? `لگيت ${countCars(matches.length)} تناسب طلبك، هاي أفضل ${MAX_CHAT_CARS}:`
+      : `هاي ${countCars(matches.length)} متوفرة حسب طلبك:`;
+  return listReply(intro, matches, criteria);
+}

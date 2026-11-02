@@ -2,8 +2,8 @@
 // returns compact JSON; the model never sees or invents anything else.
 import { USD_TO_IQD } from "@/lib/format";
 import { insert, rpc, select, type SupabaseEnv } from "@/server/supabase";
+import { type CarRow } from "@/server/catalog";
 import { budgetFromWords } from "./verify";
-import type { Car } from "@/types/car";
 
 export const MAX_SHOWN_CARS = 3;
 
@@ -144,71 +144,12 @@ export const TOOL_DEFINITIONS = [
 // Database rows → app types
 // ---------------------------------------------------------------------------
 
-interface SearchRow {
-  id: string;
-  brand: string;
-  model: string;
-  trim_level: string | null;
-  year: number;
-  price_iqd: number;
-  condition: string;
-  origin: string | null;
-  body_type: string;
-  mileage_km: number;
-  fuel: string;
-  transmission: string;
-  drivetrain: string | null;
-  seats: number;
-  horsepower: number | null;
-  engine: string;
-  color: string;
-  city: string;
-  status: string;
-  tags: string[];
-  features: string[];
+interface SearchRow extends Omit<CarRow, "cylinders" | "featured" | "description" | "images"> {
   total_count: number;
 }
 
-interface FullRow extends Omit<SearchRow, "total_count"> {
-  cylinders: number | null;
-  featured: boolean;
-  description: string;
-  images: { path: string }[];
-}
-
-export function toCar(row: FullRow): Car {
-  return {
-    id: row.id,
-    brand: row.brand,
-    model: row.model,
-    trim: row.trim_level ?? undefined,
-    year: row.year,
-    price: row.price_iqd,
-    currency: "IQD",
-    condition: row.condition as Car["condition"],
-    origin: (row.origin ?? undefined) as Car["origin"],
-    bodyType: row.body_type as Car["bodyType"],
-    mileage: row.mileage_km,
-    transmission: row.transmission as Car["transmission"],
-    fuel: row.fuel as Car["fuel"],
-    engine: row.engine,
-    cylinders: row.cylinders ?? undefined,
-    horsepower: row.horsepower ?? undefined,
-    drivetrain: (row.drivetrain ?? undefined) as Car["drivetrain"],
-    seats: row.seats,
-    color: row.color,
-    city: row.city,
-    status: row.status as Car["status"],
-    featured: row.featured,
-    tags: row.tags,
-    description: row.description,
-    images: row.images.map((image) => image.path),
-    features: row.features,
-  };
-}
-
 // What the model reads about a car: enough to choose and to answer, no noise.
-function brief(row: SearchRow | FullRow) {
+function brief(row: SearchRow | CarRow) {
   return {
     id: row.id,
     name: `${row.brand} ${row.model}${row.trim_level ? ` ${row.trim_level}` : ""} ${row.year}`,
@@ -241,9 +182,9 @@ const ids = (value: unknown, max: number) =>
     .filter((id): id is string => typeof id === "string" && /^[\w-]{1,40}$/.test(id))
     .slice(0, max);
 
-export function fetchCars(env: SupabaseEnv, carIds: string[]): Promise<FullRow[]> {
+export function fetchCars(env: SupabaseEnv, carIds: string[]): Promise<CarRow[]> {
   if (carIds.length === 0) return Promise.resolve([]);
-  return select<FullRow[]>(env, "cars_full", `id=in.(${carIds.join(",")})&select=*`);
+  return select<CarRow[]>(env, "cars_full", `id=in.(${carIds.join(",")})&select=*`);
 }
 
 // ---------------------------------------------------------------------------

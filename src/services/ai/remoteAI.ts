@@ -2,8 +2,8 @@ import { phoneHref, whatsappHref } from "@/config/site";
 import { carWhatsappMessage } from "@/lib/carMessages";
 import { formatIQD } from "@/lib/format";
 import type { Car } from "@/types/car";
-import { mockAIService } from "./mockAI";
-import { MAX_CHAT_CARS, type AIService, type ChatMessage } from "./types";
+import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage } from "./types";
+import { offlineMessage, welcomeMessage } from "./welcome";
 
 const SESSION_KEY = "autopro:chat-session";
 const TIMEOUT_MS = 60_000;
@@ -41,12 +41,12 @@ function contactActions(car: Car): ChatMessage["actions"] {
 }
 
 /**
- * Sadeem backed by the LLM route (/api/chat: OpenRouter + Supabase). When the
- * route isn't configured, is rate limited or fails, the rule-based Sadeem
- * answers instead, so the chat never goes silent.
+ * Sadeem through /api/chat, which answers with the LLM (OpenRouter +
+ * Supabase) or, when that isn't available, with the rule-based Sadeem. If the
+ * route can't be reached, the buyer gets WhatsApp and call buttons instead.
  */
 export const remoteAIService: AIService = {
-  getWelcomeMessage: () => mockAIService.getWelcomeMessage(),
+  getWelcomeMessage: welcomeMessage,
 
   async sendMessage(message, history) {
     try {
@@ -56,8 +56,16 @@ export const remoteAIService: AIService = {
         body: JSON.stringify({ message, history: toHistory(history), sessionId: sessionId() }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
+      if (res.status === 429) return offlineMessage(true);
       if (!res.ok) throw new Error(String(res.status));
-      const data: { content: string; cars?: Car[]; quickReplies?: string[]; matchCount?: number } = await res.json();
+      const data: {
+        content: string;
+        cars?: Car[];
+        quickReplies?: string[];
+        matchCount?: number;
+        criteria?: string[];
+        actions?: ChatAction[];
+      } = await res.json();
       const cars = (data.cars ?? []).slice(0, MAX_CHAT_CARS);
       return {
         id: `msg-${Date.now()}`,
@@ -66,11 +74,12 @@ export const remoteAIService: AIService = {
         timestamp: new Date().toISOString(),
         cars: cars.length ? cars : undefined,
         matchCount: data.matchCount,
+        criteria: data.criteria?.length ? data.criteria : undefined,
         quickReplies: data.quickReplies?.length ? data.quickReplies : undefined,
-        actions: cars.length === 1 ? contactActions(cars[0]) : undefined,
+        actions: data.actions?.length ? data.actions : cars.length === 1 ? contactActions(cars[0]) : undefined,
       };
     } catch {
-      return mockAIService.sendMessage(message, history);
+      return offlineMessage();
     }
   },
 };
