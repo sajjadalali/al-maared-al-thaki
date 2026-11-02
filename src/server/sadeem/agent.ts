@@ -189,7 +189,7 @@ const ENDING_TOOLS = new Set(["show_cars", "suggest_replies"]);
 const IRAQI_WORDS = (
   [
     ["تبي|تبغى|تبغي|بدك", "تريد"], ["يبي|يبغى|يبغي|بده", "يريد"], ["الحين|دلوقتي", "هسه"],
-    ["وايد", "هواية"], ["كويس|منيح", "زين"],
+    ["وايد", "هواية"], ["كويس|منيح", "زين"], ["تكدر", "تگدر"], ["يكدر", "يگدر"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^\\u0600-\\u06FF])([وف]?)(?:${words})(?![\\u0600-\\u06FF])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -214,7 +214,20 @@ const isFullReply = (text: string) => text.includes("**") || text.length >= 150;
 function joinReply(answerTexts: string[], finalText: string): string {
   if (isFullReply(finalText)) return finalText;
   const full = answerTexts.filter(isFullReply).at(-1);
-  return [...new Set([...(full ? [full] : answerTexts), finalText].filter(Boolean))].join("\n\n");
+  const parts = [...(full ? [full] : answerTexts), finalText].filter(Boolean);
+  // The same short answer written twice (once per round, worded a little
+  // differently) is kept once: the later version.
+  return parts.filter((part, i) => !parts.slice(i + 1).some((later) => sameText(part, later))).join("\n\n");
+}
+
+const words = (text: string) => new Set(text.split(/[^\p{L}\p{N}]+/u).filter(Boolean));
+
+// Mostly the same words (Jaccard over 0.6): one answer written twice.
+function sameText(a: string, b: string): boolean {
+  const wa = words(a);
+  const wb = words(b);
+  const shared = [...wa].filter((w) => wb.has(w)).length;
+  return shared / (wa.size + wb.size - shared || 1) > 0.6;
 }
 
 /** Cars the tools returned that the reply names (model and year on one line), in reply order. */
@@ -350,7 +363,9 @@ export async function runSadeem(
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(results[i]) });
     });
     const failed = results.some((result) => result && typeof result === "object" && "error" in result);
-    if (isFullReply(text) && !failed && calls.every((call) => ENDING_TOOLS.has(call.function.name))) break;
+    // Also a short answer with only suggestions ("شنو رقم موبايلك؟"): nothing left to do.
+    const onlySuggestions = calls.every((call) => call.function.name === "suggest_replies");
+    if ((isFullReply(text) || (text && onlySuggestions)) && !failed && calls.every((call) => ENDING_TOOLS.has(call.function.name))) break;
   }
 
   let content = joinReply(answerTexts, finalText);
