@@ -149,10 +149,30 @@ interface SearchRow extends Omit<CarRow, "cylinders" | "featured" | "description
 }
 
 // What the model reads about a car: enough to choose and to answer, no noise.
-function brief(row: SearchRow | CarRow) {
+// Arabic names of every car (most buyers read no English), from cars_full,
+// fetched again at most once a minute.
+const NAMES_TTL_MS = 60_000;
+let namesCache: { at: number; names: Map<string, string> } | null = null;
+
+async function arabicNames(env: SupabaseEnv): Promise<Map<string, string>> {
+  if (namesCache && Date.now() - namesCache.at < NAMES_TTL_MS) return namesCache.names;
+  const rows = await select<{ id: string; brand: string; brand_ar: string | null; model: string; model_ar: string | null }[]>(
+    env,
+    "cars_full",
+    "select=id,brand,brand_ar,model,model_ar"
+  );
+  // Models without an Arabic name keep theirs ("لكزس RX 350"): it is a number buyers read as is.
+  const names = new Map(rows.map((r) => [r.id, `${r.brand_ar ?? r.brand} ${r.model_ar ?? r.model}`]));
+  namesCache = { at: Date.now(), names };
+  return names;
+}
+
+function brief(row: SearchRow | CarRow, arabicName?: string) {
   return {
     id: row.id,
-    name: `${row.brand} ${row.model}${row.trim_level ? ` ${row.trim_level}` : ""} ${row.year}`,
+    // What the reply calls the car; name_en and the trim only to tell cars apart.
+    name: `${arabicName ?? `${row.brand} ${row.model}`} ${row.year}`,
+    name_en: `${row.brand} ${row.model}${row.trim_level ? ` ${row.trim_level}` : ""} ${row.year}`,
     price_iqd: row.price_iqd,
     price_usd: usdOf(row.price_iqd),
     condition: row.condition,
@@ -218,7 +238,7 @@ export interface TurnState {
   /** Cars looked up with get_car_details, shown when show_cars isn't called. */
   detailIds: string[];
   /** Cars the tools returned this turn, to spot the ones the reply names. */
-  found: Map<string, { model: string; year: number }>;
+  found: Map<string, { model: string; name: string; year: number }>;
   quickReplies: string[];
   leadSaved: boolean;
   searches: Record<string, unknown>[];
@@ -316,26 +336,31 @@ export async function runTool(
       }
       params.p_limit = Math.min(Math.max(Number(params.p_limit) || 6, 1), 10);
       state.searches.push(args);
-      const rows = await rpc<SearchRow[]>(env, "search_cars", params);
+      const [rows, names] = await Promise.all([rpc<SearchRow[]>(env, "search_cars", params), arabicNames(env)]);
       rows.forEach((row) => {
         state.seenIds.add(row.id);
         state.seenPrices.set(row.id, row.price_iqd);
-        state.found.set(row.id, { model: row.model, year: row.year });
+        state.found.set(row.id, { model: row.model, name: names.get(row.id) ?? row.model, year: row.year });
       });
       state.matchCount = rows[0]?.total_count ?? 0;
-      return { total: state.matchCount, cars: rows.map(brief) };
+      return { total: state.matchCount, cars: rows.map((row) => brief(row, names.get(row.id))) };
     }
 
     case "get_car_details": {
-      const rows = await fetchCars(env, ids(args.ids, 5));
+      const [rows, names] = await Promise.all([fetchCars(env, ids(args.ids, 5)), arabicNames(env)]);
       rows.forEach((row) => {
         state.seenIds.add(row.id);
         state.seenPrices.set(row.id, row.price_iqd);
-        state.found.set(row.id, { model: row.model, year: row.year });
+        state.found.set(row.id, { model: row.model, name: names.get(row.id) ?? row.model, year: row.year });
         if (!state.detailIds.includes(row.id)) state.detailIds.push(row.id);
       });
       state.searches.push({ details: rows.map((row) => row.id) });
-      return rows.map((row) => ({ ...brief(row), cylinders: row.cylinders, features: row.features, description: row.description }));
+      return rows.map((row) => ({
+        ...brief(row, names.get(row.id)),
+        cylinders: row.cylinders,
+        features: row.features,
+        description: row.description,
+      }));
     }
 
     case "show_cars": {

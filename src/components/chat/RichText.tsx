@@ -42,6 +42,8 @@ function inline(text: string): ReactNode[] {
 export function RichText({ text }: { text: string }) {
   const blocks: ReactNode[] = [];
   let bullets: string[] = [];
+  // An empty line separates blocks (one car from the next): a visible gap.
+  let gap = false;
 
   const flush = () => {
     if (bullets.length === 0) return;
@@ -65,7 +67,16 @@ export function RichText({ text }: { text: string }) {
       continue;
     }
     flush();
-    if (line.trim()) blocks.push(<p key={`p-${blocks.length}`}>{inline(line)}</p>);
+    if (!line.trim()) {
+      gap = blocks.length > 0;
+      continue;
+    }
+    blocks.push(
+      <p key={`p-${blocks.length}`} className={gap ? "pt-2.5" : undefined}>
+        {inline(line)}
+      </p>
+    );
+    gap = false;
   }
   flush();
 
