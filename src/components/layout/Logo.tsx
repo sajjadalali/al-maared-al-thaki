@@ -26,13 +26,19 @@ export function LogoMark({ className }: { className?: string }) {
 
 export function Logo({ tone = "dark", className }: { tone?: "dark" | "light"; className?: string }) {
   return (
-    <Link href="/" className={cn("flex shrink-0 items-center gap-2.5", className)}>
-      <LogoMark className={cn("h-10 w-10", tone === "dark" ? "text-brand-950" : "text-white/10")} />
-      <span className="flex flex-col leading-none">
+    <Link href="/" className={cn("flex min-w-0 items-center gap-2.5", className)}>
+      <LogoMark className={cn("h-10 w-10 shrink-0", tone === "dark" ? "text-brand-950" : "text-white/10")} />
+      <span className="flex min-w-0 flex-col leading-none">
         <span className={cn("text-[17px] font-bold", tone === "dark" ? "text-brand-950" : "text-white")}>
           {site.name}
         </span>
-        <span className={cn("mt-1 text-[11.5px] font-normal", tone === "dark" ? "text-neutral-500" : "text-white/50")}>
+        {/* A long tagline wraps to two lines on phones instead of pushing the menu off the screen. */}
+        <span
+          className={cn(
+            "mt-1 max-w-[14rem] text-[11px] font-normal leading-[1.4] sm:max-w-none sm:text-[11.5px] sm:leading-none",
+            tone === "dark" ? "text-neutral-500" : "text-white/50"
+          )}
+        >
           {site.tagline}
         </span>
       </span>
