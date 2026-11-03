@@ -1,12 +1,13 @@
 // Sets up the Telegram alert for new leads.
 //
 // Usage:
-//   TELEGRAM_BOT_TOKEN=… npm run telegram               list the chats the bot is in, with their ids
+//   TELEGRAM_BOT_TOKEN=… npm run telegram               list the channels (and chats) the bot is in, with their ids
 //   TELEGRAM_BOT_TOKEN=… TELEGRAM_CHAT_ID=… npm run telegram -- --test
 //                                                       send a test message to those chats
 //
-// The bot only sees a group after it is added and someone writes in the group
-// (or mentions the bot), so write "مرحبا" there before listing.
+// Add the bot to the channel as an admin that can post messages, then write
+// any post in the channel: the bot only sees a channel through its updates.
+// A public channel can also be given by its username (TELEGRAM_CHAT_ID=@name).
 
 const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
 if (!token) {
@@ -37,15 +38,15 @@ if (process.argv.includes("--test")) {
   }
 } else {
   const me = await call("getMe");
-  const updates = await call("getUpdates", { allowed_updates: ["message", "my_chat_member"] });
+  const updates = await call("getUpdates", { allowed_updates: ["channel_post", "message", "my_chat_member"] });
   const chats = new Map();
   for (const update of updates) {
-    const chat = (update.message ?? update.my_chat_member)?.chat;
+    const chat = (update.channel_post ?? update.message ?? update.my_chat_member)?.chat;
     if (chat) chats.set(chat.id, chat);
   }
   console.log(`Bot: @${me.username}`);
   if (!chats.size) {
-    console.log("No chats yet: add the bot to the sales group, write a message there, then run this again.");
+    console.log("No channels yet: add the bot to the channel as an admin that can post, write a post there, then run this again.");
   }
   for (const chat of chats.values()) {
     console.log(`${chat.id}\t${chat.type}\t${chat.title ?? [chat.first_name, chat.last_name].filter(Boolean).join(" ")}`);

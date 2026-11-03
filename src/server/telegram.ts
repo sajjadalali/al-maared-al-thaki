@@ -1,4 +1,4 @@
-// Telegram messages to the sales team, through the Bot API. Import only from
+// Telegram alerts to the sales team's channel, through the Bot API. Import only from
 // server code: it reads the bot token from the environment.
 
 import { site } from "@/config/site";
@@ -6,7 +6,11 @@ import { formatIQD } from "@/lib/format";
 
 export interface TelegramEnv {
   token: string;
-  /** One chat (a group's id is negative, e.g. -1001234567890) or several, comma-separated. */
+  /**
+   * Where alerts go: a channel's id (-1001234567890) or a public channel's
+   * @username, or several of them comma-separated. The bot must be an admin
+   * of the channel that can post messages. Groups and private chats work too.
+   */
   chatIds: string[];
 }
 
