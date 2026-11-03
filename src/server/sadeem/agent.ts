@@ -3,12 +3,23 @@
 // cars it chose to show, loaded fresh from the database.
 import { phoneHref, site, whatsappHref } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
+import { carMarker } from "@/services/ai/carMarkers";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
 import { overviewPrices, systemPrompt } from "./prompt";
 import { readCompletionStream } from "./stream";
 import { toCar } from "@/server/catalog";
-import { MAX_SHOWN_CARS, TOOL_DEFINITIONS, arabicNames, fetchCars, markShown, runTool, usdOf, type TurnState } from "./tools";
+import {
+  MAX_SHOWN_CARS,
+  TOOL_DEFINITIONS,
+  arabicNames,
+  fetchCars,
+  markShown,
+  runTool,
+  usdOf,
+  type ArabicName,
+  type TurnState,
+} from "./tools";
 import { mentionsOverBudget, moneyFigures, unsupportedFigures, type AllowedFigures } from "./verify";
 
 // Fast and cheap with reliable tool calls; set OPENROUTER_MODEL for something else.
@@ -164,14 +175,14 @@ async function complete(
 // so follow-ups can rely on facts the model no longer has tool results for.
 // The browser names the cars "Ford Explorer 2022 – 37,000,000 د.ع"; the note
 // gives the Arabic name instead, so follow-ups don't go back to English names.
-function noteName(id: string, name: string, arabic: Map<string, string>): string {
+function noteName(id: string, name: string, arabic: Map<string, ArabicName>): string {
   const [label, ...rest] = name.split(" – ");
   const year = label.match(/\d{4}$/)?.[0];
-  const ar = arabic.get(id);
+  const ar = arabic.get(id)?.full;
   return [ar && year ? `${ar} ${year}` : label, ...rest].join(" – ");
 }
 
-function historyToMessages(history: HistoryMessage[], arabic: Map<string, string>): LlmMessage[] {
+function historyToMessages(history: HistoryMessage[], arabic: Map<string, ArabicName>): LlmMessage[] {
   return history.map((m) => {
     if (m.role !== "assistant" || !m.cars?.length) return { role: m.role, content: m.content };
     const count = m.matchCount ? ` | عدد السيارات المطابقة للبحث: ${m.matchCount}` : "";
@@ -273,20 +284,43 @@ function sameText(a: string, b: string): boolean {
   return shared / (wa.size + wb.size - shared || 1) > 0.6;
 }
 
-/** Cars the tools returned that the reply names (Arabic or Latin model, and year, on one line), in reply order. */
+type FoundCar = TurnState["found"] extends Map<string, infer C> ? C : never;
+
+// A line that names the car: its year and its name in any form ("شيري تيغو",
+// just "التيغو", or the Latin model).
+function namesCar(line: string, car: FoundCar): boolean {
+  const lower = line.toLowerCase();
+  const names = [car.model, car.name?.full, car.name?.model].filter((n): n is string => Boolean(n));
+  return lower.includes(String(car.year)) && names.some((n) => lower.includes(n.toLowerCase()));
+}
+
+/** Cars the tools returned that the reply names, in reply order. */
 function mentionedCars(reply: string, found: TurnState["found"]): string[] {
-  const lines = reply.toLowerCase().split("\n");
+  const lines = reply.split("\n");
   return [...found]
-    .map(([id, car]) => ({
-      id,
-      at: lines.findIndex(
-        (line) =>
-          (line.includes(car.model.toLowerCase()) || line.includes(car.name.toLowerCase())) && line.includes(String(car.year))
-      ),
-    }))
+    .map(([id, car]) => ({ id, at: lines.findIndex((line) => namesCar(line, car)) }))
     .filter((car) => car.at >= 0)
     .sort((a, b) => a.at - b.at)
     .map((car) => car.id);
+}
+
+// Each car's card right under its paragraph (the one whose first line names
+// it); cards for cars without one stay under the reply.
+function placeCards(reply: string, ids: string[], found: TurnState["found"]): string {
+  const left = new Set(ids);
+  return reply
+    .split(/\n\s*\n/)
+    .map((block) => {
+      // A comparison names both cars on its first line: both cards go there.
+      const first = block.split("\n")[0];
+      const here = [...left].filter((carId) => {
+        const car = found.get(carId);
+        return car && namesCar(first, car);
+      });
+      here.forEach((carId) => left.delete(carId));
+      return [block, ...here.map(carMarker)].join("\n");
+    })
+    .join("\n\n");
 }
 
 // The showroom's number as the reply writes it, digits only ("7838548091").
@@ -365,10 +399,11 @@ export async function runSadeem(
       role: "system",
       content: [{ type: "text", text: await systemPrompt(db), cache_control: { type: "ephemeral", ttl: "1h" } }],
     },
-    ...historyToMessages(history, await arabicNames(db).catch(() => new Map<string, string>())),
+    ...historyToMessages(history, await arabicNames(db).catch(() => new Map<string, ArabicName>())),
     { role: "user", content: message },
   ];
 
+  const buyerGavePhone = /(?:\+?964|0)\s?7\d{2}[\s-]?\d{3}[\s-]?\d{4}/.test(message.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))));
   const answerTexts: string[] = [];
   let finalText = "";
   // The text shown while it is written: earlier answer rounds plus the round
@@ -404,7 +439,9 @@ export async function runSadeem(
     if (llm.fallbackModel && reply.model?.startsWith(llm.fallbackModel) && !state.searches.some((s) => s.fallback)) {
       state.searches.push({ fallback: reply.model });
     }
-    const calls = reply.tool_calls ?? [];
+    // Saving the buyer's number needs a number in their message; models
+    // sometimes call it anyway next to a finished reply, which then got lost.
+    const calls = (reply.tool_calls ?? []).filter((call) => call.function.name !== "save_lead" || buyerGavePhone);
     const text = cleanReply(reply.content ?? "");
     if (calls.length === 0) {
       finalText = text;
@@ -444,11 +481,12 @@ export async function runSadeem(
   // Prices of every car this conversation has touched, current from the database.
   const rows = await fetchCars(db, [...state.seenIds]);
   rows.forEach((row) => state.seenPrices.set(row.id, row.price_iqd));
-  // The cards under the reply: the cars it names (in its order), else the
-  // ones looked up in detail. Only cars a tool returned can be named.
+  // The cards under the reply: the cars it names (in its order), then the
+  // ones looked up in detail (both sides of a comparison). Only cars a tool
+  // returned can be shown.
   const showNamed = (text: string) => {
     const named = mentionedCars(text, state.found);
-    markShown(state, (named.length ? named : state.detailIds).slice(0, MAX_SHOWN_CARS));
+    markShown(state, [...new Set([...named, ...state.detailIds])].slice(0, MAX_SHOWN_CARS));
   };
   showNamed(content);
 
@@ -489,7 +527,8 @@ export async function runSadeem(
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {
-    content: finalContent,
+    // Cards between the paragraphs; the contact check reads the text itself.
+    content: cars.length ? placeCards(finalContent, state.shownIds, state.found) : finalContent,
     cars,
     quickReplies: suggestions,
     leadSaved: state.leadSaved,

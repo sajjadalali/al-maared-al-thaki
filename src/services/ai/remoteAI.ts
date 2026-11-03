@@ -2,6 +2,7 @@ import { phoneHref, whatsappHref } from "@/config/site";
 import { carWhatsappMessage } from "@/lib/carMessages";
 import { formatIQD } from "@/lib/format";
 import type { Car } from "@/types/car";
+import { stripCarMarkers } from "./carMarkers";
 import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage, type ReplyProgress } from "./types";
 import { offlineMessage, welcomeMessage } from "./welcome";
 
@@ -13,7 +14,7 @@ const TIMEOUT_MS = 60_000;
 function toHistory(history: ChatMessage[]) {
   return history.slice(-12).map((m) => ({
     role: m.role,
-    content: m.content,
+    content: stripCarMarkers(m.content),
     cars: m.cars?.map((car) => ({ id: car.id, name: `${car.brand} ${car.model} ${car.year} – ${formatIQD(car.price)}` })),
     matchCount: m.matchCount,
   }));

@@ -129,9 +129,15 @@ interface SearchRow extends Omit<CarRow, "cylinders" | "featured" | "description
 // Arabic names of every car (most buyers read no English), from cars_full,
 // fetched again at most once a minute.
 const NAMES_TTL_MS = 60_000;
-let namesCache: { at: number; names: Map<string, string> } | null = null;
+/** A car's Arabic name ("شيري تيغو") and its model alone ("تيغو"), as replies write them. */
+export interface ArabicName {
+  full: string;
+  model: string;
+}
 
-export async function arabicNames(env: SupabaseEnv): Promise<Map<string, string>> {
+let namesCache: { at: number; names: Map<string, ArabicName> } | null = null;
+
+export async function arabicNames(env: SupabaseEnv): Promise<Map<string, ArabicName>> {
   if (namesCache && Date.now() - namesCache.at < NAMES_TTL_MS) return namesCache.names;
   const rows = await select<{ id: string; brand: string; brand_ar: string | null; model: string; model_ar: string | null }[]>(
     env,
@@ -139,7 +145,9 @@ export async function arabicNames(env: SupabaseEnv): Promise<Map<string, string>
     "select=id,brand,brand_ar,model,model_ar"
   );
   // Models without an Arabic name keep theirs ("لكزس RX 350"): it is a number buyers read as is.
-  const names = new Map(rows.map((r) => [r.id, `${r.brand_ar ?? r.brand} ${r.model_ar ?? r.model}`]));
+  const names = new Map(
+    rows.map((r) => [r.id, { full: `${r.brand_ar ?? r.brand} ${r.model_ar ?? r.model}`, model: r.model_ar ?? r.model }])
+  );
   namesCache = { at: Date.now(), names };
   return names;
 }
@@ -220,7 +228,7 @@ export interface TurnState {
   /** Cars looked up with get_car_details, shown when the reply names none of the cars. */
   detailIds: string[];
   /** Cars the tools returned this turn, to spot the ones the reply names. */
-  found: Map<string, { model: string; name: string; year: number }>;
+  found: Map<string, { model: string; name?: ArabicName; year: number }>;
   leadSaved: boolean;
   searches: Record<string, unknown>[];
 }
@@ -321,10 +329,10 @@ export async function runTool(
       rows.forEach((row) => {
         state.seenIds.add(row.id);
         state.seenPrices.set(row.id, row.price_iqd);
-        state.found.set(row.id, { model: row.model, name: names.get(row.id) ?? row.model, year: row.year });
+        state.found.set(row.id, { model: row.model, name: names.get(row.id), year: row.year });
       });
       state.matchCount = rows[0]?.total_count ?? 0;
-      return { total: state.matchCount, cars: rows.map((row) => brief(row, names.get(row.id), state.request?.budgetMax)) };
+      return { total: state.matchCount, cars: rows.map((row) => brief(row, names.get(row.id)?.full, state.request?.budgetMax)) };
     }
 
     case "get_car_details": {
@@ -332,12 +340,12 @@ export async function runTool(
       rows.forEach((row) => {
         state.seenIds.add(row.id);
         state.seenPrices.set(row.id, row.price_iqd);
-        state.found.set(row.id, { model: row.model, name: names.get(row.id) ?? row.model, year: row.year });
+        state.found.set(row.id, { model: row.model, name: names.get(row.id), year: row.year });
         if (!state.detailIds.includes(row.id)) state.detailIds.push(row.id);
       });
       state.searches.push({ details: rows.map((row) => row.id) });
       return rows.map((row) => ({
-        ...brief(row, names.get(row.id), state.request?.budgetMax),
+        ...brief(row, names.get(row.id)?.full, state.request?.budgetMax),
         cylinders: row.cylinders,
         features: row.features,
         description: row.description,
