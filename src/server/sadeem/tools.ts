@@ -101,18 +101,6 @@ export const TOOL_DEFINITIONS = [
   {
     type: "function",
     function: {
-      name: "show_cars",
-      description: `Show cars to the buyer as cards (photo, price, link) under your reply, best first, at most ${MAX_SHOWN_CARS}. Only ids returned by search_cars or get_car_details.`,
-      parameters: {
-        type: "object",
-        properties: { ids: list(str, "Car ids in display order.") },
-        required: ["ids"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
       name: "save_lead",
       description: "Save the buyer's phone number so the sales team calls back. Only when the buyer gives a number and wants a call, a test drive or an offer.",
       parameters: {
@@ -124,18 +112,6 @@ export const TOOL_DEFINITIONS = [
           note: { type: "string", description: "What they want, in Arabic (e.g. تجربة قيادة يوم السبت)." },
         },
         required: ["phone"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "suggest_replies",
-      description: "2-3 short follow-up messages the buyer can tap, written as the buyer would say them in Iraqi Arabic.",
-      parameters: {
-        type: "object",
-        properties: { options: list(str, "2-3 short options.") },
-        required: ["options"],
       },
     },
   },
@@ -168,7 +144,10 @@ export async function arabicNames(env: SupabaseEnv): Promise<Map<string, string>
   return names;
 }
 
-function brief(row: SearchRow | CarRow, arabicName?: string) {
+// budgetMax: the buyer's budget, so a car above it says by how much (the
+// reply quotes these figures instead of working them out).
+function brief(row: SearchRow | CarRow, arabicName?: string, budgetMax?: number) {
+  const overBy = budgetMax && row.price_iqd > budgetMax ? row.price_iqd - budgetMax : 0;
   return {
     id: row.id,
     // What the reply calls the car; name_en and the trim only to tell cars apart.
@@ -190,6 +169,7 @@ function brief(row: SearchRow | CarRow, arabicName?: string) {
     city: row.city,
     status: row.status,
     tags: row.tags,
+    ...(overBy ? { over_budget_by_iqd: overBy, over_budget_by_usd: usdOf(overBy) } : {}),
   };
 }
 
@@ -228,7 +208,7 @@ export interface OverBudget {
 }
 
 export interface TurnState {
-  /** Every car id a tool returned this turn, so show_cars can't show made-up ids. */
+  /** Every car id a tool returned this turn (and shown before), so only real cars are shown. */
   seenIds: Set<string>;
   /** Prices of those cars, to check every figure the reply quotes. */
   seenPrices: Map<string, number>;
@@ -237,11 +217,10 @@ export interface TurnState {
   /** Matches of the last search (often more than the cars shown). */
   matchCount?: number;
   shownIds: string[];
-  /** Cars looked up with get_car_details, shown when show_cars isn't called. */
+  /** Cars looked up with get_car_details, shown when the reply names none of the cars. */
   detailIds: string[];
   /** Cars the tools returned this turn, to spot the ones the reply names. */
   found: Map<string, { model: string; name: string; year: number }>;
-  quickReplies: string[];
   leadSaved: boolean;
   searches: Record<string, unknown>[];
 }
@@ -345,7 +324,7 @@ export async function runTool(
         state.found.set(row.id, { model: row.model, name: names.get(row.id) ?? row.model, year: row.year });
       });
       state.matchCount = rows[0]?.total_count ?? 0;
-      return { total: state.matchCount, cars: rows.map((row) => brief(row, names.get(row.id))) };
+      return { total: state.matchCount, cars: rows.map((row) => brief(row, names.get(row.id), state.request?.budgetMax)) };
     }
 
     case "get_car_details": {
@@ -358,31 +337,11 @@ export async function runTool(
       });
       state.searches.push({ details: rows.map((row) => row.id) });
       return rows.map((row) => ({
-        ...brief(row, names.get(row.id)),
+        ...brief(row, names.get(row.id), state.request?.budgetMax),
         cylinders: row.cylinders,
         features: row.features,
         description: row.description,
       }));
-    }
-
-    case "show_cars": {
-      const wanted = ids(args.ids, MAX_SHOWN_CARS);
-      const unknown = wanted.filter((id) => !state.seenIds.has(id));
-      markShown(state, wanted.filter((id) => state.seenIds.has(id)));
-      return {
-        shown: state.shownIds,
-        ...(unknown.length ? { error: `Not from a search this turn, not shown: ${unknown.join(", ")}` } : {}),
-        ...(state.overBudget.length
-          ? {
-              over_budget: state.overBudget.map((car) => ({
-                id: car.id,
-                over_by_iqd: car.overBy,
-                over_by_usd: usdOf(car.overBy),
-              })),
-              rule: "Your reply must say these cars are above the buyer's budget and by how much.",
-            }
-          : {}),
-      };
     }
 
     case "save_lead": {
@@ -405,16 +364,6 @@ export async function runTool(
       });
       state.leadSaved = saved;
       return saved ? { saved: true } : { saved: false, error: "Saving is not available; give the WhatsApp number instead." };
-    }
-
-    case "suggest_replies": {
-      state.quickReplies = (Array.isArray(args.options) ? args.options : [])
-        .filter((o): o is string => typeof o === "string" && o.length <= 60)
-        .map((o) => o.trim())
-        // A tap sends the option as it is: none the buyer would have to finish ("هذا رقمي:").
-        .filter((o) => o.length >= 3 && !/[:：…]$|\.\.\.$/.test(o) && !/\b07\b|xxx/i.test(o))
-        .slice(0, 3);
-      return { ok: true };
     }
 
     default:

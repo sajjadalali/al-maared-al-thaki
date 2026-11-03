@@ -180,9 +180,9 @@ function historyToMessages(history: HistoryMessage[], arabic: Map<string, string
   });
 }
 
-// Tools whose round usually carries the main answer text (models often write
-// the reply next to show_cars and only a closing line after it).
-const ANSWER_TOOLS = new Set(["show_cars", "suggest_replies", "save_lead"]);
+// Tools whose round may carry the main answer text (a reply written next to
+// save_lead, with only a short line after its result).
+const ANSWER_TOOLS = new Set(["save_lead"]);
 
 const PREVIEW_MS = 80;
 
@@ -194,9 +194,39 @@ function statusOf(tools: string[]): string | undefined {
   return undefined;
 }
 
-// A round that only shows cars and suggestions next to a full written reply
-// is the answer: no need to ask the model again (one call saved per reply).
-const ENDING_TOOLS = new Set(["show_cars", "suggest_replies"]);
+// The reply ends with the buyer's next messages, written after the answer so
+// they follow from it: "اقتراحات: قارنلي بيناتهم | أريد أرخص | …".
+const SUGGESTIONS = /^\s*اقتراحات\s*[:：]/;
+
+// A tap sends the option as it is: none the buyer would have to finish
+// ("هذا رقمي:"), and none in Sadeem's voice ("شنو ميزانيتك؟").
+const usableSuggestion = (o: string) =>
+  o.length >= 3 &&
+  o.length <= 60 &&
+  !/[:：…]$|\.\.\.$/.test(o) &&
+  !/\b07\b|xxx/i.test(o) &&
+  !/ميزانيتك|^تحب |^تريد /.test(o);
+
+function splitSuggestions(reply: string): { text: string; suggestions: string[] } {
+  const lines = reply.split("\n");
+  const at = lines.findLastIndex((line) => SUGGESTIONS.test(line));
+  if (at < 0) return { text: reply, suggestions: [] };
+  const suggestions = lines[at]
+    .replace(SUGGESTIONS, "")
+    .split("|")
+    .map((o) => o.replace(/^[\s«"']+|[\s»"']+$/g, ""))
+    .filter(usableSuggestion)
+    .slice(0, 3);
+  return { text: lines.filter((_, i) => i !== at).join("\n").trim(), suggestions };
+}
+
+// While it streams: no suggestions line, not even its first letters.
+function hideSuggestions(text: string): string {
+  const lines = text.split("\n").filter((line) => !SUGGESTIONS.test(line));
+  const last = lines.at(-1)?.trim() ?? "";
+  if (last && "اقتراحات:".startsWith(last)) lines.pop();
+  return lines.join("\n").trimEnd();
+}
 
 // Gulf/Levantine words models slip into, with their Iraqi equivalents.
 const IRAQI_WORDS = (
@@ -222,7 +252,7 @@ const cleanReply = (text: string) =>
 // A whole reply lists cars in bold or runs a few lines; a closing line doesn't.
 const isFullReply = (text: string) => text.includes("**") || text.length >= 150;
 
-// The model may write the answer next to show_cars and then only a closing
+// The model may write the answer next to save_lead and then only a closing
 // line, or write the whole answer twice (once per round): keep one full answer.
 function joinReply(answerTexts: string[], finalText: string): string {
   if (isFullReply(finalText)) return finalText;
@@ -323,7 +353,6 @@ export async function runSadeem(
     shownIds: [],
     detailIds: [],
     found: new Map(),
-    quickReplies: [],
     leadSaved: false,
     searches: [],
   };
@@ -349,7 +378,7 @@ export async function runSadeem(
   let shownAt = 0;
   const preview = (force = false) => {
     if (!onEvent || (!force && Date.now() - shownAt < PREVIEW_MS)) return;
-    let text = cleanReply([...answerTexts, roundText].filter(Boolean).join("\n\n"))
+    let text = hideSuggestions(cleanReply([...answerTexts, roundText].filter(Boolean).join("\n\n")))
       // half an emoji, when a piece ends inside one
       .replace(/[\uD800-\uDBFF]$/, "");
     // a car name still being written: close its bold so no stray ** shows
@@ -399,10 +428,6 @@ export async function runSadeem(
     calls.forEach((call, i) => {
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(results[i]) });
     });
-    const failed = results.some((result) => result && typeof result === "object" && "error" in result);
-    // Also a short answer with only suggestions ("شنو رقم موبايلك؟"): nothing left to do.
-    const onlySuggestions = calls.every((call) => call.function.name === "suggest_replies");
-    if ((isFullReply(text) || (text && onlySuggestions)) && !failed && calls.every((call) => ENDING_TOOLS.has(call.function.name))) break;
   }
 
   let content = joinReply(answerTexts, finalText);
@@ -413,19 +438,19 @@ export async function runSadeem(
     content = cleanReply((await complete(llm, messages, false, turn, streamText)).content ?? "");
   }
 
+  let suggestions: string[];
+  ({ text: content, suggestions } = splitSuggestions(content));
+
   // Prices of every car this conversation has touched, current from the database.
   const rows = await fetchCars(db, [...state.seenIds]);
   rows.forEach((row) => state.seenPrices.set(row.id, row.price_iqd));
-  // Models sometimes list cars without calling show_cars (comparisons, quick
-  // answers); show the ones the reply names, else the ones looked up in detail.
-  if (!state.shownIds.length) {
-    const named = mentionedCars(content, state.found);
+  // The cards under the reply: the cars it names (in its order), else the
+  // ones looked up in detail. Only cars a tool returned can be named.
+  const showNamed = (text: string) => {
+    const named = mentionedCars(text, state.found);
     markShown(state, (named.length ? named : state.detailIds).slice(0, MAX_SHOWN_CARS));
-  }
-  const cars = state.shownIds
-    .map((id) => rows.find((row) => row.id === id))
-    .filter((row) => row !== undefined)
-    .map(toCar);
+  };
+  showNamed(content);
 
   // Check the reply against the facts; one rewrite if it quotes a figure no
   // tool returned or hides that a shown car is over budget.
@@ -439,17 +464,26 @@ export async function runSadeem(
         role: "system",
         content:
           `Your reply has problems: ${problems.join(" | ")}. Rewrite it in Iraqi Arabic using only figures from the tool results ` +
-          `(prices: ${[...state.seenPrices].map(([id, p]) => `${id} ${p.toLocaleString("en-US")} د.ع ≈ ${usdOf(p).toLocaleString("en-US")} $`).join("; ")}). No tools.`,
+          `(prices: ${[...state.seenPrices].map(([id, p]) => `${id} ${p.toLocaleString("en-US")} دينار ≈ ${usdOf(p).toLocaleString("en-US")} دولار`).join("; ")}). ` +
+          "Keep the same shape, ending with the suggestions line. No tools.",
       });
       onEvent?.({ type: "status", text: "سديم يراجع الأسعار…" });
       const fixed = cleanReply((await complete(llm, messages, false, turn)).content ?? "");
       if (fixed) {
-        const left = replyProblems(fixed, allowed, state);
+        const rewritten = splitSuggestions(fixed);
+        const left = replyProblems(rewritten.text, allowed, state);
         if (left.length) state.searches.push({ verify_after_rewrite: left });
-        content = fixed;
+        content = rewritten.text;
+        if (rewritten.suggestions.length) suggestions = rewritten.suggestions;
+        showNamed(content);
       }
     }
   }
+
+  const cars = state.shownIds
+    .map((id) => rows.find((row) => row.id === id))
+    .filter((row) => row !== undefined)
+    .map(toCar);
 
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
@@ -457,7 +491,7 @@ export async function runSadeem(
   return {
     content: finalContent,
     cars,
-    quickReplies: state.quickReplies,
+    quickReplies: suggestions,
     leadSaved: state.leadSaved,
     matchCount: cars.length ? state.matchCount : undefined,
     actions: contactActions(finalContent, state, cars, history),
