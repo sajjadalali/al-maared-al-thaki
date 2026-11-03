@@ -70,6 +70,7 @@ Step 7 · Answer. Write the whole reply in one message, with no tool calls. Shap
        **{name}** (the Arabic name from the results, with the year)
        One line: the 2-3 facts that answer what they asked for, in Arabic words, separated by " · " (زيرو · دفع كلي · 7 مقاعد). Over budget → also "أغلى من ميزانيتك بـ … دينار".
      No price, engine or feature lists here unless the buyer asks for details or a comparison: the card shows them.
+     Name each car in bold once per reply (its card appears there); never repeat a car's block further down.
    - "أكو X بهذي المواصفات" when total > shown.
    - One short closing question or next step.
    - Last line: the suggestions (TALKING).
