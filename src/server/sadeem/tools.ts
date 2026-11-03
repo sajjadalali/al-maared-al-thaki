@@ -1,5 +1,6 @@
 // The tools Sadeem (the LLM) can call. Each one runs against Supabase and
 // returns compact JSON; the model never sees or invents anything else.
+import { site } from "@/config/site";
 import { USD_TO_IQD } from "@/lib/format";
 import { insert, rpc, select, type SupabaseEnv } from "@/server/supabase";
 import { type CarRow } from "@/server/catalog";
@@ -154,7 +155,7 @@ interface SearchRow extends Omit<CarRow, "cylinders" | "featured" | "description
 const NAMES_TTL_MS = 60_000;
 let namesCache: { at: number; names: Map<string, string> } | null = null;
 
-async function arabicNames(env: SupabaseEnv): Promise<Map<string, string>> {
+export async function arabicNames(env: SupabaseEnv): Promise<Map<string, string>> {
   if (namesCache && Date.now() - namesCache.at < NAMES_TTL_MS) return namesCache.names;
   const rows = await select<{ id: string; brand: string; brand_ar: string | null; model: string; model_ar: string | null }[]>(
     env,
@@ -180,6 +181,7 @@ function brief(row: SearchRow | CarRow, arabicName?: string) {
     body: row.body_type,
     mileage_km: row.mileage_km,
     fuel: row.fuel,
+    transmission: row.transmission,
     engine: row.engine,
     hp: row.horsepower,
     drivetrain: row.drivetrain,
@@ -385,7 +387,14 @@ export async function runTool(
 
     case "save_lead": {
       const phone = String(args.phone ?? "").replace(/[^\d+]/g, "");
-      if (phone.replace(/\D/g, "").length < 8) return { saved: false, error: "Invalid phone number; ask again." };
+      // An Iraqi mobile: 07XXXXXXXXX, or +9647XXXXXXXXX.
+      const local = phone.replace(/^\+?964/, "0");
+      if (!/^07\d{9}$/.test(local)) {
+        return { saved: false, error: "Not a full Iraqi mobile number (11 digits starting 07). Ask for it again." };
+      }
+      if (local === site.whatsapp.replace(/^964/, "0")) {
+        return { saved: false, error: "That is the showroom's own number, not the buyer's. Ask for the buyer's number." };
+      }
       const carId = typeof args.car_id === "string" && state.seenIds.has(args.car_id) ? args.car_id : null;
       const saved = await insert(env, "leads", {
         phone,
@@ -401,6 +410,9 @@ export async function runTool(
     case "suggest_replies": {
       state.quickReplies = (Array.isArray(args.options) ? args.options : [])
         .filter((o): o is string => typeof o === "string" && o.length <= 60)
+        .map((o) => o.trim())
+        // A tap sends the option as it is: none the buyer would have to finish ("هذا رقمي:").
+        .filter((o) => o.length >= 3 && !/[:：…]$|\.\.\.$/.test(o) && !/\b07\b|xxx/i.test(o))
         .slice(0, 3);
       return { ok: true };
     }

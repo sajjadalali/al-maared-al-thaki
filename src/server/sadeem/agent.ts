@@ -5,10 +5,10 @@ import { phoneHref, site, whatsappHref } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
-import { systemPrompt } from "./prompt";
+import { overviewPrices, systemPrompt } from "./prompt";
 import { readCompletionStream } from "./stream";
 import { toCar } from "@/server/catalog";
-import { MAX_SHOWN_CARS, TOOL_DEFINITIONS, fetchCars, markShown, runTool, usdOf, type TurnState } from "./tools";
+import { MAX_SHOWN_CARS, TOOL_DEFINITIONS, arabicNames, fetchCars, markShown, runTool, usdOf, type TurnState } from "./tools";
 import { mentionsOverBudget, moneyFigures, unsupportedFigures, type AllowedFigures } from "./verify";
 
 // Fast and cheap with reliable tool calls; set OPENROUTER_MODEL for something else.
@@ -159,14 +159,21 @@ async function complete(
 
 // Earlier replies carry a note of what they were based on (from the database),
 // so follow-ups can rely on facts the model no longer has tool results for.
-function historyToMessages(history: HistoryMessage[]): LlmMessage[] {
+// The browser names the cars "Ford Explorer 2022 – 37,000,000 د.ع"; the note
+// gives the Arabic name instead, so follow-ups don't go back to English names.
+function noteName(id: string, name: string, arabic: Map<string, string>): string {
+  const [label, ...rest] = name.split(" – ");
+  const year = label.match(/\d{4}$/)?.[0];
+  const ar = arabic.get(id);
+  return [ar && year ? `${ar} ${year}` : label, ...rest].join(" – ");
+}
+
+function historyToMessages(history: HistoryMessage[], arabic: Map<string, string>): LlmMessage[] {
   return history.map((m) => {
     if (m.role !== "assistant" || !m.cars?.length) return { role: m.role, content: m.content };
     const count = m.matchCount ? ` | عدد السيارات المطابقة للبحث: ${m.matchCount}` : "";
-    return {
-      role: m.role,
-      content: `${m.content}\n\n[من قاعدة البيانات، السيارات المعروضة: ${m.cars.map((c) => `${c.id} ${c.name}`).join("؛ ")}${count}]`,
-    };
+    const cars = m.cars.map((c) => `${c.id} ${noteName(c.id, c.name, arabic)}`).join("؛ ");
+    return { role: m.role, content: `${m.content}\n\n[من قاعدة البيانات، السيارات المعروضة: ${cars}${count}]` };
   });
 }
 
@@ -271,7 +278,8 @@ function contactActions(reply: string, state: TurnState, cars: Car[], history: H
 
 function allowedFigures(state: TurnState, buyerTexts: string[]): AllowedFigures {
   const prices = [...state.seenPrices.values()];
-  const iqd = [...prices, ...state.overBudget.map((c) => c.overBy)];
+  // The stock overview's price ranges are database facts too ("أرخص سيارة عدنا بـ …").
+  const iqd = [...prices, ...state.overBudget.map((c) => c.overBy), ...overviewPrices()];
   // Differences, for "أرخص بـ 4 مليون" in comparisons.
   for (const a of prices) for (const b of prices) if (a > b) iqd.push(a - b);
   if (state.request?.budgetMax) iqd.push(state.request.budgetMax);
@@ -325,7 +333,7 @@ export async function runSadeem(
       role: "system",
       content: [{ type: "text", text: await systemPrompt(db), cache_control: { type: "ephemeral", ttl: "1h" } }],
     },
-    ...historyToMessages(history),
+    ...historyToMessages(history, await arabicNames(db).catch(() => new Map<string, string>())),
     { role: "user", content: message },
   ];
 
