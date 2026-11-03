@@ -216,6 +216,8 @@ const usableSuggestion = (o: string) =>
   o.length <= 60 &&
   !/[:：…]$|\.\.\.$/.test(o) &&
   !/\b07\b|xxx/i.test(o) &&
+  // a phone number in a suggestion is one the model made up
+  !/\d{7,}/.test(o.replace(/[\s-]/g, "")) &&
   !/ميزانيتك|^تحب |^تريد /.test(o);
 
 function splitSuggestions(reply: string): { text: string; suggestions: string[] } {
@@ -390,6 +392,17 @@ export async function runSadeem(
     leadSaved: false,
     searches: [],
   };
+  const arabic = await arabicNames(db).catch(() => new Map<string, ArabicName>());
+  // Cars shown earlier in the conversation can be named again ("أريد الفورد
+  // اكسبلورر 2022") without a new search, and still get their card.
+  for (const m of history) {
+    for (const c of m.cars ?? []) {
+      const label = c.name.split(" – ")[0];
+      const year = Number(label.match(/\d{4}$/)?.[0]);
+      if (year) state.found.set(c.id, { model: label.replace(/\s*\d{4}$/, ""), name: arabic.get(c.id), year });
+    }
+  }
+
   const messages: LlmMessage[] = [
     // The tools and these instructions are the same for every call: providers
     // that cache (Anthropic and Gemini on this marker, OpenAI, DeepSeek and
@@ -399,7 +412,7 @@ export async function runSadeem(
       role: "system",
       content: [{ type: "text", text: await systemPrompt(db), cache_control: { type: "ephemeral", ttl: "1h" } }],
     },
-    ...historyToMessages(history, await arabicNames(db).catch(() => new Map<string, ArabicName>())),
+    ...historyToMessages(history, arabic),
     { role: "user", content: message },
   ];
 
