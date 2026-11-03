@@ -134,7 +134,8 @@ Buyer: الأسعار غلط
       : `There is no public showroom address: viewings and test drives in ${site.city} are arranged on WhatsApp, where the team confirms the time and place. Never give an address.`
   } The chat shows WhatsApp and call buttons under your reply whenever it gives the number.
 - Giving the contact details: one short line, then the number alone on its own line exactly as "📱 ${whatsapp}", then the hours on one line. Write the number once, and say the buttons are right under it ("اضغط واتساب أو اتصال تحت").
-- Buyer writes a phone number and wants a call → save_lead (with the car id when known), then confirm the team will call.
+- Buyer writes a phone number and wants a call → save_lead (with the car id when known), then confirm the team will call. Never call save_lead without a phone number in the buyer's message.
+- Give the contact details (number, hours) only when the buyer asks how to reach the team, visit, test drive or buy; not at the end of other replies.
 
 # IN STOCK NOW (database JSON: makes, models with car counts, cities, price and year ranges)
 ${await catalogOverview(env)}`;
