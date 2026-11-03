@@ -101,7 +101,8 @@ export function openRouterEnv(): OpenRouterEnv | null {
 interface TurnStats {
   /** Keeps calls on one provider, so its prompt cache stays warm. */
   sessionKey: string;
-  calls: { ms: number; model?: string; prompt?: number; cached?: number }[];
+  /** One entry per model call: time, tokens, and what it did (tools called, whether it wrote text). */
+  calls: { ms: number; model?: string; prompt?: number; cached?: number; tools: string[]; text: number }[];
 }
 
 // With onText the call is streamed and every piece of text is passed on as it
@@ -147,6 +148,8 @@ async function complete(
     model: data.model,
     prompt: data.usage?.prompt_tokens,
     cached: data.usage?.prompt_tokens_details?.cached_tokens,
+    tools: (message.tool_calls ?? []).map((call: { function: { name: string } }) => call.function.name),
+    text: (message.content ?? "").length,
   });
   return {
     role: "assistant",
