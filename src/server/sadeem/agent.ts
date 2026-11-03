@@ -3,6 +3,7 @@
 // cars it chose to show, loaded fresh from the database.
 import { phoneHref, site, whatsappHref } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
+import { carMarker } from "@/services/ai/carMarkers";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
 import { overviewPrices, systemPrompt } from "./prompt";
@@ -283,24 +284,43 @@ function sameText(a: string, b: string): boolean {
   return shared / (wa.size + wb.size - shared || 1) > 0.6;
 }
 
-/**
- * Cars the tools returned that the reply names, in reply order: a line with
- * the car's year and its name in any form ("شيري تيغو", just "التيغو", or
- * the Latin model).
- */
+type FoundCar = TurnState["found"] extends Map<string, infer C> ? C : never;
+
+// A line that names the car: its year and its name in any form ("شيري تيغو",
+// just "التيغو", or the Latin model).
+function namesCar(line: string, car: FoundCar): boolean {
+  const lower = line.toLowerCase();
+  const names = [car.model, car.name?.full, car.name?.model].filter((n): n is string => Boolean(n));
+  return lower.includes(String(car.year)) && names.some((n) => lower.includes(n.toLowerCase()));
+}
+
+/** Cars the tools returned that the reply names, in reply order. */
 function mentionedCars(reply: string, found: TurnState["found"]): string[] {
-  const lines = reply.toLowerCase().split("\n");
+  const lines = reply.split("\n");
   return [...found]
-    .map(([id, car]) => {
-      const names = [car.model, car.name?.full, car.name?.model].filter((n): n is string => Boolean(n)).map((n) => n.toLowerCase());
-      return {
-        id,
-        at: lines.findIndex((line) => line.includes(String(car.year)) && names.some((n) => line.includes(n))),
-      };
-    })
+    .map(([id, car]) => ({ id, at: lines.findIndex((line) => namesCar(line, car)) }))
     .filter((car) => car.at >= 0)
     .sort((a, b) => a.at - b.at)
     .map((car) => car.id);
+}
+
+// Each car's card right under its paragraph (the one whose first line names
+// it); cards for cars without one stay under the reply.
+function placeCards(reply: string, ids: string[], found: TurnState["found"]): string {
+  const left = new Set(ids);
+  return reply
+    .split(/\n\s*\n/)
+    .map((block) => {
+      // A comparison names both cars on its first line: both cards go there.
+      const first = block.split("\n")[0];
+      const here = [...left].filter((carId) => {
+        const car = found.get(carId);
+        return car && namesCar(first, car);
+      });
+      here.forEach((carId) => left.delete(carId));
+      return [block, ...here.map(carMarker)].join("\n");
+    })
+    .join("\n\n");
 }
 
 // The showroom's number as the reply writes it, digits only ("7838548091").
@@ -507,7 +527,8 @@ export async function runSadeem(
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {
-    content: finalContent,
+    // Cards between the paragraphs; the contact check reads the text itself.
+    content: cars.length ? placeCards(finalContent, state.shownIds, state.found) : finalContent,
     cars,
     quickReplies: suggestions,
     leadSaved: state.leadSaved,

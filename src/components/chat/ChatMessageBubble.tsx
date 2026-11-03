@@ -4,6 +4,8 @@ import { RichText } from "./RichText";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { cn } from "@/lib/cn";
 import { MAX_CHAT_CARS, type ChatMessage } from "@/services/ai";
+import { splitAtCars } from "@/services/ai/carMarkers";
+import type { Car } from "@/types/car";
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("ar-IQ-u-nu-latn", { hour: "numeric", minute: "2-digit" });
@@ -13,6 +15,14 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
   // Each reply carries the cars as the database had them when it was written.
   const cars = (message.cars ?? []).slice(0, MAX_CHAT_CARS);
+  // The reply's paragraphs with each car's card right under the paragraph
+  // about it; cards without a place in the text come after the reply.
+  const parts = splitAtCars(message.content);
+  const placed = new Set(parts.flatMap((part) => ("carId" in part ? [part.carId] : [])));
+  const rest = cars.filter((car) => !placed.has(car.id));
+  const lastText = parts.findLastIndex((part) => "text" in part);
+  const card = (car: Car) =>
+    cars.length === 1 ? <CarDetailChatCard car={car} /> : <CarRecommendationCard car={car} />;
 
   if (isUser) {
     return (
@@ -35,36 +45,51 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
       </span>
 
       <div className="flex min-w-0 max-w-[88%] flex-1 flex-col items-end gap-2">
-        <div className="rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 pb-1.5 pt-2.5 shadow-sm">
-          <div className="text-[15px] font-normal leading-7 text-neutral-800">
-            <RichText text={message.content} />
-          </div>
+        {parts.map((part, i) => {
+          if ("carId" in part) {
+            const car = cars.find((c) => c.id === part.carId);
+            return car ? (
+              <div key={`car-${car.id}`} className="w-full">
+                {card(car)}
+              </div>
+            ) : null;
+          }
+          return (
+            <div
+              key={`text-${i}`}
+              className={cn(
+                "w-full rounded-2xl border border-black/[0.04] bg-white px-3.5 pb-1.5 pt-2.5 shadow-sm",
+                i === 0 && "rounded-tl-md"
+              )}
+            >
+              <div className="text-[15px] font-normal leading-7 text-neutral-800">
+                <RichText text={part.text.trim()} />
+              </div>
 
-          {message.criteria && message.criteria.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {message.criteria.map((c) => (
-                <span
-                  key={c}
-                  className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[12px] font-semibold text-brand-800"
-                >
-                  <bdi>{c}</bdi>
-                </span>
-              ))}
+              {i === lastText && message.criteria && message.criteria.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {message.criteria.map((c) => (
+                    <span
+                      key={c}
+                      className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[12px] font-semibold text-brand-800"
+                    >
+                      <bdi>{c}</bdi>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {i === lastText && <p className="mt-0.5 text-end text-[10.5px] text-neutral-400">{formatTime(message.timestamp)}</p>}
             </div>
-          )}
+          );
+        })}
 
-          <p className="mt-0.5 text-end text-[10.5px] text-neutral-400">{formatTime(message.timestamp)}</p>
-        </div>
-
-        {cars.length === 1 && (
-          <div className="w-full">
-            <CarDetailChatCard car={cars[0]} />
-          </div>
-        )}
-        {cars.length > 1 && (
+        {rest.length > 0 && (
           <div className="flex w-full flex-col gap-2">
-            {cars.map((car) => (
-              <CarRecommendationCard key={car.id} car={car} />
+            {rest.map((car) => (
+              <div key={car.id} className="w-full">
+                {card(car)}
+              </div>
             ))}
           </div>
         )}
