@@ -3,6 +3,7 @@
 import { site } from "@/config/site";
 import { USD_TO_IQD } from "@/lib/format";
 import { insert, rpc, select, type SupabaseEnv } from "@/server/supabase";
+import { notifyLead } from "@/server/telegram";
 import { type CarRow } from "@/server/catalog";
 import { budgetFromWords } from "./verify";
 
@@ -231,6 +232,8 @@ export interface TurnState {
   found: Map<string, { model: string; name?: ArabicName; year: number }>;
   leadSaved: boolean;
   searches: Record<string, unknown>[];
+  /** The buyer's message this turn, passed on with a lead. */
+  message?: string;
 }
 
 // Models sometimes put a wider search range in budget_max_iqd ("ب عشرين
@@ -363,13 +366,32 @@ export async function runTool(
         return { saved: false, error: "That is the showroom's own number, not the buyer's. Ask for the buyer's number." };
       }
       const carId = typeof args.car_id === "string" && state.seenIds.has(args.car_id) ? args.car_id : null;
-      const saved = await insert(env, "leads", {
-        phone,
-        name: typeof args.name === "string" ? args.name.slice(0, 80) : null,
-        car_id: carId,
-        message: typeof args.note === "string" ? args.note.slice(0, 500) : null,
-        source: "chat",
-      });
+      const name = typeof args.name === "string" && args.name.trim() ? args.name.trim().slice(0, 80) : null;
+      const note = typeof args.note === "string" && args.note.trim() ? args.note.trim().slice(0, 500) : null;
+      const car = carId ? state.found.get(carId) : undefined;
+      // The database and Telegram side by side: either one is enough for the
+      // team to call back, so a lead is only lost when both fail.
+      const [stored, notified] = await Promise.all([
+        insert(env, "leads", { phone, name, car_id: carId, message: note, source: "chat" }).catch((error) => {
+          console.error("Saving lead:", error);
+          return false;
+        }),
+        notifyLead({
+          phone: local,
+          name,
+          car: carId
+            ? {
+                id: carId,
+                label: car ? `${car.name?.full ?? car.model} ${car.year}` : carId,
+                priceIqd: state.seenPrices.get(carId),
+              }
+            : null,
+          note,
+          message: state.message,
+        }),
+      ]);
+      state.searches.push({ lead: { stored, notified } });
+      const saved = stored || notified;
       state.leadSaved = saved;
       return saved ? { saved: true } : { saved: false, error: "Saving is not available; give the WhatsApp number instead." };
     }
