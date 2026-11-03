@@ -35,9 +35,15 @@ export interface ReplyProgress {
 export interface AIService {
   /**
    * Sends a user message and the recent conversation history, returns Sadeem's
-   * reply. onProgress gets the reply as it is written, before it resolves.
+   * reply. onProgress gets the reply as it is written, before it resolves;
+   * conversationId keeps each conversation apart in the chat logs.
    */
-  sendMessage(message: string, history: ChatMessage[], onProgress?: (progress: ReplyProgress) => void): Promise<ChatMessage>;
+  sendMessage(
+    message: string,
+    history: ChatMessage[],
+    onProgress?: (progress: ReplyProgress) => void,
+    conversationId?: string
+  ): Promise<ChatMessage>;
   /** The opening message shown when the chat is first opened. */
   getWelcomeMessage(): ChatMessage;
 }

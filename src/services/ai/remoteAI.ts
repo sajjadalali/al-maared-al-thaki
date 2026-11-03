@@ -5,21 +5,7 @@ import type { Car } from "@/types/car";
 import { MAX_CHAT_CARS, type AIService, type ChatAction, type ChatMessage, type ReplyProgress } from "./types";
 import { offlineMessage, welcomeMessage } from "./welcome";
 
-const SESSION_KEY = "autopro:chat-session";
 const TIMEOUT_MS = 60_000;
-
-function sessionId(): string | undefined {
-  try {
-    let id = window.localStorage.getItem(SESSION_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      window.localStorage.setItem(SESSION_KEY, id);
-    }
-    return id;
-  } catch {
-    return undefined;
-  }
-}
 
 // What the server needs from earlier messages: the text, which cars were shown
 // (with their prices) and how many matched, so "الثانية", "قارنهم" or "الأسعار
@@ -79,12 +65,12 @@ function contactActions(car: Car): ChatMessage["actions"] {
 export const remoteAIService: AIService = {
   getWelcomeMessage: welcomeMessage,
 
-  async sendMessage(message, history, onProgress) {
+  async sendMessage(message, history, onProgress, conversationId) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history: toHistory(history), sessionId: sessionId(), stream: true }),
+        body: JSON.stringify({ message, history: toHistory(history), sessionId: conversationId, stream: true }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (res.status === 429) return offlineMessage(true);
