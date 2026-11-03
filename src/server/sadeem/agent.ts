@@ -391,6 +391,7 @@ export async function runSadeem(
     found: new Map(),
     leadSaved: false,
     searches: [],
+    message,
   };
   const arabic = await arabicNames(db).catch(() => new Map<string, ArabicName>());
   // Cars shown earlier in the conversation can be named again ("أريد الفورد

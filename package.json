@@ -9,7 +9,8 @@
     "lint": "eslint",
     "import-cars": "node scripts/import-cars.mjs",
     "fetch-photos": "node scripts/fetch-photos.mjs",
-    "sync-supabase": "node scripts/sync-supabase.mjs"
+    "sync-supabase": "node scripts/sync-supabase.mjs",
+    "telegram": "node scripts/telegram.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.48.0",
