@@ -18,19 +18,18 @@
     "horsepower": 203,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "أحمر",
+    "color": "فضي",
     "city": "بغداد",
     "status": "متوفرة",
     "featured": true,
     "tags": [],
     "description": "تويوتا كامري SE 2024 وارد أمريكي، ممشى 21 ألف كم فقط. السيارة بدون صبغ وبدون حوادث مسجلة، فحصت بالكامل في المعرض. اقتصادية بالوقود وقطعها متوفرة بكل مكان، خيار مضمون للعائلة والاستخدام اليومي.",
     "images": [
-      "/cars/car-001-1.webp",
       "/cars/car-001-2.webp",
       "/cars/car-001-3.webp"
     ],
     "features": [
-      "شاشة 9 بوصة",
+      "شاشة 8 بوصة",
       "آبل كاربلاي وأندرويد أوتو",
       "كاميرا خلفية",
       "مثبت سرعة تكيفي",
@@ -67,9 +66,7 @@
     ],
     "description": "تويوتا كورولا SE 2023 وارد أمريكي بمحرك 2.0 لتر، ممشى 34 ألف كم. من أقل السيارات استهلاكاً للوقود وتكاليف صيانتها بسيطة. حالة ممتازة ومناسبة للاستخدام اليومي.",
     "images": [
-      "/cars/car-002-1.webp",
-      "/cars/car-002-2.webp",
-      "/cars/car-002-3.webp"
+      "/cars/car-002-1.webp"
     ],
     "features": [
       "شاشة 8 بوصة",
@@ -109,7 +106,6 @@
     "description": "تويوتا لاند كروزر GXR 2026 خليجي زيرو، الدفع الرباعي الأكثر طلباً في العراق. محرك V6 سعة 3.5 لتر توين تيربو بقوة 409 حصان وناقل 10 سرعات، قوة وموثوقية للطرق الخارجية والمدينة.",
     "images": [
       "/cars/car-003-1.webp",
-      "/cars/car-003-2.webp",
       "/cars/car-003-3.webp"
     ],
     "features": [
@@ -218,14 +214,13 @@
     "horsepower": 180,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "رمادي",
+    "color": "أحمر",
     "city": "أربيل",
     "status": "متوفرة",
     "featured": true,
     "tags": [],
     "description": "كيا سبورتاج GT-Line 2023 وارد كوري، الجيل الجديد بالشاشة المنحنية. SUV عملية ومريحة للعائلة، ممشى 27 ألف كم ومساحة داخلية واسعة.",
     "images": [
-      "/cars/car-006-1.webp",
       "/cars/car-006-2.webp",
       "/cars/car-006-3.webp"
     ],
@@ -242,6 +237,7 @@
     "id": "car-007",
     "brand": "Kia",
     "model": "Sorento",
+    "trim": "EX",
     "year": 2026,
     "price": 58000000,
     "currency": "IQD",
@@ -264,8 +260,7 @@
     "description": "كيا سورينتو 2026 وكالة زيرو بمحرك V6 سعة 3.5 لتر ودفع كلي، سبعة مقاعد حقيقية للعوائل الكبيرة. ضمان الوكيل وتجهيزات أمان متقدمة.",
     "images": [
       "/cars/car-007-1.webp",
-      "/cars/car-007-2.webp",
-      "/cars/car-007-3.webp"
+      "/cars/car-007-2.webp"
     ],
     "features": [
       "سبعة مقاعد",
@@ -281,6 +276,7 @@
     "id": "car-008",
     "brand": "Hyundai",
     "model": "Sonata",
+    "trim": "Premium",
     "year": 2023,
     "price": 27500000,
     "currency": "IQD",
@@ -290,9 +286,9 @@
     "mileage": 41000,
     "transmission": "أوتوماتيك",
     "fuel": "بنزين",
-    "engine": "2.5L",
+    "engine": "2.0L",
     "cylinders": 4,
-    "horsepower": 191,
+    "horsepower": 160,
     "drivetrain": "أمامي",
     "seats": 5,
     "color": "أبيض",
@@ -300,11 +296,10 @@
     "status": "متوفرة",
     "featured": false,
     "tags": [],
-    "description": "هيونداي سوناتا 2023 وارد كوري، سيدان عائلية واسعة وهادئة. ممشى 41 ألف كم وسجل صيانة واضح.",
+    "description": "هيونداي سوناتا 2023 وارد كوري بمحرك 2.0 لتر، سيدان عائلية واسعة وهادئة. ممشى 41 ألف كم وسجل صيانة واضح.",
     "images": [
       "/cars/car-008-1.webp",
-      "/cars/car-008-2.webp",
-      "/cars/car-008-3.webp"
+      "/cars/car-008-2.webp"
     ],
     "features": [
       "شاشة 10.25 بوصة",
@@ -318,6 +313,7 @@
     "id": "car-009",
     "brand": "Hyundai",
     "model": "Tucson",
+    "trim": "Smart",
     "year": 2024,
     "price": 31000000,
     "currency": "IQD",
@@ -458,7 +454,6 @@
     "description": "نيسان باترول LE بلاتينيوم 2026 خليجي زيرو، الجيل الجديد بمحرك V6 توين تيربو بقوة 425 حصان. فخامة كاملة ومقصورة واسعة لثمانية ركاب، رمز القوة في السوق العراقي.",
     "images": [
       "/cars/car-012-1.webp",
-      "/cars/car-012-2.webp",
       "/cars/car-012-3.webp"
     ],
     "features": [
@@ -475,6 +470,7 @@
     "id": "car-013",
     "brand": "Nissan",
     "model": "Sunny",
+    "trim": "SV",
     "year": 2024,
     "price": 20000000,
     "currency": "IQD",
@@ -499,13 +495,14 @@
     "description": "نيسان صني 2024 وكالة، من أكثر السيارات اقتصادية بالوقود والصيانة. ممشى 22 ألف كم، خيار موثوق لأول سيارة ولسائقي التطبيقات.",
     "images": [
       "/cars/car-013-1.webp",
-      "/cars/car-013-2.webp",
-      "/cars/car-013-3.webp"
+      "/cars/car-013-2.webp"
     ],
     "features": [
-      "شاشة وسطية",
-      "بلوتوث",
+      "شاشة لمس",
+      "آبل كاربلاي وأندرويد أوتو",
       "كاميرا خلفية",
+      "شاحن لاسلكي",
+      "جنوط 16 بوصة",
       "مكيف أوتوماتيك"
     ]
   },
@@ -565,7 +562,7 @@
     "horsepower": 355,
     "drivetrain": "رباعي",
     "seats": 8,
-    "color": "أسود",
+    "color": "أبيض",
     "city": "البصرة",
     "status": "متوفرة",
     "featured": false,
@@ -574,7 +571,6 @@
     ],
     "description": "شفروليه تاهو LT 2023 وارد أمريكي بمحرك V8 ودفع رباعي، SUV كبيرة تتسع لثمانية ركاب براحة تامة. ممشى 33 ألف كم.",
     "images": [
-      "/cars/car-015-1.webp",
       "/cars/car-015-2.webp",
       "/cars/car-015-3.webp"
     ],
@@ -591,6 +587,7 @@
     "id": "car-016",
     "brand": "Lexus",
     "model": "ES 350",
+    "trim": "Ultra Luxury",
     "year": 2023,
     "price": 57000000,
     "currency": "IQD",
@@ -630,6 +627,7 @@
     "id": "car-017",
     "brand": "Lexus",
     "model": "RX 350",
+    "trim": "Prestige",
     "year": 2024,
     "price": 76000000,
     "currency": "IQD",
@@ -654,8 +652,7 @@
     "description": "لكزس RX 350 2024 خليجي، الجيل الجديد بمحرك 2.4 تيربو ودفع كلي. SUV فاخرة بتصميم جريء وتجهيزات أمان متقدمة، بحالة ممتازة.",
     "images": [
       "/cars/car-017-1.webp",
-      "/cars/car-017-2.webp",
-      "/cars/car-017-3.webp"
+      "/cars/car-017-2.webp"
     ],
     "features": [
       "شاشة 14 بوصة",
@@ -734,8 +731,7 @@
     "description": "مرسيدس GLE 450 4MATIC موديل 2026 خليجي زيرو، محرك سداسي 3.0 لتر تيربو مع نظام هجين خفيف. فخامة وأداء عالي وتجهيزات كاملة.",
     "images": [
       "/cars/car-019-1.webp",
-      "/cars/car-019-2.webp",
-      "/cars/car-019-3.webp"
+      "/cars/car-019-2.webp"
     ],
     "features": [
       "تعليق هوائي",
@@ -909,6 +905,7 @@
     "id": "car-024",
     "brand": "Kia",
     "model": "Picanto",
+    "trim": "EX",
     "year": 2024,
     "price": 18500000,
     "currency": "IQD",
@@ -933,8 +930,7 @@
     "description": "كيا بيكانتو 2024 وكالة، هاتشباك صغيرة واقتصادية جداً بالوقود، مثالية للتنقل داخل المدينة وسهلة الركن. ممشى 21 ألف كم.",
     "images": [
       "/cars/car-024-1.webp",
-      "/cars/car-024-2.webp",
-      "/cars/car-024-3.webp"
+      "/cars/car-024-2.webp"
     ],
     "features": [
       "شاشة 8 بوصة",
@@ -1050,8 +1046,7 @@
     "description": "هوندا سيفيك Sport 2023 وارد أمريكي، تصميم رياضي جذاب وقيادة ممتعة مع اقتصاد جيد بالوقود. ممشى 29 ألف كم.",
     "images": [
       "/cars/car-027-1.webp",
-      "/cars/car-027-2.webp",
-      "/cars/car-027-3.webp"
+      "/cars/car-027-2.webp"
     ],
     "features": [
       "شاشة 7 بوصة",
@@ -1065,6 +1060,7 @@
     "id": "car-028",
     "brand": "Mitsubishi",
     "model": "Pajero",
+    "trim": "GLS",
     "year": 2021,
     "price": 38000000,
     "currency": "IQD",
@@ -1101,7 +1097,7 @@
     "id": "car-029",
     "brand": "Toyota",
     "model": "Hilux",
-    "trim": "دبل قمارة",
+    "trim": "GLX",
     "year": 2024,
     "price": 49000000,
     "currency": "IQD",
@@ -1123,8 +1119,7 @@
     "tags": [],
     "description": "تويوتا هايلكس 2024 دبل قمارة خليجي بمحرك 2.7 لتر ودفع رباعي، بيكب قوي وموثوق للعمل والطرق الخارجية. ممشى 26 ألف كم.",
     "images": [
-      "/cars/car-029-1.webp",
-      "/cars/car-029-2.webp"
+      "/cars/car-029-1.webp"
     ],
     "features": [
       "دفع رباعي",
@@ -1138,6 +1133,7 @@
     "id": "car-030",
     "brand": "Changan",
     "model": "CS75 Plus",
+    "trim": "Sport",
     "year": 2026,
     "price": 46000000,
     "currency": "IQD",
@@ -1152,14 +1148,13 @@
     "horsepower": 233,
     "drivetrain": "أمامي",
     "seats": 5,
-    "color": "رمادي",
+    "color": "أبيض",
     "city": "بغداد",
     "status": "متوفرة",
     "featured": true,
     "tags": [],
     "description": "شانجان CS75 بلس 2026 وكالة زيرو بمحرك 2.0 تيربو، من أكثر SUV الصينية طلباً في العراق. تجهيزات كاملة بسعر منافس مع ضمان الوكيل.",
     "images": [
-      "/cars/car-030-1.webp",
       "/cars/car-030-2.webp",
       "/cars/car-030-3.webp"
     ],
@@ -1176,7 +1171,8 @@
     "id": "car-031",
     "brand": "Geely",
     "model": "Coolray",
-    "year": 2026,
+    "trim": "Sport",
+    "year": 2025,
     "price": 34000000,
     "currency": "IQD",
     "condition": "جديدة",
@@ -1186,7 +1182,7 @@
     "transmission": "أوتوماتيك",
     "fuel": "بنزين",
     "engine": "1.5L تيربو",
-    "cylinders": 4,
+    "cylinders": 3,
     "horsepower": 177,
     "drivetrain": "أمامي",
     "seats": 5,
@@ -1197,7 +1193,7 @@
     "tags": [
       "اقتصادية"
     ],
-    "description": "جيلي كولراي 2026 وكالة زيرو، SUV مدمجة رياضية بمحرك 1.5 تيربو وناقل DCT بسبع سرعات. اقتصادية ومناسبة للشباب والمدينة.",
+    "description": "جيلي كولراي 2025 وكالة زيرو، SUV مدمجة رياضية بمحرك 1.5 تيربو وناقل DCT بسبع سرعات. اقتصادية ومناسبة للشباب والمدينة.",
     "images": [
       "/cars/car-031-1.webp",
       "/cars/car-031-2.webp",
@@ -1215,6 +1211,7 @@
     "id": "car-032",
     "brand": "Haval",
     "model": "H6",
+    "trim": "Premium",
     "year": 2026,
     "price": 44000000,
     "currency": "IQD",
@@ -1226,32 +1223,34 @@
     "fuel": "بنزين",
     "engine": "2.0L تيربو",
     "cylinders": 4,
-    "horsepower": 234,
-    "drivetrain": "أمامي",
+    "horsepower": 235,
+    "drivetrain": "كلي",
     "seats": 5,
     "color": "بيج",
     "city": "أربيل",
     "status": "متوفرة",
     "featured": false,
     "tags": [],
-    "description": "هافال H6 2026 وكالة زيرو، SUV عائلية واسعة بمحرك 2.0 تيربو وتجهيزات تقنية متقدمة، مع ضمان الوكيل.",
+    "description": "هافال H6 2026 وكالة زيرو، SUV عائلية واسعة بمحرك 2.0 تيربو ودفع كلي وتجهيزات تقنية متقدمة، مع ضمان الوكيل.",
     "images": [
       "/cars/car-032-1.webp",
       "/cars/car-032-2.webp"
     ],
     "features": [
-      "شاشة 12.3 بوصة",
+      "شاشة 14.6 بوصة",
       "كاميرا 360 درجة",
       "فتحة سقف بانورامية",
       "مقاعد جلد",
       "شاحن لاسلكي",
-      "ركن ذاتي"
+      "ركن ذاتي",
+      "دفع كلي"
     ]
   },
   {
     "id": "car-033",
     "brand": "Hyundai",
     "model": "Santa Fe",
+    "trim": "Calligraphy",
     "year": 2026,
     "price": 71000000,
     "currency": "IQD",
@@ -1274,8 +1273,7 @@
     "description": "هيونداي سنتافي 2026 خليجي زيرو، الجيل الجديد بالتصميم المربع الواسع وسبعة مقاعد. محرك 2.5 تيربو ودفع كلي، خيار مثالي للعائلة الكبيرة.",
     "images": [
       "/cars/car-033-1.webp",
-      "/cars/car-033-2.webp",
-      "/cars/car-033-3.webp"
+      "/cars/car-033-2.webp"
     ],
     "features": [
       "سبعة مقاعد",
@@ -1290,6 +1288,7 @@
     "id": "car-034",
     "brand": "Chery",
     "model": "Tiggo 8 Pro Max",
+    "trim": "Flagship",
     "year": 2026,
     "price": 48000000,
     "currency": "IQD",

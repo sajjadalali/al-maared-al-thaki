@@ -1,10 +1,4 @@
 {
-  "/cars/car-001-1.webp": {
-    "author": "HJUdall",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:24_Toyota_Camry_SE.jpg"
-  },
   "/cars/car-001-2.webp": {
     "author": "Elise240SX",
     "license": "CC BY-SA 4.0",
@@ -23,29 +17,11 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2025_Toyota_Corolla_LE_ice_cap.jpg"
   },
-  "/cars/car-002-2.webp": {
-    "author": "HJUdall",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:24_Toyota_Corolla_XSE.jpg"
-  },
-  "/cars/car-002-3.webp": {
-    "author": "Mr.choppers",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2024_Toyota_Corolla_LE_in_Classic_Silver_Metallic%2C_front_right.jpg"
-  },
   "/cars/car-003-1.webp": {
     "author": "Retired electrician",
     "license": "CC0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Moscow%2C_Toyota_Land_Cruiser_black%2C_Sept_2025_01.jpg"
-  },
-  "/cars/car-003-2.webp": {
-    "author": "Авто Плюс Новости",
-    "license": "CC BY 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2021_Toyota_Land_Cruiser_300_(Russia)_rear_view.png"
   },
   "/cars/car-003-3.webp": {
     "author": "Autosdeprimera",
@@ -83,12 +59,6 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:KIA_K5_INTERIOR_China.jpg"
   },
-  "/cars/car-006-1.webp": {
-    "author": "Elise240SX",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2023_Kia_Sportage_LX_in_Gravity_Grey%2C_Front_Left%2C_05-22-2022.jpg"
-  },
   "/cars/car-006-2.webp": {
     "author": "Harvey Bold",
     "license": "CC0",
@@ -113,12 +83,6 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2024_Kia_Sorento_X-Line_SX_Prestige_(facelift)%2C_rear_12.20.24.jpg"
   },
-  "/cars/car-007-3.webp": {
-    "author": "Elise240SX",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2024_Kia_Sorento_LX_in_Gravity_Grey%2C_front_left%2C_2024-07-21.jpg"
-  },
   "/cars/car-008-1.webp": {
     "author": "Benespit",
     "license": "CC BY-SA 4.0",
@@ -130,12 +94,6 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:0_Hyundai_Sonata_(DN8)_sensuous_2.jpg"
-  },
-  "/cars/car-008-3.webp": {
-    "author": "HJUdall",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:23_Hyundai_Sonata_SE.jpg"
   },
   "/cars/car-009-1.webp": {
     "author": "Damian B Oh",
@@ -191,12 +149,6 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Nissan_Patrol_Y63_3.5_V6T_LE_Granite_Black_-_rear.jpg"
   },
-  "/cars/car-012-2.webp": {
-    "author": "ToyGTone",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Nissan_Patrol_2025_Y63.jpg"
-  },
   "/cars/car-012-3.webp": {
     "author": "Ethan Llamas",
     "license": "CC BY-SA 4.0",
@@ -215,12 +167,6 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2023_Nissan_Versa_(N18)_IMG_3105.jpg"
   },
-  "/cars/car-013-3.webp": {
-    "author": "Deathpallie325",
-    "license": "CC BY 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2024_Nissan_Versa_front_view.jpg"
-  },
   "/cars/car-014-1.webp": {
     "author": "Elise240SX",
     "license": "CC BY-SA 4.0",
@@ -232,12 +178,6 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2024_Chevrolet_Malibu_1LT_in_Sterling_Grey_Metallic%2C_rear_right%2C_2024-03-31.jpg"
-  },
-  "/cars/car-015-1.webp": {
-    "author": "Ethan Llamas",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Chevrolet_Tahoe_GMT1UC_5.3_Z71_V8_Black.jpg"
   },
   "/cars/car-015-2.webp": {
     "author": "Kevauto",
@@ -275,12 +215,6 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2023_Lexus_RX_350_Premium_Plus_in_Matador_Red_Mica%2C_rear_left.jpg"
   },
-  "/cars/car-017-3.webp": {
-    "author": "HJUdall",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:23_Lexus_RX_350_Premium.jpg"
-  },
   "/cars/car-018-1.webp": {
     "author": "Damian B Oh",
     "license": "CC BY-SA 4.0",
@@ -304,12 +238,6 @@
     "license": "CC BY-SA 3.0 de",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/de/",
     "source": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_GLE_AMG_Line_(V_167%2C_Facelift)_%E2%80%93_h_14042024.jpg"
-  },
-  "/cars/car-019-3.webp": {
-    "author": "Charles from Port Chester, New York",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_GLE_450_4MATIC_(W167%2C_2026)_(55211989821).jpg"
   },
   "/cars/car-020-1.webp": {
     "author": "Damian B Oh",
@@ -383,12 +311,6 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2024_Kia_Picanto_(JA)_Rutesheimer_Autoschau_2025_DSC_9200.jpg"
   },
-  "/cars/car-024-3.webp": {
-    "author": "Alexander Migl",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2024_Kia_Picanto_(JA)_IAA_2025_DSC_1272.jpg"
-  },
   "/cars/car-025-1.webp": {
     "author": "© M 93",
     "license": "CC BY-SA 3.0 de",
@@ -437,12 +359,6 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:Honda_Civic_(2021)_sedan_Sport_DSC_7054.jpg"
   },
-  "/cars/car-027-3.webp": {
-    "author": "SsmIntrigue",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:2022_Honda_Civic_Sport%2C_Front_Right%2C_06-20-2021.jpg"
-  },
   "/cars/car-028-1.webp": {
     "author": "Tangjunwen CN",
     "license": "CC BY-SA 4.0",
@@ -460,18 +376,6 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2024_Toyota_Hilux_Revo_Z-Edition_Double-Cab_2.4_Mid.jpg"
-  },
-  "/cars/car-029-2.webp": {
-    "author": "Captainmorlypogi1959",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Toyota_Hilux_4x2_G_2024_(2).jpg"
-  },
-  "/cars/car-030-1.webp": {
-    "author": "Retired electrician",
-    "license": "CC0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Moscow%2C_Changan_CS75_plus_grey%2C_May_2026_02.jpg"
   },
   "/cars/car-030-2.webp": {
     "author": "JustAnotherCarDesigner",
@@ -526,12 +430,6 @@
     "license": "CC BY-SA 3.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
     "source": "https://commons.wikimedia.org/wiki/File:2024_Hyundai_Santa_Fe_Calligraphy_AWD_in_Rockwood_Green_Pearl%2C_rear_right.jpg"
-  },
-  "/cars/car-033-3.webp": {
-    "author": "Ethan Llamas",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "source": "https://commons.wikimedia.org/wiki/File:Hyundai_Santa_Fe_MX5_2.5T_Calligraphy_HTRAC_Ocado_Green_Pearl.jpg"
   },
   "/cars/car-034-1.webp": {
     "author": "MoCars",
