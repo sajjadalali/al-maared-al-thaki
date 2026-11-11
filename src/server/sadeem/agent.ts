@@ -244,7 +244,7 @@ function hideSuggestions(text: string): string {
 // Gulf/Levantine words models slip into, with their Iraqi equivalents.
 const IRAQI_WORDS = (
   [
-    ["تبي|تبغى|تبغي|بدك", "تريد"], ["يبي|يبغى|يبغي|بده", "يريد"], ["الحين|دلوقتي", "هسه"],
+    ["تبي|تبغى|تبغي|بدك", "تريد"], ["يبي|يبغى|يبغي|بده", "يريد"], ["الحين|دلوقتي", "هسه"], ["للحين", "لهسه"],
     ["وايد", "هواية"], ["كويس|منيح", "زين"], ["تكدر", "تگدر"], ["يكدر", "يگدر"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^\\u0600-\\u06FF])([وف]?)(?:${words})(?![\\u0600-\\u06FF])`, "g"), `$1$2${iraqi}`] as const);
@@ -306,23 +306,28 @@ function mentionedCars(reply: string, found: TurnState["found"]): string[] {
     .map((car) => car.id);
 }
 
-// Each car's card right under its paragraph (the one whose first line names
-// it); cards for cars without one stay under the reply.
+// Each car's card right under its paragraph: the block that starts with the
+// car's bold name when there is one (so a car first named in passing in the
+// opening line doesn't get its card above its own block), otherwise the first
+// paragraph whose first line names it. Cards for cars without one stay under
+// the reply.
 function placeCards(reply: string, ids: string[], found: TurnState["found"]): string {
-  const left = new Set(ids);
-  return reply
-    .split(/\n\s*\n/)
-    .map((block) => {
-      // A comparison names both cars on its first line: both cards go there.
-      const first = block.split("\n")[0];
-      const here = [...left].filter((carId) => {
-        const car = found.get(carId);
-        return car && namesCar(first, car);
-      });
-      here.forEach((carId) => left.delete(carId));
-      return [block, ...here.map(carMarker)].join("\n");
-    })
-    .join("\n\n");
+  const blocks = reply.split(/\n\s*\n/);
+  const firstLines = blocks.map((block) => block.split("\n")[0]);
+  const heading = (line: string, car: FoundCar) => {
+    const bold = line.trimStart().match(/^\*\*([^*]+)\*\*/);
+    return Boolean(bold && namesCar(bold[1], car));
+  };
+  const under = blocks.map((): string[] => []);
+  for (const carId of ids) {
+    const car = found.get(carId);
+    if (!car) continue;
+    let at = firstLines.findIndex((line) => heading(line, car));
+    if (at < 0) at = firstLines.findIndex((line) => namesCar(line, car));
+    if (at >= 0) under[at].push(carId);
+  }
+  // A comparison names both cars on its first line: both cards go there, in reply order.
+  return blocks.map((block, i) => [block, ...under[i].map(carMarker)].join("\n")).join("\n\n");
 }
 
 // The showroom's number as the reply writes it, digits only ("7838548091").

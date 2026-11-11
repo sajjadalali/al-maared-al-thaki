@@ -52,7 +52,7 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: "search_cars",
       description:
-        "Search the showroom's stock. Use structured filters for everything the buyer stated; put only leftover words in `text`. Returns at most `limit` cars plus `total` matches. Call again with relaxed filters when nothing matches.",
+        "Search the showroom's stock. Use structured filters for everything the buyer stated; put only leftover words in `text`. Returns at most `limit` cars plus `total`: the matches available now (reserved ones are counted apart in `reserved`). Call again with relaxed filters when nothing matches.",
       parameters: {
         type: "object",
         properties: {
@@ -124,6 +124,8 @@ export const TOOL_DEFINITIONS = [
 
 interface SearchRow extends Omit<CarRow, "cylinders" | "featured" | "description" | "images"> {
   total_count: number;
+  /** Matches that can be bought now (متوفرة); total_count counts reserved cars too. */
+  available_count?: number;
 }
 
 // What the model reads about a car: enough to choose and to answer, no noise.
@@ -334,8 +336,15 @@ export async function runTool(
         state.seenPrices.set(row.id, row.price_iqd);
         state.found.set(row.id, { model: row.model, name: names.get(row.id), year: row.year });
       });
-      state.matchCount = rows[0]?.total_count ?? 0;
-      return { total: state.matchCount, cars: rows.map((row) => brief(row, names.get(row.id)?.full, state.request?.budgetMax)) };
+      // "أكو X" counts cars a buyer can have: the reserved ones are reported apart.
+      const total = rows[0]?.total_count ?? 0;
+      const available = rows[0]?.available_count ?? total;
+      state.matchCount = available;
+      return {
+        total: available,
+        ...(total > available ? { reserved: total - available } : {}),
+        cars: rows.map((row) => brief(row, names.get(row.id)?.full, state.request?.budgetMax)),
+      };
     }
 
     case "get_car_details": {

@@ -12,7 +12,7 @@
 // Exit code 1 when a check fails, so the GitHub workflow shows red.
 
 import { randomUUID } from "node:crypto";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 
 const SITE = (process.env.SITE_URL ?? "https://maared-al-thaki.duckdns.org").replace(/\/$/, "");
 const TIMEOUT_MS = 60_000;
@@ -24,6 +24,11 @@ const stripMarkers = (s) => s.replace(/\n?\[\[car:[\w-]+\]\]/g, "");
 const carName = (c) => `${c.brand} ${c.model}`;
 const num = (s) => Number(String(s).replace(/,/g, ""));
 const near = (a, b, tol) => Math.abs(a - b) <= Math.max(b * tol, 1);
+
+// Cars a buyer can have now, from the catalog the site is built from.
+const AVAILABLE = JSON.parse(readFileSync(new URL("../src/data/cars.json", import.meta.url), "utf8")).filter(
+  (c) => c.status === "متوفرة"
+).length;
 
 const sessionId = () => `5ade7e57-${randomUUID().slice(9)}`;
 
@@ -43,7 +48,14 @@ async function ask(message, history, session) {
 
 // ---------- checks every reply gets ----------
 
-const BANNED_WORDS = ["تبي", "الحين", "وايد", "كويس", "تكدر", "شلونك يا", "إيش", "ايش"];
+const BANNED_WORDS = ["تبي", "الحين", "للحين", "وايد", "كويس", "تكدر", "شلونك يا", "إيش", "ايش"];
+// English that belongs in a reply: the body type SUV (as the catalog writes
+// it), and the models with no Arabic name in models.name_ar (EV6, GLE 450,
+// ES 350, RX 350; 520i has no two-letter word).
+const ENGLISH_OK = new Set(["SUV", "EV", "GLE", "ES", "RX"]);
+// Sadeem talking about its own steps instead of answering (seen on 3 Nov:
+// «سوّيت استدعاء لحفظ الطلب … الحفظ فشل»).
+const INTERNAL_TALK = ["استدعاء", "أداة", "الأداة", "قاعدة البيانات", "الحفظ فشل", "غلط مني"];
 
 function generalChecks(reply, userMessage) {
   const problems = [];
@@ -53,8 +65,18 @@ function generalChecks(reply, userMessage) {
   if (reply.ms > 15_000) problems.push(`الرد تأخر ${(reply.ms / 1000).toFixed(1)} ثانية`);
   if (reply.cars.length > 3) problems.push(`عرض ${reply.cars.length} سيارات (الحد 3)`);
 
-  const english = text.match(/[A-Za-z]{2,}/g);
-  if (english) problems.push(`كلمات إنگليزية: ${[...new Set(english)].join("، ")}`);
+  const english = (text.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !ENGLISH_OK.has(w));
+  if (english.length) problems.push(`كلمات إنگليزية: ${[...new Set(english)].join("، ")}`);
+
+  const internal = INTERNAL_TALK.filter((word) => text.includes(word));
+  if (internal.length) problems.push(`كلام داخلي للزبون: ${internal.map((w) => `«${w}»`).join("، ")}`);
+
+  // "أكو 34 سيارة" when fewer are available.
+  for (const m of text.matchAll(/(\d+)\s*(?:سيارة|سيارات)/g)) {
+    if (num(m[1]) > AVAILABLE && !toWestern(userMessage).includes(m[1])) problems.push(`عدد «${m[0]}» أكثر من المتوفر (${AVAILABLE})`);
+  }
+
+  problems.push(...cardProblems(reply));
 
   for (const word of BANNED_WORDS) {
     if (new RegExp(`(^|[^\\u0600-\\u06FF])[وفب]?${word}(?![\\u0600-\\u06FF])`).test(text)) problems.push(`كلمة مو عراقية: «${word}»`);
@@ -76,6 +98,33 @@ function generalChecks(reply, userMessage) {
     if (reply.cars.length && !reply.cars.some((c) => c.year === v) && !asked.includes(m[1])) problems.push(`سنة «${m[1]}» ما تطابق أي كرت`);
   }
   return problems;
+}
+
+// A car named in bold twice («**كيا بيكانتو 2024**» in the opening line and
+// again as its block), or its card above its own block.
+function cardProblems(reply) {
+  const problems = [];
+  const raw = toWestern(reply.content ?? "");
+  const named = [...stripMarkers(raw).matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1].trim()).filter((b) => /\b20[12]\d\b/.test(b));
+  named.forEach((a, i) => {
+    const again = named.slice(i + 1).find((b) => a.match(/\b20[12]\d\b/)[0] === b.match(/\b20[12]\d\b/)[0] && (a.includes(b) || b.includes(a)));
+    if (again) problems.push(`كرر اسم السيارة: «${again}»`);
+  });
+  const paras = raw.split(/\n\s*\n/);
+  paras.forEach((para, i) => {
+    for (const m of para.matchAll(/\[\[car:([\w-]+)\]\]/g)) {
+      const car = reply.cars.find((c) => c.id === m[1]);
+      if (!car) continue;
+      const here = stripMarkers(para);
+      const block = paras.slice(i + 1).find((later) => {
+        const bold = later.trimStart().match(/^\*\*([^*]+)\*\*/);
+        const word = bold?.[1].includes(String(car.year)) && bold[1].replace(String(car.year), "").trim().split(/\s+/).at(-1);
+        return word && here.includes(word);
+      });
+      if (block) problems.push(`كرت ${carName(car)} فوق فقرتها`);
+    }
+  });
+  return [...new Set(problems)];
 }
 
 // ---------- the conversations ----------
@@ -100,12 +149,21 @@ const underBudget = (budget) => (r) => {
     : `سيارات أغلى من الميزانية بدون ما يگول: ${over.map(carName).join("، ")}`;
 };
 const notInvented = has(/ما عندي|ما أعرف|ما اعرف|معلومة|نتأكد|تتأكد|المعاينة|معاينة|الفحص|فحص|واتساب|تواصل|اتصل/);
+// "No paint / no accidents" is fine when a shown car's description says it
+// (the used Camry's does); otherwise Sadeem must not claim it and should hedge.
+const NO_DAMAGE = /(ما بيها|بدون|خالية من)\s*(أي\s*)?(ضربة|صبغ|حوادث|حادث)/;
+const damageAnswer = (r) => {
+  const m = r.text.match(NO_DAMAGE);
+  if (!m) return notInvented(r);
+  return r.cars.some((c) => NO_DAMAGE.test(c.description ?? "")) ? null : `أكّد معلومة ما موجودة بالبيانات: «${m[0]}»`;
+};
 
 const CONVERSATIONS = [
   {
     name: "عائلية بحدود 30 مليون",
     turns: [
-      { say: "أريد سيارة عائلية بحدود 30 مليون", expect: [cardsSome(() => true, "ما عرض ولا سيارة"), underBudget(30_000_000)] },
+      { say: "أريد سيارة عائلية بحدود 30 مليون", expect: [cardsSome(() => true, "ما عرض ولا سيارة"), // "بحدود X" allows X × 1.05 (prompt.ts), so up to 31.5 million.
+        underBudget(30_000_000 * 1.05)] },
       { say: "الأولى شكد ماشية؟", expect: [has(/كم|كيلو/)] },
     ],
   },
@@ -113,7 +171,7 @@ const CONVERSATIONS = [
     name: "كامري وسؤال عن الحوادث",
     turns: [
       { say: "عندكم كامري؟", expect: [cardsAll((c) => c.model === "Camry", "عرض شي مو كامري"), cardsSome((c) => c.model === "Camry", "ما عرض الكامري")] },
-      { say: "المستعملة بيها ضربة لو صبغ؟", expect: [hasNot(/(ما بيها|بدون|خالية من)\s*(أي\s*)?(ضربة|صبغ|حوادث|حادث)/, "أكّد معلومة ما موجودة بالبيانات"), notInvented] },
+      { say: "المستعملة بيها ضربة لو صبغ؟", expect: [damageAnswer] },
     ],
   },
   {
@@ -163,6 +221,36 @@ const CONVERSATIONS = [
   {
     name: "قوة المحرك",
     turns: [{ say: "شكد قوة محرك الهافال؟", expect: [cardsSome((c) => c.brand === "Haval", "ما عرض الهافال"), has(/حصان/)] }],
+  },
+  // Off-topic: never answered, not even in passing ("الأرجنتين فازت… أنا مختص بالسيارات").
+  {
+    name: "سؤال برا الشغل 2",
+    turns: [{ say: "شنو عاصمة فرنسا؟", expect: [hasNot(/باريس/, "جاوب على سؤال برا شغل المعرض"), noCards("عرض سيارات بدون داعي")] }],
+  },
+  {
+    name: "سؤال برا الشغل 3",
+    turns: [
+      {
+        say: "اكتبلي كود بايثون يجمع رقمين",
+        expect: [hasNot(/def |print\(|```|return |a \+ b/, "كتب كود"), noCards("عرض سيارات بدون داعي")],
+      },
+    ],
+  },
+  // The two cases from 3 Nov. Neither may save a lead: the showroom's own
+  // number is refused, and a message without a number has nothing to save.
+  {
+    name: "طلب بدون رقم",
+    turns: [{ say: "أريد SUV عائلية", expect: [cardsSome(() => true, "ما عرض ولا سيارة")] }],
+  },
+  {
+    name: "رقم المعرض كرقم الزبون",
+    turns: [
+      { say: "أريد أحجز تجربة قيادة للكامري", expect: [hasNot(/سجّلت|سجلت|حفظت|انحفظ|تسجّل|تسجل رقمك/, "گال سجّل رقم والزبون ما كاتب رقم")] },
+      {
+        say: "هذا رقمي 07838548091",
+        expect: [hasNot(/سجّلت|سجلت|حفظت|انحفظ|راح يتصلون بيك/, "قبل رقم المعرض كرقم زبون"), has(/رقم/)],
+      },
+    ],
   },
 ];
 
