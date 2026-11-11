@@ -410,13 +410,45 @@ function dropNameBeforeBold(reply: string, found: TurnState["found"]): string {
 
 // «أكو 14 جيب بالمعرض…» at the top and again at the end: the second one goes,
 // with the comma or "و" that joined it to the rest of its sentence.
+// A count said in words first («عدنا سيارتين…») and then as the closing
+// «أكو 2 بهذي المواصفات» is the same count too; only that closing formula is
+// dropped then, never another sentence that happens to hold the same number.
+const COUNT_NOUNS = "سيارات|سيارة|جيبات|جيب|خيارات|خيار|كوريات|موديلات";
+const COUNT_WORDS: [RegExp, number][] = [
+  [/(?:سيارت|جيب|خيار|موديل|نسخت|وحدت|كامري)ين(?![\u0621-\u064A])/g, 2],
+  ...(
+    [
+      ["اثنين|اثنتين|ثنتين", 2], ["ثلاث|ثلاثة|تلاث", 3], ["أربع|اربع|أربعة|اربعة", 4], ["خمس|خمسة", 5],
+      ["ست|ستة", 6], ["سبع|سبعة", 7], ["ثمان|ثماني|ثمانية", 8], ["تسع|تسعة", 9], ["عشر|عشرة", 10],
+    ] as const
+  ).map(([words, n]): [RegExp, number] => [new RegExp(`(?<![\\u0621-\\u064A])(?:${words})\\s+(?:${COUNT_NOUNS})(?![\\u0621-\\u064A])`, "g"), n]),
+];
+
 function dropRepeatedCount(reply: string): string {
+  const inWords = COUNT_WORDS.flatMap(([re, n]) => [...reply.matchAll(re)].map((m) => ({ n: String(n), at: m.index ?? 0 })));
   const said = new Set<string>();
-  return reply.replace(/(?:أكو|عدنا|عندنا)\s+(\d+)\s+[^\s،.\n]+[^،.\n]*?(?:[،.]\s*و?|(?=\n)|$)/g, (clause, n: string) => {
-    if (said.has(n)) return "";
+  return reply.replace(/(?:أكو|عدنا|عندنا)\s+(\d+)\s+[^\s،.\n]+[^،.\n]*?(?:[،.]\s*و?|(?=\n)|$)/g, (clause, n: string, at: number) => {
+    const restatesWords = /بهذي المواصفات|بنفس المواصفات/.test(clause) && inWords.some((w) => w.n === n && w.at < at);
+    if (said.has(n) || restatesWords) return "";
     said.add(n);
     return clause;
   });
+}
+
+// In a facts line («زيرو · وكالة · رباعي») the drivetrain alone reads oddly: «دفع رباعي».
+const DRIVETRAINS = new Set(["رباعي", "كلي", "أمامي", "خلفي"]);
+function spellDrivetrain(reply: string): string {
+  return reply
+    .split("\n")
+    .map((line) =>
+      line.includes("·")
+        ? line
+            .split("·")
+            .map((part) => (DRIVETRAINS.has(part.trim()) ? part.replace(part.trim(), `دفع ${part.trim()}`) : part))
+            .join("·")
+        : line
+    )
+    .join("\n");
 }
 
 // The showroom's number as the reply writes it, digits only ("7838548091").
@@ -734,7 +766,7 @@ export async function runSadeem(
     .map(toCar);
 
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
-  if (content) content = dropRepeatedCount(dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found));
+  if (content) content = spellDrivetrain(dropRepeatedCount(dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found)));
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {

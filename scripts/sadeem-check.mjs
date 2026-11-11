@@ -94,6 +94,13 @@ function generalChecks(reply, userMessage) {
   );
   if (extraBold) problems.push(`خط عريض لشي مو اسم سيارة: «${extraBold[1]}»`);
 
+  // The drivetrain alone in a facts line («زيرو · وكالة · رباعي»).
+  const bareDrive = text.split("\n").filter((l) => l.includes("·")).flatMap((l) => l.split("·").map((p) => p.trim())).find((p) => /^(رباعي|كلي|أمامي|خلفي)$/.test(p));
+  if (bareDrive) problems.push(`«${bareDrive}» لحالها، الصح «دفع ${bareDrive}»`);
+
+  // A count in words, then again as «أكو 2 بهذي المواصفات».
+  if (/(?:سيارت|جيب|خيار|كامري)ين(?![\u0621-\u064A])[\s\S]*أكو\s+2\s+بهذي المواصفات/.test(text)) problems.push("كرر العدد: بالكلمات وبعدين «أكو 2»");
+
   // The same count twice («أكو 14 جيب» at the top and the end).
   const counts = [...text.matchAll(/(?:أكو|عدنا|عندنا)\s+(\d+)\s/g)].map((m) => m[1]);
   const again = counts.find((n, i) => counts.indexOf(n) !== i);
