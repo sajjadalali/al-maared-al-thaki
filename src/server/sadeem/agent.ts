@@ -287,6 +287,8 @@ const cleanReply = (text: string) =>
   boldCarsOnly(toIraqi(text))
     // "بـ" glued to a word once its bold is gone: «بـبغداد» → «ببغداد».
     .replace(/بـ(?=[\u0621-\u064A])/g, "ب")
+    // «بـ» before a word that already has its «ب» («بـ**ببغداد**» → «بببغداد»): Arabic never has three in a row.
+    .replace(/ب{3,}/g, "بب")
     .replace(/\[من قاعدة البيانات[^\]]*\]/g, "")
     .split("\n")
     .filter((line) => /[\u0600-\u06FF]/.test(line) || line.includes("**") || !/([A-Za-z]+\W+){3}/.test(line))
