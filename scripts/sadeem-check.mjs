@@ -43,7 +43,11 @@ async function ask(message, history, session) {
 
 // ---------- checks every reply gets ----------
 
-const BANNED_WORDS = ["تبي", "الحين", "وايد", "كويس", "تكدر", "شلونك يا", "إيش", "ايش"];
+const BANNED_WORDS = ["تبي", "الحين", "للحين", "وايد", "كويس", "تكدر", "شلونك يا", "إيش", "ايش"];
+// English that belongs in a reply: the body type SUV (as the catalog writes
+// it), and the models with no Arabic name in models.name_ar (EV6, GLE 450,
+// ES 350, RX 350; 520i has no two-letter word).
+const ENGLISH_OK = new Set(["SUV", "EV", "GLE", "ES", "RX"]);
 // Sadeem talking about its own steps instead of answering (seen on 3 Nov:
 // «سوّيت استدعاء لحفظ الطلب … الحفظ فشل»).
 const INTERNAL_TALK = ["استدعاء", "أداة", "الأداة", "قاعدة البيانات", "الحفظ فشل", "غلط مني"];
@@ -56,8 +60,8 @@ function generalChecks(reply, userMessage) {
   if (reply.ms > 15_000) problems.push(`الرد تأخر ${(reply.ms / 1000).toFixed(1)} ثانية`);
   if (reply.cars.length > 3) problems.push(`عرض ${reply.cars.length} سيارات (الحد 3)`);
 
-  const english = text.match(/[A-Za-z]{2,}/g);
-  if (english) problems.push(`كلمات إنگليزية: ${[...new Set(english)].join("، ")}`);
+  const english = (text.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !ENGLISH_OK.has(w));
+  if (english.length) problems.push(`كلمات إنگليزية: ${[...new Set(english)].join("، ")}`);
 
   const internal = INTERNAL_TALK.filter((word) => text.includes(word));
   if (internal.length) problems.push(`كلام داخلي للزبون: ${internal.map((w) => `«${w}»`).join("، ")}`);
@@ -106,12 +110,21 @@ const underBudget = (budget) => (r) => {
     : `سيارات أغلى من الميزانية بدون ما يگول: ${over.map(carName).join("، ")}`;
 };
 const notInvented = has(/ما عندي|ما أعرف|ما اعرف|معلومة|نتأكد|تتأكد|المعاينة|معاينة|الفحص|فحص|واتساب|تواصل|اتصل/);
+// "No paint / no accidents" is fine when a shown car's description says it
+// (the used Camry's does); otherwise Sadeem must not claim it and should hedge.
+const NO_DAMAGE = /(ما بيها|بدون|خالية من)\s*(أي\s*)?(ضربة|صبغ|حوادث|حادث)/;
+const damageAnswer = (r) => {
+  const m = r.text.match(NO_DAMAGE);
+  if (!m) return notInvented(r);
+  return r.cars.some((c) => NO_DAMAGE.test(c.description ?? "")) ? null : `أكّد معلومة ما موجودة بالبيانات: «${m[0]}»`;
+};
 
 const CONVERSATIONS = [
   {
     name: "عائلية بحدود 30 مليون",
     turns: [
-      { say: "أريد سيارة عائلية بحدود 30 مليون", expect: [cardsSome(() => true, "ما عرض ولا سيارة"), underBudget(30_000_000)] },
+      { say: "أريد سيارة عائلية بحدود 30 مليون", expect: [cardsSome(() => true, "ما عرض ولا سيارة"), // "بحدود X" allows X × 1.05 (prompt.ts), so up to 31.5 million.
+        underBudget(30_000_000 * 1.05)] },
       { say: "الأولى شكد ماشية؟", expect: [has(/كم|كيلو/)] },
     ],
   },
@@ -119,7 +132,7 @@ const CONVERSATIONS = [
     name: "كامري وسؤال عن الحوادث",
     turns: [
       { say: "عندكم كامري؟", expect: [cardsAll((c) => c.model === "Camry", "عرض شي مو كامري"), cardsSome((c) => c.model === "Camry", "ما عرض الكامري")] },
-      { say: "المستعملة بيها ضربة لو صبغ؟", expect: [hasNot(/(ما بيها|بدون|خالية من)\s*(أي\s*)?(ضربة|صبغ|حوادث|حادث)/, "أكّد معلومة ما موجودة بالبيانات"), notInvented] },
+      { say: "المستعملة بيها ضربة لو صبغ؟", expect: [damageAnswer] },
     ],
   },
   {
