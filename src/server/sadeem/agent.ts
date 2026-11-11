@@ -257,7 +257,8 @@ const IRAQI_WORDS = (
     ["ولكن", "بس"], ["لكن", "بس"], ["لا يوجد|لا توجد|ليس لدينا|ليس عندنا", "ماكو"], ["يوجد|توجد", "أكو"],
     ["لدينا", "عدنا"], ["لديك", "عندك"], ["عبر", "على"],
     ["معك", "وياك"], ["معكم", "وياكم"], ["معه", "وياه"], ["معها", "وياها"], ["معهم", "وياهم"], ["معنا", "ويانا"],
-    ["في بغداد", "ببغداد"],
+    ["في بغداد", "ببغداد"], ["أكدر|اكدر", "أگدر"], ["نكدر", "نگدر"], ["لكيت", "لگيت"], ["لكينا", "لگينا"],
+    ["تقول", "تگول"], ["يقول", "يگول"], ["أقول|اقول", "أگول"], ["فيه", "بيه"], ["فيها", "بيها"], ["فيهم", "بيهم"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^${AR_LETTER}])([وف]?)(?:${words})(?![${AR_LETTER}])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -359,6 +360,8 @@ function dropRepeatedBlocks(reply: string, found: TurnState["found"]): string {
   const opensWith = (block: string) => block.trimStart().match(/^\*\*([^*]+)\*\*/)?.[1];
   const named = (bold: string | undefined) =>
     bold ? [...found].filter(([, car]) => namesCar(bold, car)).map(([id]) => id) : [];
+  // Cars already named in bold anywhere in an earlier paragraph ("أرخص سيارة عندنا **كيا بيكانتو 2024**").
+  const boldIn = (block: string) => [...block.matchAll(/\*\*([^*]+)\*\*/g)].flatMap((m) => named(m[1]));
   const seen = new Set<string>();
   return blocks
     .filter((block) => {
@@ -370,7 +373,7 @@ function dropRepeatedBlocks(reply: string, found: TurnState["found"]): string {
         (lines.length === 1 || lines[1].includes("·")) &&
         !mentionsOverBudget(block);
       const repeat = caption && ids.length > 0 && ids.every((id) => seen.has(id));
-      ids.forEach((id) => seen.add(id));
+      if (!repeat) boldIn(block).forEach((id) => seen.add(id));
       return !repeat;
     })
     .join("\n\n");
