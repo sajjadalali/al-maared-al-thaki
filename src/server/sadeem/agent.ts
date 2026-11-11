@@ -3,7 +3,7 @@
 // cars it chose to show, loaded fresh from the database.
 import { phoneHref, site, whatsappHref } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
-import { carMarker } from "@/services/ai/carMarkers";
+import { carMarker, stripCarMarkers } from "@/services/ai/carMarkers";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
 import { overviewAvailable, overviewPrices, systemPrompt } from "./prompt";
@@ -283,8 +283,10 @@ const boldCarsOnly = (text: string) =>
     /(19|20)\d\d/.test(inner) || /[:：]\s*$/.test(inner) || colon ? all : inner
   );
 
+// Card markers are placed by the server only: any the model copies from a
+// history that still had them would show the cards twice.
 const cleanReply = (text: string) =>
-  boldCarsOnly(toIraqi(text))
+  boldCarsOnly(toIraqi(stripCarMarkers(text)))
     // "بـ" glued to a word once its bold is gone: «بـبغداد» → «ببغداد».
     .replace(/بـ(?=[\u0621-\u064A])/g, "ب")
     // «بـ» before a word that already has its «ب» («بـ**ببغداد**» → «بببغداد»): Arabic never has three in a row.
