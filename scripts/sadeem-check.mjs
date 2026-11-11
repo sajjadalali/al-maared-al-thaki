@@ -48,14 +48,22 @@ async function ask(message, history, session) {
 
 // ---------- checks every reply gets ----------
 
-const BANNED_WORDS = ["تبي", "الحين", "للحين", "وايد", "كويس", "تكدر", "شلونك يا", "إيش", "ايش"];
+// Arabic letters and marks, not Arabic punctuation: "فقط،" still ends at the comma.
+const AR_LETTER = "\\u0620-\\u065F\\u066E-\\u06D3\\u06FA-\\u06FF";
+
+// Not Iraqi: Gulf, Levantine and Egyptian words, and formal Arabic (فصحى).
+const BANNED_WORDS = [
+  "تبي", "الحين", "للحين", "وايد", "كويس", "تكدر", "شلونك يا", "إيش", "ايش",
+  "أيوه", "ايوه", "حالياً", "حاليا", "الآن", "يوجد", "لا يوجد", "لدينا", "لديك", "سوف", "لماذا", "ماذا",
+  "فقط", "لكن", "جداً", "معك", "معهم", "معه", "عبر", "أقدر", "تقدر", "يقدر",
+];
 // English that belongs in a reply: the body type SUV (as the catalog writes
 // it), and the models with no Arabic name in models.name_ar (EV6, GLE 450,
 // ES 350, RX 350; 520i has no two-letter word).
 const ENGLISH_OK = new Set(["SUV", "EV", "GLE", "ES", "RX"]);
 // Sadeem talking about its own steps instead of answering (seen on 3 Nov:
 // «سوّيت استدعاء لحفظ الطلب … الحفظ فشل»).
-const INTERNAL_TALK = ["استدعاء", "أداة", "الأداة", "قاعدة البيانات", "الحفظ فشل", "غلط مني"];
+const INTERNAL_TALK = ["استدعاء", "أداة", "الأداة", "قاعدة البيانات", "وصلتني", "الحفظ فشل", "غلط مني"];
 
 function generalChecks(reply, userMessage) {
   const problems = [];
@@ -78,11 +86,13 @@ function generalChecks(reply, userMessage) {
 
   problems.push(...cardProblems(reply));
 
+  if (text.includes("د.ع")) problems.push("كتب «د.ع» بدل «دينار»");
+
   const persian = text.match(/[کیپژ]/g);
   if (persian) problems.push(`حروف فارسية: ${[...new Set(persian)].join("، ")}`);
 
   for (const word of BANNED_WORDS) {
-    if (new RegExp(`(^|[^\\u0600-\\u06FF])[وفب]?${word}(?![\\u0600-\\u06FF])`).test(text)) problems.push(`كلمة مو عراقية: «${word}»`);
+    if (new RegExp(`(^|[^${AR_LETTER}])[وفب]?${word}(?![${AR_LETTER}])`).test(text)) problems.push(`كلمة مو عراقية: «${word}»`);
   }
 
   // Mileage, horsepower and model years in the text must belong to a shown car
@@ -151,6 +161,16 @@ const underBudget = (budget) => (r) => {
     ? null
     : `سيارات أغلى من الميزانية بدون ما يگول: ${over.map(carName).join("، ")}`;
 };
+// "ضمن ميزانيتك" next to a price above the budget, in the same phrase
+// ("الباقي ضمن الـ 30 مليون: كيا كي 5 بـ 30,500,000 دينار").
+const noWithinOver = (budget) => (r) => {
+  const bad = toWestern(r.text)
+    .split(/[.،\n؟!]/)
+    .filter((part) => /ضمن/.test(part) && !/مو ضمن|ما ضمن|خارج/.test(part))
+    .filter((part) => [...part.matchAll(/\d{1,3}(?:,\d{3}){2,}/g)].some((m) => num(m[0]) > budget));
+  return bad.length ? `گال «ضمن» عن سعر أغلى من الميزانية: «${bad[0].trim()}»` : null;
+};
+
 const notInvented = has(/ما عندي|ما أعرف|ما اعرف|معلومة|نتأكد|تتأكد|المعاينة|معاينة|الفحص|فحص|واتساب|تواصل|اتصل/);
 // "No paint / no accidents" is fine when a shown car's description says it
 // (the used Camry's does); otherwise Sadeem must not claim it and should hedge.
@@ -165,9 +185,16 @@ const CONVERSATIONS = [
   {
     name: "عائلية بحدود 30 مليون",
     turns: [
-      { say: "أريد سيارة عائلية بحدود 30 مليون", expect: [cardsSome(() => true, "ما عرض ولا سيارة"), // "بحدود X" allows X × 1.05 (prompt.ts), so up to 31.5 million.
-        underBudget(30_000_000 * 1.05)] },
-      { say: "الأولى شكد ماشية؟", expect: [has(/كم|كيلو/)] },
+      {
+        say: "أريد سيارة عائلية بحدود 30 مليون",
+        expect: [
+          cardsSome(() => true, "ما عرض ولا سيارة"),
+          // "بحدود 30" searches up to 31.5 million, but a car above 30 must be called over the budget.
+          underBudget(30_000_000),
+          noWithinOver(30_000_000),
+        ],
+      },
+      { say: "الأولى شكد ماشية؟", expect: [has(/كم|كيلو/), noWithinOver(30_000_000)] },
     ],
   },
   {
@@ -193,7 +220,7 @@ const CONVERSATIONS = [
   },
   {
     name: "سيارة ما موجودة",
-    turns: [{ say: "عندكم تسلا؟", expect: [cardsAll((c) => !/tesla/i.test(c.brand), "عرض تسلا مخترعة"), has(/ما عندنا|ماكو|ما متوفر|ما موجود|حالياً/)] }],
+    turns: [{ say: "عندكم تسلا؟", expect: [cardsAll((c) => !/tesla/i.test(c.brand), "عرض تسلا مخترعة"), has(/ما عندنا|ماكو|ما متوفر|ما موجود|حالياً/), hasNot(/(كهربائية|كهربائي|كهربا)\s*(ثانية|ثاني|أخرى|غيرها)|خيارات كهربائية/, "عرض خيارات ماكو")] }],
   },
   {
     name: "كورية جديدة تحت 40",

@@ -6,7 +6,7 @@ import type { SupabaseEnv } from "@/server/supabase";
 import { carMarker } from "@/services/ai/carMarkers";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
-import { overviewPrices, systemPrompt } from "./prompt";
+import { overviewAvailable, overviewPrices, systemPrompt } from "./prompt";
 import { readCompletionStream } from "./stream";
 import { toCar } from "@/server/catalog";
 import {
@@ -241,17 +241,34 @@ function hideSuggestions(text: string): string {
   return lines.join("\n").trimEnd();
 }
 
-// Gulf/Levantine words models slip into, with their Iraqi equivalents.
+// Arabic letters and their marks, not Arabic punctuation (، ؛ ؟) or digits:
+// a word right before a comma still ends there.
+const AR_LETTER = "\\u0620-\\u065F\\u066E-\\u06D3\\u06FA-\\u06FF";
+
+// Gulf, Levantine, Egyptian and formal (فصحى) words models slip into, with
+// their Iraqi equivalents. Applied in order, so "ولكن" goes before "لكن".
 const IRAQI_WORDS = (
   [
     ["تبي|تبغى|تبغي|بدك", "تريد"], ["يبي|يبغى|يبغي|بده", "يريد"], ["الحين|دلوقتي", "هسه"], ["للحين", "لهسه"],
     ["وايد", "هواية"], ["كويس|منيح", "زين"], ["تكدر", "تگدر"], ["يكدر", "يگدر"],
+    ["أقدر|اقدر", "أگدر"], ["تقدر", "تگدر"], ["يقدر", "يگدر"], ["نقدر", "نگدر"],
+    ["أيوه|ايوه|أيوا|ايوا", "إي"], ["حالياً|حاليا|الآن|الان", "هسه"], ["سوف", "راح"],
+    ["لماذا", "ليش"], ["ماذا", "شنو"], ["كيف", "شلون"], ["جداً|جدا", "كلش"], ["فقط", "بس"],
+    ["ولكن", "بس"], ["لكن", "بس"], ["لا يوجد|لا توجد|ليس لدينا|ليس عندنا", "ماكو"], ["يوجد|توجد", "أكو"],
+    ["لدينا", "عدنا"], ["لديك", "عندك"], ["عبر", "على"],
+    ["معك", "وياك"], ["معكم", "وياكم"], ["معه", "وياه"], ["معها", "وياها"], ["معهم", "وياهم"], ["معنا", "ويانا"],
+    ["في بغداد", "ببغداد"],
   ] as const
-).map(([words, iraqi]) => [new RegExp(`(^|[^\\u0600-\\u06FF])([وف]?)(?:${words})(?![\\u0600-\\u06FF])`, "g"), `$1$2${iraqi}`] as const);
+).map(([words, iraqi]) => [new RegExp(`(^|[^${AR_LETTER}])([وف]?)(?:${words})(?![${AR_LETTER}])`, "g"), `$1$2${iraqi}`] as const);
 
 // Persian kaf and yeh the model sometimes writes («کامری»); گ and چ are Iraqi and stay.
+// Money in words, as the site writes it: دينار and دولار, not «د.ع» and «$».
 const toIraqi = (text: string) =>
-  IRAQI_WORDS.reduce((out, [re, iraqi]) => out.replace(re, iraqi), text).replace(/ک/g, "ك").replace(/ی/g, "ي");
+  IRAQI_WORDS.reduce((out, [re, iraqi]) => out.replace(re, iraqi), text)
+    .replace(/ک/g, "ك")
+    .replace(/ی/g, "ي")
+    .replace(/د\.ع\.?/g, "دينار")
+    .replace(/\s*\$/g, " دولار");
 
 // Drops notes the model sometimes adds for itself: English ones ("the reply
 // above is in the chat…"; every line meant for the buyer has Arabic in it) and
@@ -386,12 +403,15 @@ function allowedFigures(state: TurnState, buyerTexts: string[]): AllowedFigures 
   // Differences, for "أرخص بـ 4 مليون" in comparisons.
   for (const a of prices) for (const b of prices) if (a > b) iqd.push(a - b);
   if (state.request?.budgetMax) iqd.push(state.request.budgetMax);
+  if (state.request?.budgetStated) iqd.push(state.request.budgetStated);
   if (state.request?.budgetMin) iqd.push(state.request.budgetMin);
   const usd = [...prices.map(usdOf), ...state.overBudget.map((c) => usdOf(c.overBy))];
   // Whatever the buyer wrote may be repeated back ("ميزانيتك 20 ألف دولار").
   for (const f of buyerTexts.flatMap(moneyFigures)) (f.currency === "USD" ? usd : iqd).push(f.value);
   return { iqd, usd };
 }
+
+const INTERNAL_TALK = ["استدعاء", "الأداة", "أداة", "قاعدة البيانات", "وصلتني", "وصلني من البحث", "الحفظ فشل", "غلط مني"];
 
 function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState): string[] {
   const problems = unsupportedFigures(reply, allowed).map((f) => `"${f}" is not a price from the tools`);
@@ -401,6 +421,24 @@ function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState)
         `(by ${state.overBudget.map((c) => `${c.overBy.toLocaleString("en-US")} د.ع`).join(", ")})`
     );
   }
+  // Counts of cars ("أكو 4 سيارات ثانية") must be what the search found, what
+  // the reply shows, or the difference: the model gets the subtraction wrong.
+  if (state.counts.length) {
+    const shown = state.shownIds.length;
+    const ok = new Set([shown, overviewAvailable(), ...state.counts.flatMap((n) => [n, n - shown])]);
+    const bad = [...reply.matchAll(/(\d+)\s*(?:سيارة|سيارات|جيب|جيبات|خيار|خيارات)/g)]
+      .map((m) => Number(m[1]))
+      .filter((n) => n > 1 && n < 1000 && !ok.has(n));
+    if (bad.length) {
+      problems.push(
+        `the count ${bad.join(", ")} is wrong: the search found ${state.counts.at(-1)} available cars and the reply shows ${shown}. ` +
+          `Write "أكو ${state.counts.at(-1)} بهذي المواصفات" or leave the count out`
+      );
+    }
+  }
+  // Its own workings («ما وصلتني كلها»، «قاعدة البيانات») are not for the buyer.
+  const internal = INTERNAL_TALK.filter((w) => reply.includes(w));
+  if (internal.length) problems.push(`it talks about your own workings (${internal.join("، ")}): answer the buyer only`);
   // English words: only a model name with no Arabic one (كيا EV6) may stay in Latin letters.
   const latinOk = new Set(
     ["SUV", ...[...state.found.values()].flatMap((car) => car.name?.full?.match(/[A-Za-z]+/g) ?? [])].map((w) => w.toLowerCase())
@@ -431,6 +469,7 @@ export async function runSadeem(
     found: new Map(),
     leadSaved: false,
     searches: [],
+    counts: [],
     message,
   };
   const arabic = await arabicNames(db).catch(() => new Map<string, ArabicName>());
