@@ -12,7 +12,7 @@
 // Exit code 1 when a check fails, so the GitHub workflow shows red.
 
 import { randomUUID } from "node:crypto";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 
 const SITE = (process.env.SITE_URL ?? "https://maared-al-thaki.duckdns.org").replace(/\/$/, "");
 const TIMEOUT_MS = 60_000;
@@ -24,6 +24,11 @@ const stripMarkers = (s) => s.replace(/\n?\[\[car:[\w-]+\]\]/g, "");
 const carName = (c) => `${c.brand} ${c.model}`;
 const num = (s) => Number(String(s).replace(/,/g, ""));
 const near = (a, b, tol) => Math.abs(a - b) <= Math.max(b * tol, 1);
+
+// Cars a buyer can have now, from the catalog the site is built from.
+const AVAILABLE = JSON.parse(readFileSync(new URL("../src/data/cars.json", import.meta.url), "utf8")).filter(
+  (c) => c.status === "متوفرة"
+).length;
 
 const sessionId = () => `5ade7e57-${randomUUID().slice(9)}`;
 
@@ -66,6 +71,13 @@ function generalChecks(reply, userMessage) {
   const internal = INTERNAL_TALK.filter((word) => text.includes(word));
   if (internal.length) problems.push(`كلام داخلي للزبون: ${internal.map((w) => `«${w}»`).join("، ")}`);
 
+  // "أكو 34 سيارة" when fewer are available.
+  for (const m of text.matchAll(/(\d+)\s*(?:سيارة|سيارات)/g)) {
+    if (num(m[1]) > AVAILABLE && !toWestern(userMessage).includes(m[1])) problems.push(`عدد «${m[0]}» أكثر من المتوفر (${AVAILABLE})`);
+  }
+
+  problems.push(...cardProblems(reply));
+
   for (const word of BANNED_WORDS) {
     if (new RegExp(`(^|[^\\u0600-\\u06FF])[وفب]?${word}(?![\\u0600-\\u06FF])`).test(text)) problems.push(`كلمة مو عراقية: «${word}»`);
   }
@@ -86,6 +98,33 @@ function generalChecks(reply, userMessage) {
     if (reply.cars.length && !reply.cars.some((c) => c.year === v) && !asked.includes(m[1])) problems.push(`سنة «${m[1]}» ما تطابق أي كرت`);
   }
   return problems;
+}
+
+// A car named in bold twice («**كيا بيكانتو 2024**» in the opening line and
+// again as its block), or its card above its own block.
+function cardProblems(reply) {
+  const problems = [];
+  const raw = toWestern(reply.content ?? "");
+  const named = [...stripMarkers(raw).matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1].trim()).filter((b) => /\b20[12]\d\b/.test(b));
+  named.forEach((a, i) => {
+    const again = named.slice(i + 1).find((b) => a.match(/\b20[12]\d\b/)[0] === b.match(/\b20[12]\d\b/)[0] && (a.includes(b) || b.includes(a)));
+    if (again) problems.push(`كرر اسم السيارة: «${again}»`);
+  });
+  const paras = raw.split(/\n\s*\n/);
+  paras.forEach((para, i) => {
+    for (const m of para.matchAll(/\[\[car:([\w-]+)\]\]/g)) {
+      const car = reply.cars.find((c) => c.id === m[1]);
+      if (!car) continue;
+      const here = stripMarkers(para);
+      const block = paras.slice(i + 1).find((later) => {
+        const bold = later.trimStart().match(/^\*\*([^*]+)\*\*/);
+        const word = bold?.[1].includes(String(car.year)) && bold[1].replace(String(car.year), "").trim().split(/\s+/).at(-1);
+        return word && here.includes(word);
+      });
+      if (block) problems.push(`كرت ${carName(car)} فوق فقرتها`);
+    }
+  });
+  return [...new Set(problems)];
 }
 
 // ---------- the conversations ----------
@@ -182,6 +221,20 @@ const CONVERSATIONS = [
   {
     name: "قوة المحرك",
     turns: [{ say: "شكد قوة محرك الهافال؟", expect: [cardsSome((c) => c.brand === "Haval", "ما عرض الهافال"), has(/حصان/)] }],
+  },
+  // Off-topic: never answered, not even in passing ("الأرجنتين فازت… أنا مختص بالسيارات").
+  {
+    name: "سؤال برا الشغل 2",
+    turns: [{ say: "شنو عاصمة فرنسا؟", expect: [hasNot(/باريس/, "جاوب على سؤال برا شغل المعرض"), noCards("عرض سيارات بدون داعي")] }],
+  },
+  {
+    name: "سؤال برا الشغل 3",
+    turns: [
+      {
+        say: "اكتبلي كود بايثون يجمع رقمين",
+        expect: [hasNot(/def |print\(|```|return |a \+ b/, "كتب كود"), noCards("عرض سيارات بدون داعي")],
+      },
+    ],
   },
   // The two cases from 3 Nov. Neither may save a lead: the showroom's own
   // number is refused, and a message without a number has nothing to save.
