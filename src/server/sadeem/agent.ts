@@ -414,6 +414,21 @@ function allowedFigures(state: TurnState, buyerTexts: string[]): AllowedFigures 
   return { iqd, usd };
 }
 
+// Tools that only look things up: an answer written next to them needs nothing they would add.
+const LOOKUP_TOOLS = new Set(["search_cars", "get_car_details", "record_request"]);
+
+// Latin words inside the cars' own texts, which a reply may quote as they are.
+const DATA_TEXTS = new Set(["features", "engine", "description"]);
+function collectDataLatin(value: unknown, key: string, into: Set<string>) {
+  if (typeof value === "string") {
+    if (DATA_TEXTS.has(key)) for (const word of value.match(/[A-Za-z]{2,}/g) ?? []) into.add(word.toLowerCase());
+  } else if (Array.isArray(value)) {
+    value.forEach((item) => collectDataLatin(item, key, into));
+  } else if (value && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) collectDataLatin(v, k, into);
+  }
+}
+
 const INTERNAL_TALK = ["استدعاء", "الأداة", "أداة", "قاعدة البيانات", "وصلتني", "وصلني من البحث", "الحفظ فشل", "غلط مني"];
 
 function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState): string[] {
@@ -443,9 +458,10 @@ function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState)
   const internal = INTERNAL_TALK.filter((w) => reply.includes(w));
   if (internal.length) problems.push(`it talks about your own workings (${internal.join("، ")}): answer the buyer only`);
   // English words: only a model name with no Arabic one (كيا EV6) may stay in Latin letters.
-  const latinOk = new Set(
-    ["SUV", ...[...state.found.values()].flatMap((car) => car.name?.full?.match(/[A-Za-z]+/g) ?? [])].map((w) => w.toLowerCase())
-  );
+  const latinOk = new Set([
+    ...["SUV", ...[...state.found.values()].flatMap((car) => car.name?.full?.match(/[A-Za-z]+/g) ?? [])].map((w) => w.toLowerCase()),
+    ...state.dataLatin,
+  ]);
   const latin = [...new Set(reply.match(/[A-Za-z]{2,}/g) ?? [])].filter((w) => !latinOk.has(w.toLowerCase()));
   if (latin.length) problems.push(`it has English words (${latin.join(", ")}): write them in Iraqi Arabic`);
   return problems;
@@ -473,6 +489,7 @@ export async function runSadeem(
     leadSaved: false,
     searches: [],
     counts: [],
+    dataLatin: new Set(),
     message,
   };
   const arabic = await arabicNames(db).catch(() => new Map<string, ArabicName>());
@@ -543,6 +560,16 @@ export async function runSadeem(
       finalText = text;
       break;
     }
+    // A full answer about the cars, written next to one more lookup after this
+    // turn already searched: that answer is the reply. Otherwise the model sends
+    // the rest as a separate partial message and the answer itself is lost
+    // («تحت الغطاء، السبورتاج والكي 5 محركهم…» with no answer and no cards).
+    const searched = state.counts.length > 0 || state.detailIds.length > 0;
+    if (searched && text.includes("**") && text.length >= 150 && calls.every((call) => LOOKUP_TOOLS.has(call.function.name))) {
+      state.searches.push({ answered_before: calls.map((call) => call.function.name) });
+      finalText = text;
+      break;
+    }
     if (text && calls.some((call) => ANSWER_TOOLS.has(call.function.name))) answerTexts.push(text);
     const status = statusOf(calls.map((call) => call.function.name));
     if (status && !shown) onEvent?.({ type: "status", text: status });
@@ -561,6 +588,7 @@ export async function runSadeem(
     calls.forEach((call, i) => {
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(results[i]) });
     });
+    results.forEach((result) => collectDataLatin(result, "", state.dataLatin));
   }
 
   let content = joinReply(answerTexts, finalText);

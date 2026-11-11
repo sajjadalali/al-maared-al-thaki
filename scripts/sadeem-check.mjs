@@ -132,8 +132,13 @@ function cardProblems(reply) {
       const here = stripMarkers(para);
       const block = paras.slice(i + 1).find((later) => {
         const bold = later.trimStart().match(/^\*\*([^*]+)\*\*/);
-        const word = bold?.[1].includes(String(car.year)) && bold[1].replace(String(car.year), "").trim().split(/\s+/).at(-1);
-        return word && here.includes(word);
+        // The model's words, without the brand and without numbers ("سنتافي" of
+        // "هيونداي سنتافي"; not the "5" of "اكس 5", which "5 مقاعد" also has).
+        if (!bold?.[1].includes(String(car.year))) return false;
+        const words = bold[1].replace(String(car.year), "").trim().split(/\s+/);
+        return (words.length > 1 ? words.slice(1) : words)
+          .filter((w) => w.length >= 3 && !/\d/.test(w))
+          .some((w) => here.includes(w));
       });
       if (block) problems.push(`كرت ${carName(car)} فوق فقرتها`);
     }
