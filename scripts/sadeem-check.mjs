@@ -44,6 +44,9 @@ async function ask(message, history, session) {
 // ---------- checks every reply gets ----------
 
 const BANNED_WORDS = ["تبي", "الحين", "وايد", "كويس", "تكدر", "شلونك يا", "إيش", "ايش"];
+// Sadeem talking about its own steps instead of answering (seen on 3 Nov:
+// «سوّيت استدعاء لحفظ الطلب … الحفظ فشل»).
+const INTERNAL_TALK = ["استدعاء", "أداة", "الأداة", "قاعدة البيانات", "الحفظ فشل", "غلط مني"];
 
 function generalChecks(reply, userMessage) {
   const problems = [];
@@ -55,6 +58,9 @@ function generalChecks(reply, userMessage) {
 
   const english = text.match(/[A-Za-z]{2,}/g);
   if (english) problems.push(`كلمات إنگليزية: ${[...new Set(english)].join("، ")}`);
+
+  const internal = INTERNAL_TALK.filter((word) => text.includes(word));
+  if (internal.length) problems.push(`كلام داخلي للزبون: ${internal.map((w) => `«${w}»`).join("، ")}`);
 
   for (const word of BANNED_WORDS) {
     if (new RegExp(`(^|[^\\u0600-\\u06FF])[وفب]?${word}(?![\\u0600-\\u06FF])`).test(text)) problems.push(`كلمة مو عراقية: «${word}»`);
