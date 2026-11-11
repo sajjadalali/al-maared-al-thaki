@@ -3,7 +3,8 @@
 import { site } from "@/config/site";
 import { USD_TO_IQD } from "@/lib/format";
 import { insert, rpc, select, type SupabaseEnv } from "@/server/supabase";
-import { notifyLead } from "@/server/telegram";
+import { after } from "next/server";
+import { notifyLead, type LeadNotice } from "@/server/telegram";
 import { type CarRow } from "@/server/catalog";
 import { budgetFromWords } from "./verify";
 
@@ -263,6 +264,15 @@ function checkBudget(request: BuyerRequest, words: string): { from: number; to: 
 /** The budget a car is measured against: what the buyer said ("بحدود 30" → 30), not the wider search ceiling. */
 export const buyerBudget = (request?: BuyerRequest) => request?.budgetStated ?? request?.budgetMax;
 
+/** Runs `task` once the reply is sent; outside a request (scripts) it just starts it. */
+function afterReply(task: () => Promise<unknown>) {
+  try {
+    after(task);
+  } catch {
+    void task();
+  }
+}
+
 /** Records the cars shown and which of them cost more than the budget. */
 export function markShown(state: TurnState, shownIds: string[]) {
   state.shownIds = shownIds;
@@ -403,29 +413,30 @@ export async function runTool(
       const name = typeof args.name === "string" && args.name.trim() ? args.name.trim().slice(0, 80) : null;
       const note = typeof args.note === "string" && args.note.trim() ? args.note.trim().slice(0, 500) : null;
       const car = carId ? state.found.get(carId) : undefined;
-      // The database and Telegram side by side: either one is enough for the
-      // team to call back, so a lead is only lost when both fail.
-      const [stored, notified] = await Promise.all([
-        insert(env, "leads", { phone, name, car_id: carId, message: note, source: "chat" }).catch((error) => {
-          console.error("Saving lead:", error);
-          return false;
-        }),
-        notifyLead({
-          phone: local,
-          name,
-          car: carId
-            ? {
-                id: carId,
-                label: car ? `${car.name?.full ?? car.model} ${car.year}` : carId,
-                priceIqd: state.seenPrices.get(carId),
-              }
-            : null,
-          note,
-          message: state.message,
-        }),
-      ]);
+      const notice: LeadNotice = {
+        phone: local,
+        name,
+        car: carId
+          ? { id: carId, label: car ? `${car.name?.full ?? car.model} ${car.year}` : carId, priceIqd: state.seenPrices.get(carId) }
+          : null,
+        note,
+        message: state.message,
+      };
+      const stored = await insert(env, "leads", { phone, name, car_id: carId, message: note, source: "chat" }).catch((error) => {
+        console.error("Saving lead:", error);
+        return false;
+      });
+      // Saved: Telegram goes out after the buyer has the reply (it has taken
+      // over 5 s from the server). Not saved: Telegram is the only copy, so wait for it.
+      let notified: boolean | "after_reply";
+      if (stored) {
+        afterReply(() => notifyLead(notice).then((ok) => ok || console.error(`Telegram notice for ${local} not confirmed`)));
+        notified = "after_reply";
+      } else {
+        notified = await notifyLead(notice);
+      }
       state.searches.push({ lead: { stored, notified } });
-      const saved = stored || notified;
+      const saved = stored || notified === true;
       state.leadSaved = saved;
       return saved ? { saved: true } : { saved: false, error: "Saving is not available; give the WhatsApp number instead." };
     }

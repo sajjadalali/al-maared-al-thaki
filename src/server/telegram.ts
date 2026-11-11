@@ -44,18 +44,15 @@ const baghdadTime = new Intl.DateTimeFormat("ar-IQ-u-nu-latn", {
   minute: "2-digit",
 });
 
-/** "0783 854 8091", the way the team dials it. */
-function spaced(phone: string): string {
-  return phone.replace(/^(\d{4})(\d{3})(\d{4})$/, "$1 $2 $3");
-}
-
 export function leadText(lead: LeadNotice, now = new Date()): string {
   const whatsapp = `https://wa.me/964${lead.phone.slice(1)}`;
   const lines = [
     "🔔 <b>زبون جديد من سديم</b>",
     "",
     lead.name ? `👤 ${escape(lead.name)}` : null,
-    `📱 <code>${spaced(lead.phone)}</code> · <a href="${whatsapp}">واتساب</a>`,
+    // One unbroken number: grouped with spaces, an Arabic line shows the groups
+    // in reverse order («0001 000 0770»). In <code> it copies with one tap.
+    `📱 <code>${lead.phone}</code> · <a href="${whatsapp}">واتساب</a>`,
     lead.car
       ? `🚗 <a href="${site.url}/cars/${encodeURIComponent(lead.car.id)}">${escape(lead.car.label)}</a>${
           lead.car.priceIqd ? ` · ${formatIQD(lead.car.priceIqd)}` : ""
@@ -78,7 +75,9 @@ export async function sendTelegram(env: TelegramEnv, text: string): Promise<bool
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", link_preview_options: { is_disabled: true } }),
-          signal: AbortSignal.timeout(5_000),
+          // Generous: the notice is sent after the buyer has the reply, and from
+          // the server Telegram has taken over 5 s to answer (the post still landed).
+          signal: AbortSignal.timeout(20_000),
           cache: "no-store",
         });
         if (!res.ok) console.error(`Telegram sendMessage to ${chatId}: ${res.status} ${await res.text()}`);
