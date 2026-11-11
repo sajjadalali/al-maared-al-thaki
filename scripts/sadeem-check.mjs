@@ -57,7 +57,7 @@ const BANNED_WORDS = [
   "أيوه", "ايوه", "حالياً", "حاليا", "الآن", "يوجد", "لا يوجد", "لدينا", "لديك", "سوف", "لماذا", "ماذا",
   "فقط", "لكن", "جداً", "معك", "معهم", "معه", "عبر", "أقدر", "تقدر", "يقدر",
   "أكدر", "لكيت", "تقول", "يقول", "فيه", "فيها",
-  "عذراً", "اعتذر", "أعتذر", "عدنا أكو", "أكو عدنا",
+  "عذراً", "اعتذر", "أعتذر", "عدنا أكو", "أكو عدنا", "أيه", "ايه",
 ];
 // English that belongs in a reply: the body type SUV (as the catalog writes
 // it), and the models with no Arabic name in models.name_ar (EV6, GLE 450,
@@ -87,6 +87,17 @@ function generalChecks(reply, userMessage) {
   }
 
   problems.push(...cardProblems(reply));
+
+  // Bold only for car names (with their year) and comparison labels ("**السعر:**").
+  const extraBold = [...toWestern(reply.content ?? "").matchAll(/\*\*([^*\n]+)\*\*(\s*:)?/g)].find(
+    (m) => !/(19|20)\d\d/.test(m[1]) && !/[:：]\s*$/.test(m[1]) && !m[2]
+  );
+  if (extraBold) problems.push(`خط عريض لشي مو اسم سيارة: «${extraBold[1]}»`);
+
+  // The same count twice («أكو 14 جيب» at the top and the end).
+  const counts = [...text.matchAll(/(?:أكو|عدنا|عندنا)\s+(\d+)\s/g)].map((m) => m[1]);
+  const again = counts.find((n, i) => counts.indexOf(n) !== i);
+  if (again) problems.push(`كرر العدد ${again} مرتين`);
 
   // «هذي الكامري 2024 **تويوتا كامري 2024**»: the same car twice in a row.
   const twice = toWestern(reply.content ?? "").match(/(?:ال)?(\S+)\s+(20[12]\d)\s+\*\*[^*]*\1[^*]*\2\*\*/);

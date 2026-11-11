@@ -260,6 +260,7 @@ const IRAQI_WORDS = (
     ["في بغداد", "ببغداد"], ["أكدر|اكدر", "أگدر"], ["نكدر", "نگدر"], ["لكيت", "لگيت"], ["لكينا", "لگينا"],
     ["تقول", "تگول"], ["يقول", "يگول"], ["أقول|اقول", "أگول"], ["فيه", "بيه"], ["فيها", "بيها"], ["فيهم", "بيهم"],
     ["عذراً|عذرا|اعتذر|أعتذر|ألعذر|العذر", "آسف"], ["عدنا أكو|أكو عدنا|عندنا أكو|أكو عندنا", "عدنا"],
+    ["أيه|ايه|أيوة|ايوة", "إي"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^${AR_LETTER}])([وف]?)(?:${words})(?![${AR_LETTER}])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -275,8 +276,17 @@ const toIraqi = (text: string) =>
 // Drops notes the model sometimes adds for itself: English ones ("the reply
 // above is in the chat…"; every line meant for the buyer has Arabic in it) and
 // copies of the database notes that history carries.
+// Bold is for car names (they carry their year) and comparison labels
+// ("**السعر:**"); anything else in bold («**بغداد**», «**9**») goes plain.
+const boldCarsOnly = (text: string) =>
+  text.replace(/\*\*([^*\n]+)\*\*(\s*:)?/g, (all, inner: string, colon?: string) =>
+    /(19|20)\d\d/.test(inner) || /[:：]\s*$/.test(inner) || colon ? all : inner
+  );
+
 const cleanReply = (text: string) =>
-  toIraqi(text)
+  boldCarsOnly(toIraqi(text))
+    // "بـ" glued to a word once its bold is gone: «بـبغداد» → «ببغداد».
+    .replace(/بـ(?=[\u0621-\u064A])/g, "ب")
     .replace(/\[من قاعدة البيانات[^\]]*\]/g, "")
     .split("\n")
     .filter((line) => /[\u0600-\u06FF]/.test(line) || line.includes("**") || !/([A-Za-z]+\W+){3}/.test(line))
@@ -394,6 +404,17 @@ function dropNameBeforeBold(reply: string, found: TurnState["found"]): string {
     }
   }
   return out;
+}
+
+// «أكو 14 جيب بالمعرض…» at the top and again at the end: the second one goes,
+// with the comma or "و" that joined it to the rest of its sentence.
+function dropRepeatedCount(reply: string): string {
+  const said = new Set<string>();
+  return reply.replace(/(?:أكو|عدنا|عندنا)\s+(\d+)\s+[^\s،.\n]+[^،.\n]*?(?:[،.]\s*و?|(?=\n)|$)/g, (clause, n: string) => {
+    if (said.has(n)) return "";
+    said.add(n);
+    return clause;
+  });
 }
 
 // The showroom's number as the reply writes it, digits only ("7838548091").
@@ -711,7 +732,7 @@ export async function runSadeem(
     .map(toCar);
 
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
-  if (content) content = dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found);
+  if (content) content = dropRepeatedCount(dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found));
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {
