@@ -170,6 +170,22 @@ const CONVERSATIONS = [
     name: "قوة المحرك",
     turns: [{ say: "شكد قوة محرك الهافال؟", expect: [cardsSome((c) => c.brand === "Haval", "ما عرض الهافال"), has(/حصان/)] }],
   },
+  // The two cases from 3 Nov. Neither may save a lead: the showroom's own
+  // number is refused, and a message without a number has nothing to save.
+  {
+    name: "طلب بدون رقم",
+    turns: [{ say: "أريد SUV عائلية", expect: [cardsSome(() => true, "ما عرض ولا سيارة")] }],
+  },
+  {
+    name: "رقم المعرض كرقم الزبون",
+    turns: [
+      { say: "أريد أحجز تجربة قيادة للكامري", expect: [hasNot(/سجّلت|سجلت|حفظت|انحفظ|تسجّل|تسجل رقمك/, "گال سجّل رقم والزبون ما كاتب رقم")] },
+      {
+        say: "هذا رقمي 07838548091",
+        expect: [hasNot(/سجّلت|سجلت|حفظت|انحفظ|راح يتصلون بيك/, "قبل رقم المعرض كرقم زبون"), has(/رقم/)],
+      },
+    ],
+  },
 ];
 
 // ---------- run ----------
