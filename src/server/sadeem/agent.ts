@@ -8,7 +8,7 @@ import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
 import { overviewAvailable, overviewPrices, systemPrompt } from "./prompt";
 import { readCompletionStream } from "./stream";
-import { toCar } from "@/server/catalog";
+import { toCar, type CarRow } from "@/server/catalog";
 import {
   MAX_SHOWN_CARS,
   TOOL_DEFINITIONS,
@@ -259,6 +259,7 @@ const IRAQI_WORDS = (
     ["معك", "وياك"], ["معكم", "وياكم"], ["معه", "وياه"], ["معها", "وياها"], ["معهم", "وياهم"], ["معنا", "ويانا"],
     ["في بغداد", "ببغداد"], ["أكدر|اكدر", "أگدر"], ["نكدر", "نگدر"], ["لكيت", "لگيت"], ["لكينا", "لگينا"],
     ["تقول", "تگول"], ["يقول", "يگول"], ["أقول|اقول", "أگول"], ["فيه", "بيه"], ["فيها", "بيها"], ["فيهم", "بيهم"],
+    ["عذراً|عذرا|اعتذر|أعتذر|ألعذر|العذر", "آسف"], ["عدنا أكو|أكو عدنا|عندنا أكو|أكو عندنا", "عدنا"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^${AR_LETTER}])([وف]?)(?:${words})(?![${AR_LETTER}])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -379,6 +380,22 @@ function dropRepeatedBlocks(reply: string, found: TurnState["found"]): string {
     .join("\n\n");
 }
 
+// «هذي الكامري 2024 **تويوتا كامري 2024**»: the car named twice in a row; the bold one stays.
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function dropNameBeforeBold(reply: string, found: TurnState["found"]): string {
+  let out = reply;
+  for (const car of found.values()) {
+    for (const model of new Set([car.name?.model, car.model].filter((n): n is string => Boolean(n)))) {
+      const m = escapeRe(model);
+      out = out.replace(
+        new RegExp(`(?:(?:هذي|هاي|هاذي)\\s+)?(?:ال)?${m}\\s+${car.year}\\s+(?=\\*\\*[^*]*${m}[^*]*${car.year}\\*\\*)`, "g"),
+        ""
+      );
+    }
+  }
+  return out;
+}
+
 // The showroom's number as the reply writes it, digits only ("7838548091").
 const SHOWROOM_DIGITS = site.whatsapp.replace(/^964/, "");
 
@@ -431,8 +448,53 @@ function collectDataLatin(value: unknown, key: string, into: Set<string>) {
 
 const INTERNAL_TALK = ["استدعاء", "الأداة", "أداة", "قاعدة البيانات", "وصلتني", "وصلني من البحث", "الحفظ فشل", "غلط مني"];
 
-function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState): string[] {
+// ---------------------------------------------------------------------------
+// Specs the reply quotes (horsepower, mileage, seats, cylinders) must be the
+// car's own. Checked per paragraph: one that names cars is held to those cars'
+// figures ("**هيونداي توسان 2024** … 180 حصان" is wrong: that's the
+// Sportage's); others to any car this conversation has touched. Numbers the
+// buyer wrote, and numbers in the cars' own texts ("مدى يقارب 500 كم"), pass.
+// ---------------------------------------------------------------------------
+const SPEC_PATTERNS = [
+  { kind: "hp", re: /(\d{2,4})\s*حصان/g, of: (r: CarRow) => [r.horsepower ?? -1] },
+  { kind: "km", re: /(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(ألف|الف)?\s*(?:كم|كيلو)(?![\u0621-\u064A])/g, of: (r: CarRow) => [r.mileage_km] },
+  { kind: "seats", re: /(\d{1,2})\s*(?:مقاعد|مقعد|ركاب|راكب)/g, of: (r: CarRow) => [r.seats] },
+  { kind: "cylinders", re: /(\d{1,2})\s*(?:سلندر|سلندرات|اسطوانات)/g, of: (r: CarRow) => [r.cylinders ?? -1] },
+] as const;
+
+const westernDigits = (text: string) => text.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/٬/g, ",");
+
+function specProblems(reply: string, state: TurnState, cars: CarRow[], buyerTexts: string[]): string[] {
+  const buyerNumbers = new Set(buyerTexts.flatMap((t) => westernDigits(t).match(/\d+/g) ?? []).map(Number));
+  const byId = new Map(cars.map((car) => [car.id, car]));
+  const textNumbers = (list: CarRow[]) =>
+    new Set(list.flatMap((c) => `${c.description} ${c.features.join(" ")} ${c.engine}`.match(/\d+(?:\.\d+)?/g) ?? []).map(Number));
+  const problems: string[] = [];
+  for (const paragraph of westernDigits(reply).split(/\n\s*\n/)) {
+    // Cars the paragraph talks about, by any form of their name (with or without the year).
+    const lower = paragraph.toLowerCase();
+    const named = [...state.found]
+      .filter(([id, car]) => byId.has(id) && [car.model, car.name?.model].some((n) => n && lower.includes(n.toLowerCase())))
+      .map(([id]) => byId.get(id)!);
+    const pool = named.length ? named : cars;
+    const inText = textNumbers(pool);
+    for (const { kind, re, of } of SPEC_PATTERNS) {
+      for (const m of paragraph.matchAll(re)) {
+        const value = Number(m[1].replace(/,/g, "")) * (m[2] ? 1000 : 1);
+        const known = pool.flatMap(of);
+        const near = known.some((k) => (kind === "km" ? Math.abs(k - value) <= Math.max(k * 0.02, 500) : k === value));
+        if (near || buyerNumbers.has(Number(m[1].replace(/,/g, ""))) || inText.has(value) || inText.has(Number(m[1]))) continue;
+        const who = named.length === 1 ? ` for ${named[0].brand} ${named[0].model} ${named[0].year} (${kind}: ${known.join(", ")})` : "";
+        problems.push(`"${m[0].trim()}" is not in the data${who}`);
+      }
+    }
+  }
+  return problems;
+}
+
+function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState, cars: CarRow[], buyerTexts: string[]): string[] {
   const problems = unsupportedFigures(reply, allowed).map((f) => `"${f}" is not a price from the tools`);
+  problems.push(...specProblems(reply, state, cars, buyerTexts));
   if (state.overBudget.length && !mentionsOverBudget(reply)) {
     problems.push(
       `it does not say that ${state.overBudget.map((c) => c.id).join(", ")} cost more than the budget ` +
@@ -617,23 +679,24 @@ export async function runSadeem(
   // Check the reply against the facts; one rewrite if it quotes a figure no
   // tool returned or hides that a shown car is over budget.
   if (content) {
-    const allowed = allowedFigures(state, [message, ...history.filter((m) => m.role === "user").map((m) => m.content)]);
-    const problems = replyProblems(content, allowed, state);
+    const buyerTexts = [message, ...history.filter((m) => m.role === "user").map((m) => m.content)];
+    const allowed = allowedFigures(state, buyerTexts);
+    const problems = replyProblems(content, allowed, state, rows, buyerTexts);
     if (problems.length) {
       state.searches.push({ verify: problems });
       messages.push({ role: "assistant", content });
       messages.push({
         role: "system",
         content:
-          `Your reply has problems: ${problems.join(" | ")}. Rewrite it in Iraqi Arabic using only figures from the tool results ` +
+          `Your reply has problems: ${problems.join(" | ")}. Rewrite it in Iraqi Arabic using only facts and figures from the tool results ` +
           `(prices: ${[...state.seenPrices].map(([id, p]) => `${id} ${p.toLocaleString("en-US")} دينار ≈ ${usdOf(p).toLocaleString("en-US")} دولار`).join("; ")}). ` +
           "Keep the same shape, ending with the suggestions line. No tools.",
       });
-      onEvent?.({ type: "status", text: "سديم يراجع الأسعار…" });
+      onEvent?.({ type: "status", text: "سديم يتأكد من المعلومات…" });
       const fixed = cleanReply((await complete(llm, messages, false, turn)).content ?? "");
       if (fixed) {
         const rewritten = splitSuggestions(fixed);
-        const left = replyProblems(rewritten.text, allowed, state);
+        const left = replyProblems(rewritten.text, allowed, state, rows, buyerTexts);
         if (left.length) state.searches.push({ verify_after_rewrite: left });
         content = rewritten.text;
         if (rewritten.suggestions.length) suggestions = rewritten.suggestions;
@@ -648,7 +711,7 @@ export async function runSadeem(
     .map(toCar);
 
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
-  if (content) content = dropRepeatedBlocks(content, state.found);
+  if (content) content = dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found);
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {

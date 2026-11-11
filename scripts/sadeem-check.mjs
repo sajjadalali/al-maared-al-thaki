@@ -57,6 +57,7 @@ const BANNED_WORDS = [
   "أيوه", "ايوه", "حالياً", "حاليا", "الآن", "يوجد", "لا يوجد", "لدينا", "لديك", "سوف", "لماذا", "ماذا",
   "فقط", "لكن", "جداً", "معك", "معهم", "معه", "عبر", "أقدر", "تقدر", "يقدر",
   "أكدر", "لكيت", "تقول", "يقول", "فيه", "فيها",
+  "عذراً", "اعتذر", "أعتذر", "عدنا أكو", "أكو عدنا",
 ];
 // English that belongs in a reply: the body type SUV (as the catalog writes
 // it), and the models with no Arabic name in models.name_ar (EV6, GLE 450,
@@ -86,6 +87,10 @@ function generalChecks(reply, userMessage) {
   }
 
   problems.push(...cardProblems(reply));
+
+  // «هذي الكامري 2024 **تويوتا كامري 2024**»: the same car twice in a row.
+  const twice = toWestern(reply.content ?? "").match(/(?:ال)?(\S+)\s+(20[12]\d)\s+\*\*[^*]*\1[^*]*\2\*\*/);
+  if (twice) problems.push(`اسم السيارة مرتين ورا بعض: «${twice[0]}»`);
 
   if (text.includes("د.ع")) problems.push("كتب «د.ع» بدل «دينار»");
 
@@ -240,7 +245,7 @@ const CONVERSATIONS = [
   },
   {
     name: "مقارنة",
-    turns: [{ say: "قارنلي بين السبورتاج والتوسان", expect: [cardsSome((c) => c.model === "Sportage", "ما عرض السبورتاج"), cardsSome((c) => c.model === "Tucson", "ما عرض التوسان")] }],
+    turns: [{ say: "قارنلي بين السبورتاج والتوسان", expect: [hasNot(/هدوء|هادئ|هادية|مريح|راحة|موثوق|اعتمادي|متين|ما تعطل|عطلات/, "رأي مو موجود بالبيانات"), cardsSome((c) => c.model === "Sportage", "ما عرض السبورتاج"), cardsSome((c) => c.model === "Tucson", "ما عرض التوسان")] }],
   },
   {
     name: "المكان",
