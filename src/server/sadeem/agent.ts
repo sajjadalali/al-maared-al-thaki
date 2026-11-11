@@ -249,7 +249,9 @@ const IRAQI_WORDS = (
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^\\u0600-\\u06FF])([وف]?)(?:${words})(?![\\u0600-\\u06FF])`, "g"), `$1$2${iraqi}`] as const);
 
-const toIraqi = (text: string) => IRAQI_WORDS.reduce((out, [re, iraqi]) => out.replace(re, iraqi), text);
+// Persian kaf and yeh the model sometimes writes («کامری»); گ and چ are Iraqi and stay.
+const toIraqi = (text: string) =>
+  IRAQI_WORDS.reduce((out, [re, iraqi]) => out.replace(re, iraqi), text).replace(/ک/g, "ك").replace(/ی/g, "ي");
 
 // Drops notes the model sometimes adds for itself: English ones ("the reply
 // above is in the chat…"; every line meant for the buyer has Arabic in it) and
@@ -330,6 +332,33 @@ function placeCards(reply: string, ids: string[], found: TurnState["found"]): st
   return blocks.map((block, i) => [block, ...under[i].map(carMarker)].join("\n")).join("\n\n");
 }
 
+// The model sometimes answers in a paragraph that opens with the car's bold
+// name and then adds the same car again as a name + facts caption below
+// («**تويوتا كامري 2024** ما عليها صبغ…» then «**تويوتا كامري 2024**\nمستعملة · …»).
+// The card already shows those facts: the repeated caption is dropped, unless
+// it is the one saying the car is over the budget.
+function dropRepeatedBlocks(reply: string, found: TurnState["found"]): string {
+  const blocks = reply.split(/\n\s*\n/);
+  const opensWith = (block: string) => block.trimStart().match(/^\*\*([^*]+)\*\*/)?.[1];
+  const named = (bold: string | undefined) =>
+    bold ? [...found].filter(([, car]) => namesCar(bold, car)).map(([id]) => id) : [];
+  const seen = new Set<string>();
+  return blocks
+    .filter((block) => {
+      const lines = block.trim().split("\n");
+      const ids = named(opensWith(block));
+      const caption =
+        /^\*\*[^*]+\*\*\s*$/.test(lines[0]) &&
+        lines.length <= 2 &&
+        (lines.length === 1 || lines[1].includes("·")) &&
+        !mentionsOverBudget(block);
+      const repeat = caption && ids.length > 0 && ids.every((id) => seen.has(id));
+      ids.forEach((id) => seen.add(id));
+      return !repeat;
+    })
+    .join("\n\n");
+}
+
 // The showroom's number as the reply writes it, digits only ("7838548091").
 const SHOWROOM_DIGITS = site.whatsapp.replace(/^964/, "");
 
@@ -372,6 +401,12 @@ function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState)
         `(by ${state.overBudget.map((c) => `${c.overBy.toLocaleString("en-US")} د.ع`).join(", ")})`
     );
   }
+  // English words: only a model name with no Arabic one (كيا EV6) may stay in Latin letters.
+  const latinOk = new Set(
+    ["SUV", ...[...state.found.values()].flatMap((car) => car.name?.full?.match(/[A-Za-z]+/g) ?? [])].map((w) => w.toLowerCase())
+  );
+  const latin = [...new Set(reply.match(/[A-Za-z]{2,}/g) ?? [])].filter((w) => !latinOk.has(w.toLowerCase()));
+  if (latin.length) problems.push(`it has English words (${latin.join(", ")}): write them in Iraqi Arabic`);
   return problems;
 }
 
@@ -543,6 +578,7 @@ export async function runSadeem(
     .map(toCar);
 
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
+  if (content) content = dropRepeatedBlocks(content, state.found);
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {

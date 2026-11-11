@@ -78,6 +78,9 @@ function generalChecks(reply, userMessage) {
 
   problems.push(...cardProblems(reply));
 
+  const persian = text.match(/[کیپژ]/g);
+  if (persian) problems.push(`حروف فارسية: ${[...new Set(persian)].join("، ")}`);
+
   for (const word of BANNED_WORDS) {
     if (new RegExp(`(^|[^\\u0600-\\u06FF])[وفب]?${word}(?![\\u0600-\\u06FF])`).test(text)) problems.push(`كلمة مو عراقية: «${word}»`);
   }
