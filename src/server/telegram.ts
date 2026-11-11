@@ -44,15 +44,23 @@ const baghdadTime = new Intl.DateTimeFormat("ar-IQ-u-nu-latn", {
   minute: "2-digit",
 });
 
+/**
+ * "0770 000 0001", the way the team reads and dials it, held left-to-right.
+ * In an Arabic line the spaced groups would otherwise show reversed
+ * («0001 000 0770»): the number is wrapped in an invisible LTR embedding
+ * (U+202A … U+202C), which every Telegram app understands.
+ */
+export function ltrPhone(phone: string): string {
+  return `\u202A${phone.replace(/^(\d{4})(\d{3})(\d{4})$/, "$1 $2 $3")}\u202C`;
+}
+
 export function leadText(lead: LeadNotice, now = new Date()): string {
   const whatsapp = `https://wa.me/964${lead.phone.slice(1)}`;
   const lines = [
     "🔔 <b>زبون جديد من سديم</b>",
     "",
     lead.name ? `👤 ${escape(lead.name)}` : null,
-    // One unbroken number: grouped with spaces, an Arabic line shows the groups
-    // in reverse order («0001 000 0770»). In <code> it copies with one tap.
-    `📱 <code>${lead.phone}</code> · <a href="${whatsapp}">واتساب</a>`,
+    `📱 <code>${ltrPhone(lead.phone)}</code> · <a href="${whatsapp}">واتساب</a>`,
     lead.car
       ? `🚗 <a href="${site.url}/cars/${encodeURIComponent(lead.car.id)}">${escape(lead.car.label)}</a>${
           lead.car.priceIqd ? ` · ${formatIQD(lead.car.priceIqd)}` : ""
