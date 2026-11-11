@@ -1,0 +1,28 @@
+name: Sadeem check
+
+# Talks to Sadeem on the live site with fixed buyer conversations and checks
+# each reply (scripts/sadeem-check.mjs). Runs after every deploy, or by hand
+# from the Actions tab ("Run workflow"). The report is on the run's Summary page.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/dreamy-sagan-pnpcig
+
+concurrency:
+  group: sadeem-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Wait for Coolify to deploy
+        if: github.event_name == 'push'
+        run: sleep 300
+      - run: node scripts/sadeem-check.mjs
