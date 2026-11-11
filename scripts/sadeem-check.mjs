@@ -94,6 +94,11 @@ function generalChecks(reply, userMessage) {
   );
   if (extraBold) problems.push(`خط عريض لشي مو اسم سيارة: «${extraBold[1]}»`);
 
+  // Each card once.
+  const markers = [...(reply.content ?? "").matchAll(/\[\[car:([\w-]+)\]\]/g)].map((m) => m[1]);
+  const twiceCard = markers.find((id, i) => markers.indexOf(id) !== i);
+  if (twiceCard) problems.push(`كرت ${twiceCard} طلع مرتين`);
+
   // The drivetrain alone in a facts line («زيرو · وكالة · رباعي»).
   const bareDrive = text.split("\n").filter((l) => l.includes("·")).flatMap((l) => l.split("·").map((p) => p.trim())).find((p) => /^(رباعي|كلي|أمامي|خلفي)$/.test(p));
   if (bareDrive) problems.push(`«${bareDrive}» لحالها، الصح «دفع ${bareDrive}»`);
