@@ -105,6 +105,8 @@ function generalChecks(reply, userMessage) {
 
   if (text.includes("د.ع")) problems.push("كتب «د.ع» بدل «دينار»");
 
+  if (/ب{3,}/.test(text)) problems.push("حروف مكررة: «ببب»");
+
   const persian = text.match(/[کیپژ]/g);
   if (persian) problems.push(`حروف فارسية: ${[...new Set(persian)].join("، ")}`);
 
