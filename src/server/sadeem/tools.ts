@@ -207,7 +207,10 @@ export function fetchCars(env: SupabaseEnv, carIds: string[]): Promise<CarRow[]>
 /** State one reply builds up while the model calls tools. */
 export interface BuyerRequest {
   intent: string;
+  /** Search ceiling: the budget, or X × 1.05 for "بحدود X". */
   budgetMax?: number;
+  /** The amount the buyer said for "بحدود X": cars above it are over the budget even within budgetMax. */
+  budgetStated?: number;
   budgetMin?: number;
   currency?: "IQD" | "USD";
 }
@@ -227,6 +230,8 @@ export interface TurnState {
   overBudget: OverBudget[];
   /** Matches of the last search (often more than the cars shown). */
   matchCount?: number;
+  /** Available matches of every search this turn: the counts a reply may quote. */
+  counts: number[];
   shownIds: string[];
   /** Cars looked up with get_car_details, shown when the reply names none of the cars. */
   detailIds: string[];
@@ -238,24 +243,29 @@ export interface TurnState {
   message?: string;
 }
 
+const AROUND = /حدود|بحد|حوالي|تقريب/;
+
 // Models sometimes put a wider search range in budget_max_iqd ("ب عشرين
 // مليون" recorded as 40,000,000), which hides over-budget cars from the check.
 // The buyer's own words win when they name exactly one ceiling amount.
 function checkBudget(request: BuyerRequest, words: string): { from: number; to: number } | null {
   const amount = budgetFromWords(words);
   if (!amount || !request.budgetMax || /فوق|أكثر|اكثر|بين/.test(words)) return null;
-  const to = Math.round(/حدود|بحد|حوالي|تقريب/.test(words) ? amount * 1.05 : amount);
+  const to = Math.round(AROUND.test(words) ? amount * 1.05 : amount);
   if (request.budgetMax >= amount * 0.95 && request.budgetMax <= amount * 1.1) return null;
   const from = request.budgetMax;
   request.budgetMax = to;
   return { from, to };
 }
 
+/** The budget a car is measured against: what the buyer said ("بحدود 30" → 30), not the wider search ceiling. */
+export const buyerBudget = (request?: BuyerRequest) => request?.budgetStated ?? request?.budgetMax;
+
 /** Records the cars shown and which of them cost more than the budget. */
 export function markShown(state: TurnState, shownIds: string[]) {
   state.shownIds = shownIds;
   // The budget is a ceiling: anything above it must be said out loud.
-  const ceiling = state.request?.budgetMax;
+  const ceiling = buyerBudget(state.request);
   state.overBudget = ceiling
     ? shownIds
         .map((id) => ({ id, price: state.seenPrices.get(id) ?? 0 }))
@@ -305,14 +315,26 @@ export async function runTool(
         currency: args.currency === "USD" ? "USD" : args.currency === "IQD" ? "IQD" : undefined,
       };
       state.searches.push({ request: args });
-      const corrected = checkBudget(state.request, typeof args.budget_words === "string" ? args.budget_words : "");
+      const words = typeof args.budget_words === "string" ? args.budget_words : "";
+      const corrected = checkBudget(state.request, words);
       if (corrected) state.searches.push({ budget_corrected: corrected });
-      const { budgetMax } = state.request;
+      // "بحدود 30 مليون": search up to 31.5 million, but 30 is the buyer's budget.
+      const said = budgetFromWords(words);
+      if (said && AROUND.test(words) && !/فوق|أكثر|اكثر|بين/.test(words) && state.request.budgetMax && said < state.request.budgetMax) {
+        state.request.budgetStated = said;
+      }
+      const { budgetMax, budgetStated } = state.request;
       return budgetMax
         ? {
             ok: true,
             budget_max_iqd: budgetMax,
             budget_max_usd: usdOf(budgetMax),
+            ...(budgetStated
+              ? {
+                  buyer_budget_iqd: budgetStated,
+                  note: `Search up to ${budgetMax.toLocaleString("en-US")}, but the buyer's budget is ${budgetStated.toLocaleString("en-US")}: a car above it is over the budget (its over_budget_by says by how much). Never call it ضمن ميزانيتك.`,
+                }
+              : {}),
             ...(corrected
               ? { corrected: `budget_max_iqd ${corrected.from.toLocaleString("en-US")} did not match "${args.budget_words}"; the budget is ${budgetMax.toLocaleString("en-US")}.` }
               : {}),
@@ -340,10 +362,11 @@ export async function runTool(
       const total = rows[0]?.total_count ?? 0;
       const available = rows[0]?.available_count ?? total;
       state.matchCount = available;
+      state.counts.push(available);
       return {
         total: available,
         ...(total > available ? { reserved: total - available } : {}),
-        cars: rows.map((row) => brief(row, names.get(row.id)?.full, state.request?.budgetMax)),
+        cars: rows.map((row) => brief(row, names.get(row.id)?.full, buyerBudget(state.request))),
       };
     }
 
@@ -357,7 +380,7 @@ export async function runTool(
       });
       state.searches.push({ details: rows.map((row) => row.id) });
       return rows.map((row) => ({
-        ...brief(row, names.get(row.id)?.full, state.request?.budgetMax),
+        ...brief(row, names.get(row.id)?.full, buyerBudget(state.request)),
         cylinders: row.cylinders,
         features: row.features,
         description: row.description,
