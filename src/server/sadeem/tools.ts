@@ -232,6 +232,8 @@ export interface TurnState {
   matchCount?: number;
   /** Available matches of every search this turn: the counts a reply may quote. */
   counts: number[];
+  /** Latin words in the cars' own data (features, engine, description: "Toyota Safety Sense", "AWD"), which a reply may quote. */
+  dataLatin: Set<string>;
   shownIds: string[];
   /** Cars looked up with get_car_details, shown when the reply names none of the cars. */
   detailIds: string[];
