@@ -377,18 +377,23 @@ function dropRepeatedBlocks(reply: string, found: TurnState["found"]): string {
     bold ? [...found].filter(([, car]) => namesCar(bold, car)).map(([id]) => id) : [];
   // Cars already named in bold anywhere in an earlier paragraph ("أرخص سيارة عندنا **كيا بيكانتو 2024**").
   const boldIn = (block: string) => [...block.matchAll(/\*\*([^*]+)\*\*/g)].flatMap((m) => named(m[1]));
-  const seen = new Set<string>();
+  // Where each car was first named in bold, to tell whether a caption adds anything.
+  const seen = new Map<string, string>();
   return blocks
     .filter((block) => {
       const lines = block.trim().split("\n");
       const ids = named(opensWith(block));
+      // An over-budget caption stays unless the earlier mention already gave the same figures
+      // («أغلى من ميزانيتك بـ 17,000,000» in the opening line, then again in the caption).
+      const figures = block.match(/\d{1,3}(?:,\d{3})+/g) ?? [];
+      const overSaid = (id: string) => figures.length > 0 && figures.every((f) => seen.get(id)?.includes(f));
       const caption =
-        /^\*\*[^*]+\*\*\s*$/.test(lines[0]) &&
-        lines.length <= 2 &&
-        (lines.length === 1 || lines[1].includes("·")) &&
-        !mentionsOverBudget(block);
-      const repeat = caption && ids.length > 0 && ids.every((id) => seen.has(id));
-      if (!repeat) boldIn(block).forEach((id) => seen.add(id));
+        /^\*\*[^*]+\*\*\s*$/.test(lines[0]) && lines.length <= 2 && (lines.length === 1 || lines[1].includes("·"));
+      const repeat =
+        caption &&
+        ids.length > 0 &&
+        ids.every((id) => seen.has(id) && (!mentionsOverBudget(block) || overSaid(id)));
+      if (!repeat) boldIn(block).forEach((id) => seen.has(id) || seen.set(id, block));
       return !repeat;
     })
     .join("\n\n");
