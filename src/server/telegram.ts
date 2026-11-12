@@ -33,6 +33,8 @@ export interface LeadNotice {
   note?: string | null;
   /** The buyer's own message that gave the number. */
   message?: string | null;
+  /** Where it came from: Sadeem (default) or the contact page's form. */
+  source?: "chat" | "form";
 }
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -47,7 +49,7 @@ const baghdadTime = new Intl.DateTimeFormat("ar-IQ-u-nu-latn", {
 export function leadText(lead: LeadNotice, now = new Date()): string {
   const whatsapp = `https://wa.me/964${lead.phone.slice(1)}`;
   const lines = [
-    "🔔 <b>زبون جديد من سديم</b>",
+    lead.source === "form" ? "🔔 <b>طلب جديد من صفحة التواصل</b>" : "🔔 <b>زبون جديد من سديم</b>",
     "",
     lead.name ? `👤 ${escape(lead.name)}` : null,
     // One unbroken number: spaced groups show out of order in an Arabic line
