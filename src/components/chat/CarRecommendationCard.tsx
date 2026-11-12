@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { CarImage } from "@/components/ui/CarImage";
-import { formatCarMileage, formatIQD, originLabel } from "@/lib/format";
+import { carNameAr, formatCarMileage, formatIQD, originLabel } from "@/lib/format";
 import type { Car } from "@/types/car";
 
 function Thumb({ car }: { car: Car }) {
@@ -9,7 +9,7 @@ function Thumb({ car }: { car: Car }) {
     <div className="relative h-14 w-[76px] shrink-0 overflow-hidden rounded-lg bg-surface">
       <CarImage
         src={car.images[0]}
-        alt={`${car.brand} ${car.model}`}
+        alt={carNameAr(car)}
         bodyType={car.bodyType}
         color={car.color}
         sizes="76px"
@@ -22,9 +22,7 @@ function Thumb({ car }: { car: Car }) {
 function Title({ car }: { car: Car }) {
   return (
     <p className="truncate text-[13.5px] font-bold leading-5 text-brand-950">
-      <bdi>
-        {car.brand} {car.model}
-      </bdi>{" "}
+      <bdi>{carNameAr(car)}</bdi>{" "}
       <span className="font-semibold text-neutral-500">{car.year}</span>
     </p>
   );

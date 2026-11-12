@@ -23,6 +23,9 @@ export interface Car {
   id: string;
   brand: string;
   model: string;
+  /** Arabic names from the catalog (brands.name_ar, models.name_ar); a model with none keeps its own name (EV6). */
+  brandAr?: string;
+  modelAr?: string;
   /** Trim or grade, e.g. "GXR", "SE". */
   trim?: string;
   year: number;
