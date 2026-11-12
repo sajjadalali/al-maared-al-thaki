@@ -1,3 +1,4 @@
+import brandLabels from "@/data/brand-labels.json";
 // Parallel-market rate (Baghdad exchanges, Oct 2026), not the official 1,510:
 // cars are priced in dollars at the market rate, so this is what buyers use to
 // compare prices and state budgets in dollars.
@@ -40,6 +41,11 @@ export function drivetrainLabel(drivetrain: string): string {
 }
 
 /** "≈ 24,500 $", rounded to the nearest hundred dollars. */
+/** The car's name as the chat's cards show it: «تويوتا كامري», «كيا EV6» (a model with no Arabic name keeps its own). */
+export function carNameAr(car: { brand: string; model: string; brandAr?: string; modelAr?: string }): string {
+  return `${car.brandAr ?? (brandLabels as Record<string, string>)[car.brand] ?? car.brand} ${car.modelAr ?? car.model}`;
+}
+
 export function formatUSD(priceIQD: number): string {
   return `≈ ${formatNumber(Math.round(priceIQD / USD_TO_IQD / 100) * 100)} $`;
 }

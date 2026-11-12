@@ -94,6 +94,10 @@ function generalChecks(reply, userMessage) {
   );
   if (extraBold) problems.push(`خط عريض لشي مو اسم سيارة: «${extraBold[1]}»`);
 
+  // Cards carry the Arabic name (brandAr from the catalog).
+  const noArabic = reply.cars.find((c) => !c.brandAr);
+  if (noArabic) problems.push(`كرت ${noArabic.id} بدون اسم عربي`);
+
   // Each card once.
   const markers = [...(reply.content ?? "").matchAll(/\[\[car:([\w-]+)\]\]/g)].map((m) => m[1]);
   const twiceCard = markers.find((id, i) => markers.indexOf(id) !== i);

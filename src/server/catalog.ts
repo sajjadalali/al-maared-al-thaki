@@ -17,6 +17,8 @@ export interface CarRow {
   id: string;
   brand: string;
   model: string;
+  brand_ar?: string | null;
+  model_ar?: string | null;
   trim_level: string | null;
   year: number;
   price_iqd: number;
@@ -46,6 +48,8 @@ export function toCar(row: CarRow): Car {
     id: row.id,
     brand: row.brand,
     model: row.model,
+    brandAr: row.brand_ar ?? undefined,
+    modelAr: row.model_ar ?? undefined,
     trim: row.trim_level ?? undefined,
     year: row.year,
     price: row.price_iqd,
