@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Phones on a car page: Sadeem's button sits in the price bar at the bottom
+   instead of floating over the page (MobileContactBar keeps room for it). */
+@custom-variant docked {
+  @media (width < 64rem) {
+    body:has([data-contact-bar]) & {
+      @slot;
+    }
+  }
+}
+
 @theme inline {
   --font-sans: var(--font-plex);
 

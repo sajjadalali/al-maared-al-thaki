@@ -202,7 +202,7 @@ export function ChatWidget() {
           onPointerEnter={warmUp}
           onTouchStart={warmUp}
           onFocus={warmUp}
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-brand-950 py-2.5 pe-5 ps-2.5 text-white shadow-xl shadow-brand-950/30 ring-1 ring-white/10 transition hover:bg-brand-800 active:scale-95 animate-pop-in max-lg:[body:has([data-contact-bar])_&]:bottom-24"
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-brand-950 py-2.5 pe-5 ps-2.5 text-white shadow-xl shadow-brand-950/30 ring-1 ring-white/10 transition hover:bg-brand-800 active:scale-95 animate-pop-in docked:bottom-[max(0.75rem,env(safe-area-inset-bottom))] docked:right-4 docked:p-0.5 docked:shadow-md"
           aria-label={label}
         >
           <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white">
@@ -214,8 +214,18 @@ export function ChatWidget() {
               )}
             />
           </span>
-          {/* On phones the button is just Sadeem's face, except right after the chat stepped aside. */}
-          <span className={cn("text-sm font-bold", unread || resumeHint ? "inline" : "hidden sm:inline")}>{label}</span>
+          {/* On phones the button is just Sadeem's face, except right after the chat stepped aside.
+              In the price bar of a car page, that wording shows as a bubble above the face. */}
+          <span
+            className={cn(
+              "text-sm font-bold",
+              unread || resumeHint ? "inline" : "hidden sm:inline",
+              "docked:absolute docked:bottom-full docked:right-0 docked:mb-2 docked:whitespace-nowrap docked:rounded-full docked:bg-brand-950 docked:px-3.5 docked:py-2 docked:shadow-lg docked:shadow-brand-950/25",
+              !(unread || resumeHint) && "docked:hidden"
+            )}
+          >
+            {label}
+          </span>
         </button>
       )}
 
