@@ -88,7 +88,7 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
         </div>
 
         <aside className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-          <div className="rounded-3xl border border-black/[0.07] bg-white p-5 shadow-[0_24px_50px_-34px_rgba(11,19,34,0.5)] sm:p-6 lg:sticky lg:top-28">
+          <div className="rounded-3xl border border-black/[0.07] bg-white p-5 shadow-[0_8px_24px_-18px_rgba(11,19,34,0.18)] sm:p-6 lg:sticky lg:top-28">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className={cn("flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", status.chip)}>
                 <span className={cn("h-1.5 w-1.5 rounded-full", status.dot)} />
