@@ -58,7 +58,11 @@ const BANNED_WORDS = [
   "فقط", "لكن", "جداً", "معك", "معهم", "معه", "عبر", "أقدر", "تقدر", "يقدر",
   "أكدر", "لكيت", "تقول", "يقول", "فيه", "فيها",
   "عذراً", "اعتذر", "أعتذر", "عدنا أكو", "أكو عدنا", "أيه", "ايه",
+  // Seen on 12 Nov in the model's own text («تحكي»، «أكلك»، «تم فحصها»، «وكم تحتاج»).
+  "تحكي", "لقيت", "تبعي", "تبعك", "معانا", "أقولك", "أكلك", "بالوقت الحالي", "هل", "تم", "يتم", "أيضاً", "أيضا",
 ];
+// «ويا» as "and" or before a verb or noun («على الواتساب وياهم يردون عليك»، «وياهم تحجي»، «تحجي وياه الفريق»).
+const WAYA_MISUSE = [/واتساب\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![\u0621-\u064A])/, /ويا(?:هم|ك|نا|كم|ه|ها)\s+[يتن][\u0621-\u064A]{2,}/, /ويا(?:هم|ك|ه|ها)\s+ال[\u0621-\u064A]/];
 // English that belongs in a reply: the body type SUV (as the catalog writes
 // it), and the models with no Arabic name in models.name_ar (EV6, GLE 450,
 // ES 350, RX 350; 520i has no two-letter word).
@@ -129,6 +133,15 @@ function generalChecks(reply, userMessage) {
   for (const word of BANNED_WORDS) {
     if (new RegExp(`(^|[^${AR_LETTER}])[وفب]?${word}(?![${AR_LETTER}])`).test(text)) problems.push(`كلمة مو عراقية: «${word}»`);
   }
+  for (const re of WAYA_MISUSE) {
+    const m = text.match(re);
+    if (m) problems.push(`«ويا» بمكان غلط: «${m[0]}»`);
+  }
+  // «كم» as a question (Iraqi says شكد); after a number it is كيلومتر.
+  for (const m of text.matchAll(new RegExp(`(?:^|[^${AR_LETTER}])(و?كم)(?![${AR_LETTER}])`, "g"))) {
+    if (!/(?:\d|ألف|الف|آلاف)\s*$/.test(text.slice(0, m.index + m[0].indexOf(m[1])))) problems.push("«كم» بدل «شكد»");
+  }
+  if (/(?<=[\u0621-\u064A])ـ+(?=[\u0621-\u064A])/.test(text)) problems.push("حروف ممطوطة (ـ)");
 
   // Mileage, horsepower and model years in the text must belong to a shown car
   // (or to the buyer's own words).
@@ -275,6 +288,19 @@ const CONVERSATIONS = [
   {
     name: "مقارنة",
     turns: [{ say: "قارنلي بين السبورتاج والتوسان", expect: [hasNot(/هدوء|هادئ|هادية|مريح|راحة|موثوق|اعتمادي|متين|ما تعطل|عطلات/, "رأي مو موجود بالبيانات"), cardsSome((c) => c.model === "Sportage", "ما عرض السبورتاج"), cardsSome((c) => c.model === "Tucson", "ما عرض التوسان")] }],
+  },
+  // 12 Nov: «الباجيرو أرخص» when it costs 38 million and the Explorer 37.
+  {
+    name: "مقارنة بالسعر",
+    turns: [{ say: "قارنلي بين الاكسبلورر والباجيرو", expect: [hasNot(/(?:ال)?باجيرو[^،.\n]{0,15}أرخص|أرخص[^،.\n]{0,10}(?:ال)?باجيرو/, "گال الباجيرو أرخص وهي أغلى")] }],
+  },
+  // 12 Nov: «اكتبلهم على الواتساب وياهم…» in 4 of 6 replies that send the buyer to WhatsApp.
+  {
+    name: "تحويل للواتساب",
+    turns: [
+      { say: "أكو تمويل من المصرف؟", expect: [notInvented] },
+      { say: "توصلون السيارة للبصرة؟", expect: [notInvented] },
+    ],
   },
   {
     name: "المكان",
