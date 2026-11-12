@@ -24,5 +24,7 @@ jobs:
           node-version: 22
       - name: Wait for Coolify to deploy
         if: github.event_name == 'push'
-        run: sleep 300
+        # Builds usually take 1-2 minutes but have taken 7 (12 Nov, #52): with
+        # 5 minutes the check ran against the previous version.
+        run: sleep 600
       - run: node scripts/sadeem-check.mjs

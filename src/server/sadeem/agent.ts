@@ -734,7 +734,9 @@ export async function runSadeem(
   // returned can be shown.
   const showNamed = (text: string) => {
     const named = mentionedCars(text, state.found);
-    markShown(state, [...new Set([...named, ...state.detailIds])].slice(0, MAX_SHOWN_CARS));
+    // The prompt asks for at most MAX_SHOWN_CARS, but a car named with its year
+    // in passing («وأغلاها توسان 2024 بـ 31,000,000») still gets its card: one more.
+    markShown(state, [...new Set([...named, ...state.detailIds])].slice(0, MAX_SHOWN_CARS + 1));
   };
   showNamed(content);
 
