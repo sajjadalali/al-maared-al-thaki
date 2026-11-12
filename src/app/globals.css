@@ -40,6 +40,93 @@
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-slow: float 8s ease-in-out infinite;
 
+  /* Sadeem's chat. One curve for everything it does (the iOS sheet curve):
+     quick to start, soft to land. Exits are shorter than entrances. */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-sheet-up: sheet-up 0.34s var(--ease-sheet) both;
+  --animate-sheet-down: sheet-down 0.24s cubic-bezier(0.4, 0, 1, 1) both;
+  --animate-panel-in: panel-in 0.28s var(--ease-sheet) both;
+  --animate-panel-out: panel-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+  --animate-msg-in: msg-in 0.26s var(--ease-sheet) both;
+  --animate-msg-mine: msg-mine 0.22s var(--ease-sheet) both;
+  --animate-loading-bar: loading-bar 1.1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+
+  /* Phones: the chat is a sheet that rises from the bottom edge. */
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes sheet-down {
+    from {
+      transform: none;
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  /* Larger screens: the panel grows out of the launcher's corner. */
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes panel-out {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 0;
+      transform: translateY(14px) scale(0.94);
+    }
+  }
+
+  /* Sadeem's reply rises into place; its cards follow one after another. */
+  @keyframes msg-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* The buyer's own message slides in from its side (the right, in Arabic). */
+  @keyframes msg-mine {
+    from {
+      opacity: 0;
+      transform: translateX(12px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* A car card was tapped: the page is on its way. */
+  @keyframes loading-bar {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(-250%);
+    }
+  }
+
   @keyframes rise {
     from {
       opacity: 0;
@@ -129,4 +216,14 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Motion turned off on the device: everything still works, just without it. */
+@media (prefers-reduced-motion: reduce) {
+  [data-sadeem-chat],
+  [data-sadeem-chat] * {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }
