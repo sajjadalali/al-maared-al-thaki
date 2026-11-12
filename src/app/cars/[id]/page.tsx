@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Check, ChevronLeft, Clock } from "lucide-react";
 import { getCatalog } from "@/server/catalog";
 import { getImageCredit } from "@/data/imageCredits";
-import { brandNameAr, carNameAr, formatCarMileage, formatNumber, formatUSD, originLabel } from "@/lib/format";
+import { brandNameAr, carNameAr, formatCarMileage, formatIQD, formatNumber, formatUSD, originLabel } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { site } from "@/config/site";
 import { CarGallery } from "@/components/cars/CarGallery";
@@ -28,9 +28,21 @@ export async function generateMetadata({ params }: CarDetailsPageProps): Promise
   const { id } = await params;
   const car = (await getCatalog()).getCarById(id);
   if (!car) return { title: "السيارة غير موجودة" };
+  // What a shared link shows. openGraph replaces the layout's as a whole (metadata
+  // merges shallowly), so it repeats the site name and locale; the picture comes
+  // from opengraph-image.ts next to this page.
+  const name = `${carNameAr(car)} ${car.year}`;
   return {
     title: `${carNameAr(car)} ${car.trim ? `${car.trim} ` : ""}${car.year}`,
     description: car.description,
+    openGraph: {
+      type: "website",
+      locale: "ar_IQ",
+      siteName: site.name,
+      url: `/cars/${car.id}`,
+      title: name,
+      description: [formatIQD(car.price), car.condition, formatCarMileage(car.mileage), car.city].join(" · "),
+    },
   };
 }
 
