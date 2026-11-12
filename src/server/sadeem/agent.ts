@@ -642,6 +642,9 @@ export async function runSadeem(
 
   const buyerGavePhone = /(?:\+?964|0)\s?7\d{2}[\s-]?\d{3}[\s-]?\d{4}/.test(message.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))));
   const answerTexts: string[] = [];
+  // What the model wrote, before cleanReply and the other fixes: kept in the
+  // log so a reply's wording can be traced to the model or to the server.
+  const modelTexts: string[] = [];
   let finalText = "";
   // The text shown while it is written: earlier answer rounds plus the round
   // being streamed, sent at most every PREVIEW_MS (and once more at its end).
@@ -679,6 +682,7 @@ export async function runSadeem(
     // Saving the buyer's number needs a number in their message; models
     // sometimes call it anyway next to a finished reply, which then got lost.
     const calls = (reply.tool_calls ?? []).filter((call) => call.function.name !== "save_lead" || buyerGavePhone);
+    if (reply.content) modelTexts.push(reply.content);
     const text = cleanReply(reply.content ?? "");
     if (calls.length === 0) {
       finalText = text;
@@ -720,7 +724,9 @@ export async function runSadeem(
     // Some models end a tool turn with no text at all; ask once for the reply itself.
     messages.push({ role: "system", content: "Now write your reply to the buyer in Iraqi Arabic. No tools." });
     roundText = "";
-    content = cleanReply((await complete(llm, messages, false, turn, streamText)).content ?? "");
+    const late = (await complete(llm, messages, false, turn, streamText)).content ?? "";
+    if (late) modelTexts.push(late);
+    content = cleanReply(late);
   }
 
   let suggestions: string[];
@@ -757,7 +763,9 @@ export async function runSadeem(
           "Keep the same shape, ending with the suggestions line. No tools.",
       });
       onEvent?.({ type: "status", text: "سديم يتأكد من المعلومات…" });
-      const fixed = cleanReply((await complete(llm, messages, false, turn)).content ?? "");
+      const rewrite = (await complete(llm, messages, false, turn)).content ?? "";
+      if (rewrite) modelTexts.push(`[rewrite] ${rewrite}`);
+      const fixed = cleanReply(rewrite);
       if (fixed) {
         const rewritten = splitSuggestions(fixed);
         const left = replyProblems(rewritten.text, allowed, state, rows, buyerTexts);
@@ -774,6 +782,7 @@ export async function runSadeem(
     .filter((row) => row !== undefined)
     .map(toCar);
 
+  if (modelTexts.length) state.searches.push({ model_text: modelTexts });
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
   if (content) content = spellDrivetrain(dropRepeatedCount(dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found)));
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
