@@ -52,14 +52,20 @@ type Phase = "closed" | "open" | "leaving";
 
 export function ChatWidget() {
   const [phase, setPhase] = useState<Phase>("closed");
-  // The panel mounts on first open and then stays mounted (hidden when
-  // minimised), so the conversation and any reply on its way survive.
+  // The panel mounts hidden once the page is idle (or on the first touch of
+  // the button), so opening only changes its state and its entrance runs once
+  // (mounted at the tap, a placeholder rose first and then the panel again).
+  // It then stays mounted, so the conversation and any reply on its way survive.
+  const [mounted, setMounted] = useState(false);
+  // The buyer has opened the chat at least once (the button's wording).
   const [started, setStarted] = useState(false);
   // A car card was tapped and its page is loading; the chat stays until it's there.
   const [navigating, setNavigating] = useState(false);
   const [resumeHint, setResumeHint] = useState(false);
   const [unread, setUnread] = useState(false);
   const [prompt, setPrompt] = useState<ChatPrompt | null>(null);
+  // When the chat started opening (the panel, if it mounts mid-way, picks up the motion there).
+  const [openedAt, setOpenedAt] = useState(0);
   // Back onto the chat's own history entry: the page that comes back keeps the chat open.
   const [keepOpenOn, setKeepOpenOn] = useState<string | null>(null);
   const phaseRef = useRef(phase);
@@ -73,6 +79,8 @@ export function ChatWidget() {
   const openChat = useCallback((fromHistory = false) => {
     if (phaseRef.current === "open") return;
     setPhase("open");
+    setOpenedAt(performance.now());
+    setMounted(true);
     setStarted(true);
     setUnread(false);
     setResumeHint(false);
@@ -157,11 +165,11 @@ export function ChatWidget() {
     return () => clearTimeout(timer);
   }, [resumeHint]);
 
-  // Load the panel once the page is idle, so the first tap opens it at once.
+  // Load and mount the panel (hidden) once the page is idle, so the first tap opens it at once.
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 2500));
     const cancel = window.cancelIdleCallback ?? window.clearTimeout;
-    const id = idle(() => void loadPanel());
+    const id = idle(() => void loadPanel().then(() => setMounted(true)), { timeout: 4000 });
     return () => cancel(id);
   }, []);
 
@@ -180,7 +188,7 @@ export function ChatWidget() {
     if (phaseRef.current !== "open") setUnread(true);
   }, []);
   const handleNavigate = useCallback(() => setNavigating(true), []);
-  const warmUp = () => void loadPanel();
+  const warmUp = () => void loadPanel().then(() => setMounted(true));
 
   const label = unread ? "سديم رد عليك" : resumeHint ? "رجوع للمحادثة" : started ? "كمّل مع سديم" : "تحدث مع سديم";
 
@@ -211,9 +219,10 @@ export function ChatWidget() {
         </button>
       )}
 
-      {started && (
+      {mounted && (
         <ChatPanel
           phase={phase}
+          openedAt={openedAt}
           navigating={navigating}
           onExited={finishLeaving}
           onClose={dismiss}

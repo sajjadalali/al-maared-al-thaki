@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { History, SquarePen, Sparkles, Trash2, X } from "lucide-react";
 import { aiService, type ChatMessage, type ReplyProgress } from "@/services/ai";
 import { cn } from "@/lib/cn";
@@ -54,6 +54,7 @@ const headerButton =
 // hidden while minimised, so a reply still on its way isn't lost.
 export default function ChatPanel({
   phase,
+  openedAt,
   navigating,
   onExited,
   onClose,
@@ -64,6 +65,8 @@ export default function ChatPanel({
 }: {
   /** open; leaving (sliding away, then hidden); closed (hidden, still mounted). */
   phase: "open" | "leaving" | "closed";
+  /** performance.now() when the chat started opening. */
+  openedAt: number;
   /** A car card was tapped and its page is on the way. */
   navigating: boolean;
   /** The slide-away animation finished. */
@@ -86,6 +89,21 @@ export default function ChatPanel({
   const onReplyRef = useRef(onReply);
 
   const hidden = phase === "closed";
+  // Mounted while already opening (a tap before the panel had loaded): the
+  // placeholder has been rising since openedAt, so this entrance starts that
+  // far in and the two read as one movement. Measured just before the first
+  // paint, which is when this frame's animation actually starts.
+  const frameRef = useRef<HTMLDivElement>(null);
+  const openedAtRef = useRef(openedAt);
+  const mountedOpen = useRef(phase === "open");
+  useLayoutEffect(() => {
+    if (!mountedOpen.current || !frameRef.current) return;
+    frameRef.current.style.animationDelay = `-${Math.round(performance.now() - openedAtRef.current)}ms`;
+  }, []);
+  useEffect(() => {
+    // Any later entrance or exit starts from its beginning.
+    if (phase !== "open" && frameRef.current) frameRef.current.style.animationDelay = "";
+  }, [phase]);
   const active = store.chats.find((c) => c.id === store.activeId) ?? store.chats[0];
   const messages = active.messages;
   const typing = pending?.chatId === active.id;
@@ -193,6 +211,7 @@ export default function ChatPanel({
       aria-hidden={hidden || undefined}
       data-sadeem-chat
       className={cn(CHAT_FRAME_CLASS, chatFrameMotion(phase !== "open"), hidden && "invisible")}
+      ref={frameRef}
       onAnimationEnd={(e) => {
         if (e.target === e.currentTarget && phase === "leaving") onExited();
       }}
