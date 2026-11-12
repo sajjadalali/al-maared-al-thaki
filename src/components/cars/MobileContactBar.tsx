@@ -2,7 +2,7 @@ import { Phone } from "lucide-react";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { phoneHref, whatsappHref } from "@/config/site";
 import { carWhatsappMessage } from "@/lib/carMessages";
-import { formatNumber } from "@/lib/format";
+import { carNameAr, formatNumber } from "@/lib/format";
 import type { Car } from "@/types/car";
 
 /** Price and contact buttons pinned to the bottom of the screen on phones. */
@@ -16,7 +16,7 @@ export function MobileContactBar({ car }: { car: Car }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs text-neutral-500">
             <bdi>
-              {car.brand} {car.model} {car.year}
+              {carNameAr(car)} {car.year}
             </bdi>
           </p>
           <p className="text-[17px] font-bold leading-6 text-brand-950">

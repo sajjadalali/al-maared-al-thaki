@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Check, ChevronLeft, Clock } from "lucide-react";
 import { getCatalog } from "@/server/catalog";
 import { getImageCredit } from "@/data/imageCredits";
-import { formatCarMileage, formatNumber, formatUSD, originLabel } from "@/lib/format";
+import { brandNameAr, carNameAr, formatCarMileage, formatNumber, formatUSD, originLabel } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { site } from "@/config/site";
 import { CarGallery } from "@/components/cars/CarGallery";
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: CarDetailsPageProps): Promise
   const car = (await getCatalog()).getCarById(id);
   if (!car) return { title: "السيارة غير موجودة" };
   return {
-    title: `${car.brand} ${car.model} ${car.trim ? `${car.trim} ` : ""}${car.year}`,
+    title: `${carNameAr(car)} ${car.trim ? `${car.trim} ` : ""}${car.year}`,
     description: car.description,
   };
 }
@@ -72,10 +72,12 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
         <Link href="/cars" className="hover:text-brand-950">السيارات</Link>
         <ChevronLeft className="h-3.5 w-3.5" />
         <Link href={`/cars?brand=${encodeURIComponent(car.brand)}`} className="hover:text-brand-950">
-          {car.brand}
+          {brandNameAr(car)}
         </Link>
         <ChevronLeft className="h-3.5 w-3.5" />
-        <span className="truncate font-semibold text-brand-950">{car.model}</span>
+        <span className="truncate font-semibold text-brand-950">
+          <bdi>{car.modelAr ?? car.model}</bdi>
+        </span>
       </nav>
 
       {/* Phones read top to bottom: photo, then price and contact, then details.
@@ -103,9 +105,7 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
             </div>
 
             <h1 className="mt-4 text-2xl font-bold leading-tight text-brand-950">
-              <bdi>
-                {car.brand} {car.model}
-              </bdi>
+              <bdi>{carNameAr(car)}</bdi>
             </h1>
             <p className="mt-1 text-sm text-neutral-500">
               <bdi>{[car.trim, car.year, car.color].filter(Boolean).join(" · ")}</bdi>

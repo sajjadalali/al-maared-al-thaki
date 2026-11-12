@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Fuel, Gauge, MapPin, Settings2 } from "lucide-react";
 import { CarImage } from "@/components/ui/CarImage";
 import { CarFavoriteIcon } from "@/components/cars/CarFavoriteToggle";
-import { formatCarMileage, formatNumber, originLabel } from "@/lib/format";
+import { carNameAr, formatCarMileage, formatNumber, originLabel } from "@/lib/format";
 import type { CarSummary } from "@/types/car";
 import { cn } from "@/lib/cn";
 
@@ -15,7 +15,7 @@ function shortPowertrain(car: CarSummary): string {
 
 // Rendered on the server where possible; only the heart is interactive.
 export function CarCard({ car, eager, className }: { car: CarSummary; eager?: boolean; className?: string }) {
-  const name = `${car.brand} ${car.model}`;
+  const name = carNameAr(car);
   const subtitle = [car.trim, car.year].filter(Boolean).join(" · ");
   const isNew = car.condition === "جديدة";
 

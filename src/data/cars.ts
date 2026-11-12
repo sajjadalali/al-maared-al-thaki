@@ -228,7 +228,7 @@ const FACET_KEYS = [
 ] as const satisfies readonly (keyof FacetCar)[];
 
 const SUMMARY_KEYS = [
-  "id", "brand", "model", "trim", "year", "price", "condition", "origin", "bodyType",
+  "id", "brand", "model", "brandAr", "modelAr", "trim", "year", "price", "condition", "origin", "bodyType",
   "mileage", "transmission", "fuel", "engine", "color", "city", "status", "images",
 ] as const satisfies readonly (keyof CarSummary)[];
 
