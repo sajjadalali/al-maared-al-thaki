@@ -1,14 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bot, History, SquarePen, Sparkles, Trash2, X } from "lucide-react";
+import { History, SquarePen, Sparkles, Trash2, X } from "lucide-react";
 import { aiService, type ChatMessage, type ReplyProgress } from "@/services/ai";
 import { cn } from "@/lib/cn";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
 import { QuickActions } from "./QuickActions";
 import { ChatInput } from "./ChatInput";
-import { CHAT_FRAME_CLASS, CHAT_HEADER_CLASS } from "./chatFrame";
+import { SadeemMascot } from "@/components/ui/SadeemMascot";
+import { CHAT_FRAME_CLASS, CHAT_HEADER_CLASS, chatFrameMotion } from "./chatFrame";
 import {
   MAX_CHATS,
   conversationTitle,
@@ -52,16 +53,23 @@ const headerButton =
 // initialising state is safe here. Once opened it stays mounted and is only
 // hidden while minimised, so a reply still on its way isn't lost.
 export default function ChatPanel({
-  hidden,
+  phase,
+  navigating,
+  onExited,
   onClose,
   onNavigate,
   onReply,
   prompt,
   onPromptHandled,
 }: {
-  hidden: boolean;
+  /** open; leaving (sliding away, then hidden); closed (hidden, still mounted). */
+  phase: "open" | "leaving" | "closed";
+  /** A car card was tapped and its page is on the way. */
+  navigating: boolean;
+  /** The slide-away animation finished. */
+  onExited: () => void;
   onClose: () => void;
-  /** A link in the chat (a car card) was followed: minimise so the page shows. */
+  /** A link in the chat (a car card) was followed: the chat steps aside once the page is there. */
   onNavigate: () => void;
   /** Sadeem answered (the widget flags it when the chat is minimised). */
   onReply: () => void;
@@ -77,6 +85,7 @@ export default function ChatPanel({
   const storeRef = useRef(store);
   const onReplyRef = useRef(onReply);
 
+  const hidden = phase === "closed";
   const active = store.chats.find((c) => c.id === store.activeId) ?? store.chats[0];
   const messages = active.messages;
   const typing = pending?.chatId === active.id;
@@ -178,8 +187,15 @@ export default function ChatPanel({
     <div
       role="dialog"
       aria-label="محادثة سديم"
-      hidden={hidden}
-      className={CHAT_FRAME_CLASS}
+      // Invisible and inert rather than display:none, so the messages' entrance
+      // animations don't all replay each time the chat comes back.
+      inert={hidden}
+      aria-hidden={hidden || undefined}
+      data-sadeem-chat
+      className={cn(CHAT_FRAME_CLASS, chatFrameMotion(phase !== "open"), hidden && "invisible")}
+      onAnimationEnd={(e) => {
+        if (e.target === e.currentTarget && phase === "leaving") onExited();
+      }}
       onClickCapture={(e) => {
         // Any link to a page of the site (car cards, links in a reply), not WhatsApp or phone.
         const link = (e.target as Element).closest("a");
@@ -187,20 +203,22 @@ export default function ChatPanel({
       }}
     >
       <div className={CHAT_HEADER_CLASS}>
-        <div className="flex items-center gap-3">
-          <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white/15 ring-2 ring-white/10">
-            <Bot className="h-5 w-5" />
-            <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-900 bg-success" />
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white ring-2 ring-white/10">
+            <SadeemMascot className="h-9 w-9" />
+            <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
           </span>
-          <div>
+          <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-base font-bold leading-6">
               سديم
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </p>
-            <p className="text-[12px] leading-5 text-white/70">متصل الآن · مساعد المبيعات الذكي</p>
+            <p className="truncate text-[12px] leading-5 text-white/70">
+              متصل الآن<span className="max-[379px]:hidden"> · مساعد المبيعات الذكي</span>
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
             onClick={() => setView(view === "list" ? "chat" : "list")}
@@ -217,6 +235,12 @@ export default function ChatPanel({
             <X className="h-5 w-5" />
           </button>
         </div>
+        {navigating && (
+          // The car page is loading; the chat slides away when it's there.
+          <span role="progressbar" aria-label="فتح صفحة السيارة" className="absolute inset-x-0 bottom-0 h-[3px] overflow-hidden">
+            <span className="absolute inset-y-0 right-0 w-2/5 rounded-full bg-accent-400 animate-loading-bar" />
+          </span>
+        )}
       </div>
 
       {view === "list" ? (

@@ -33,7 +33,7 @@ export function CarRecommendationCard({ car }: { car: Car }) {
   return (
     <Link
       href={`/cars/${car.id}`}
-      className="group flex items-center gap-2.5 rounded-xl border border-black/5 bg-white p-1.5 shadow-sm transition hover:border-brand-200 hover:shadow-md"
+      className="group flex items-center gap-2.5 rounded-xl border border-black/5 bg-white p-1.5 shadow-sm transition duration-150 hover:border-brand-200 hover:shadow-md active:scale-[0.98] active:border-brand-300"
     >
       <Thumb car={car} />
       <div className="min-w-0 flex-1">
@@ -60,7 +60,7 @@ export function CarDetailChatCard({ car }: { car: Car }) {
 
   return (
     <div className="rounded-xl border border-black/5 bg-white p-1.5 shadow-sm">
-      <Link href={`/cars/${car.id}`} className="group flex items-center gap-2.5">
+      <Link href={`/cars/${car.id}`} className="group flex items-center gap-2.5 transition duration-150 active:scale-[0.98]">
         <Thumb car={car} />
         <div className="min-w-0 flex-1">
           <Title car={car} />

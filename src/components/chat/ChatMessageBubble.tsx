@@ -1,4 +1,5 @@
-import { Bot, CheckCheck, Phone } from "lucide-react";
+import { CheckCheck, Phone } from "lucide-react";
+import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { CarDetailChatCard, CarRecommendationCard } from "./CarRecommendationCard";
 import { RichText } from "./RichText";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
@@ -23,10 +24,13 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   const lastText = parts.findLastIndex((part) => "text" in part);
   const card = (car: Car) =>
     cars.length === 1 ? <CarDetailChatCard car={car} /> : <CarRecommendationCard car={car} />;
+  // The cards arrive one after another, after the reply's first lines.
+  const order = [...placed, ...rest.map((car) => car.id)];
+  const arrive = (carId: string) => ({ animationDelay: `${120 + order.indexOf(carId) * 70}ms` });
 
   if (isUser) {
     return (
-      <div className="flex justify-start animate-fade-in">
+      <div className="flex justify-start animate-msg-mine">
         <div className="max-w-[82%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 pb-1.5 pt-2.5 text-white shadow-sm">
           <p className="whitespace-pre-line text-[15px] font-normal leading-7">{message.content}</p>
           <p className="mt-0.5 flex items-center justify-end gap-1 text-[10.5px] text-white/60">
@@ -39,9 +43,9 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   }
 
   return (
-    <div className="flex flex-row-reverse items-start gap-2 animate-fade-in">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
-        <Bot className="h-3.5 w-3.5" />
+    <div className="flex flex-row-reverse items-start gap-2 animate-msg-in">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
+        <SadeemMascot className="h-6 w-6" />
       </span>
 
       <div className="flex min-w-0 max-w-[88%] flex-1 flex-col items-end gap-2">
@@ -49,7 +53,7 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
           if ("carId" in part) {
             const car = cars.find((c) => c.id === part.carId);
             return car ? (
-              <div key={`car-${car.id}`} className="w-full">
+              <div key={`car-${car.id}`} className="w-full animate-msg-in" style={arrive(car.id)}>
                 {card(car)}
               </div>
             ) : null;
@@ -87,7 +91,7 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
         {rest.length > 0 && (
           <div className="flex w-full flex-col gap-2">
             {rest.map((car) => (
-              <div key={car.id} className="w-full">
+              <div key={car.id} className="w-full animate-msg-in" style={arrive(car.id)}>
                 {card(car)}
               </div>
             ))}
