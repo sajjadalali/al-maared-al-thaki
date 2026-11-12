@@ -261,6 +261,14 @@ const IRAQI_WORDS = (
     ["تقول", "تگول"], ["يقول", "يگول"], ["أقول|اقول", "أگول"], ["فيه", "بيه"], ["فيها", "بيها"], ["فيهم", "بيهم"],
     ["عذراً|عذرا|اعتذر|أعتذر|ألعذر|العذر", "آسف"], ["عدنا أكو|أكو عدنا|عندنا أكو|أكو عندنا", "عدنا"],
     ["أيه|ايه|أيوة|ايوة", "إي"],
+    // Levantine «حكى» and «تبع», and forms the model writes with ق where Iraqis say گ.
+    ["تحكي", "تحچي"], ["يحكي", "يحچي"], ["نحكي", "نحچي"], ["أحكي|احكي", "أحچي"], ["يحكون", "يحچون"], ["تحكون", "تحچون"],
+    ["تبعي", "مالتي"], ["تبعك", "مالتك"], ["تبعنا", "مالتنا"], ["تبعكم", "مالتكم"],
+    ["معانا", "ويانا"], ["معاك", "وياك"], ["معاهم", "وياهم"], ["فيك", "بيك"], ["فينا", "بينا"],
+    ["لقيت", "لگيت"], ["لقيتها", "لگيتها"], ["لقيته", "لگيته"], ["لقيتلك", "لگيتلك"], ["لقينا", "لگينا"],
+    ["أقولك|اقولك|أقلك|اقلك|أكلك|اكلك", "أگلك"], ["نقولك|نقلك", "نگلك"], ["يقولون", "يگولون"], ["قلّي|قلي", "گلّي"],
+    ["أبحث لك|أبحثلك|ابحث لك|ابحثلك", "أدورلك"], ["أبحث|ابحث", "أدوّر"], ["نبحث", "ندوّر"], ["تبحث", "تدوّر"], ["يبحث", "يدوّر"],
+    ["بالوقت الحالي|في الوقت الحالي", "هسه"], ["هلق|هلأ", "هسه"], ["كتير", "هواية"], ["هيك", "هيچ"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^${AR_LETTER}])([وف]?)(?:${words})(?![${AR_LETTER}])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -291,6 +299,14 @@ const cleanReply = (text: string) =>
     .replace(/بـ(?=[\u0621-\u064A])/g, "ب")
     // «بـ» before a word that already has its «ب» («بـ**ببغداد**» → «بببغداد»): Arabic never has three in a row.
     .replace(/ب{3,}/g, "بب")
+    // Stretched letters («ســيارة»): a tatweel between two letters.
+    .replace(/(?<=[\u0621-\u064A])ـ+(?=[\u0621-\u064A])/g, "")
+    // «تحب أعرف تفاصيل…» says "would you like me to know": the model means «أگلك».
+    .replace(/(تحب|تريد|تحبون|تريدون)\s+أعرف(?=\s+(?:تفاصيل|شي|أكثر|اكثر|عن|مواصفات|تجهيزات))/g, "$1 أگلك")
+    // «وياكد لك» is «ويأكد لك» misspelled.
+    .replace(/(^|[^\u0621-\u064A])وياكد/g, "$1ويأكد")
+    // «أكو 2 سيارات» → «أكو سيارتين».
+    .replace(/(أكو|عدنا|عندنا)\s+2\s+سيار(?:ات|ة)/g, "$1 سيارتين")
     .replace(/\[من قاعدة البيانات[^\]]*\]/g, "")
     .split("\n")
     .filter((line) => /[\u0600-\u06FF]/.test(line) || line.includes("**") || !/([A-Za-z]+\W+){3}/.test(line))
@@ -554,6 +570,94 @@ function specProblems(reply: string, state: TurnState, cars: CarRow[], buyerText
   return problems;
 }
 
+const AR = "\\u0621-\\u064A";
+const word = (words: string) => new RegExp(`(?:^|[^${AR}])([وف]?(?:${words}))(?![${AR}])`, "g");
+
+// «ويا» means "with" and follows a verb that takes it (تواصل وياهم، يتفقون وياك).
+// The model also writes it as "and" or before a verb or noun, which reads as
+// garbled: «اكتبلهم على الواتساب وياهم يردون عليك»، «وياهم تحجي»، «تحجي وياه الفريق».
+const WAYA_MISUSE = [
+  new RegExp(`واتساب\\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![${AR}])`, "g"),
+  new RegExp(`ويا(?:هم|ك|نا|كم|ه|ها)\\s+[يتن][${AR}]{2,}`, "g"),
+  new RegExp(`ويا(?:هم|ك|ه|ها)\\s+ال[${AR}]+`, "g"),
+];
+// Formal, Levantine or Egyptian words with no one-word Iraqi swap (the sentence
+// needs rewording): هل، تم، أيضاً… «كم» is checked apart: after a number it is كيلومتر.
+const NOT_IRAQI = word("هل|تم|يتم|أيضاً|أيضا|ايضاً|ايضا|لذلك|بالإضافة|بالاضافة|حيث|بدي|شو|عايز|عاوز|إزاي|ازاي|ليه|إيش|ايش");
+
+function dialectProblems(reply: string): string[] {
+  const found = new Set<string>();
+  for (const re of WAYA_MISUSE) for (const m of reply.matchAll(re)) found.add(m[0].trim());
+  for (const m of reply.matchAll(NOT_IRAQI)) found.add(m[1]);
+  for (const m of reply.matchAll(word("كم"))) {
+    const before = reply.slice(0, m.index + m[0].indexOf(m[1])).trimEnd();
+    // «21,000 كم»، «15 ألف كم»: kilometres.
+    if (!/(?:[\d٠-٩]|ألف|الف|آلاف)$/.test(before)) found.add(m[1]);
+  }
+  return found.size
+    ? [
+        `it is not natural Iraqi (${[...found].join("، ")}): ويا means "with" and only follows a verb that takes it ` +
+          `(تواصل وياهم، يتفقون وياك), never "and" and never before a verb; هل/تم/أيضاً/كم and Levantine words are not Iraqi ` +
+          `(شكد not كم، هم not أيضاً). Reword those sentences the way a Baghdad salesman says them`,
+      ]
+    : [];
+}
+
+// Comparisons between the cars in the reply («الباجيرو أرخص») must hold for
+// their prices, years, power and mileage: the model has called the dearer one
+// the cheaper one.
+const COMPARATIVES: { re: RegExp; of: (c: CarRow) => number | null; lowest: boolean; what: string }[] = [
+  { re: word("أرخص|ارخص"), of: (c) => c.price_iqd, lowest: true, what: "price" },
+  { re: word("أغلى|اغلى"), of: (c) => c.price_iqd, lowest: false, what: "price" },
+  { re: word("أحدث|احدث"), of: (c) => c.year, lowest: false, what: "year" },
+  { re: word("أقدم|اقدم"), of: (c) => c.year, lowest: true, what: "year" },
+  { re: word("أقوى|اقوى"), of: (c) => c.horsepower ?? null, lowest: false, what: "horsepower" },
+  { re: word("أقل ممشى|ممشاه أقل|ممشاها أقل"), of: (c) => c.mileage_km, lowest: true, what: "mileage" },
+  { re: word("أكثر ممشى|ممشاه أكثر|ممشاها أكثر"), of: (c) => c.mileage_km, lowest: false, what: "mileage" },
+];
+
+function comparisonProblems(reply: string, cars: CarRow[], found: TurnState["found"]): string[] {
+  const names = (id: string) => {
+    const car = found.get(id);
+    return [car?.name?.model, car?.model].filter((n): n is string => Boolean(n && n.length > 1)).map((n) => n.toLowerCase());
+  };
+  const lower = reply.toLowerCase();
+  const inReply = cars.filter((c) => names(c.id).some((n) => lower.includes(n)));
+  if (inReply.length < 2) return [];
+  const problems: string[] = [];
+  for (const clause of lower.split(/[،,.؛\n!؟?]/)) {
+    const at = inReply
+      .flatMap((c) => names(c.id).map((n) => ({ c, i: clause.indexOf(n), len: n.length })))
+      .filter((x) => x.i >= 0);
+    if (!at.length) continue;
+    for (const cmp of COMPARATIVES) {
+      for (const m of clause.matchAll(cmp.re)) {
+        const pos = m.index + m[0].indexOf(m[1]);
+        const after = clause.slice(pos + m[1].length);
+        // «أغلى من ميزانيتك»، «أرخص من 30 مليون»، «أرخص 3 منها»: not between the cars.
+        if (/^\s*(?:من\s+)?(?:ميزاني|[\d٠-٩]|ال?ـ?\s*[\d٠-٩])/.test(after)) continue;
+        // «أرخص وحدة من اللي عرضتهم»، «أرخص منهم»: among cars named elsewhere, not checked here.
+        if (/^\s*(?:وحدة\s+|سيارة\s+)?(?:من\s+(?:اللي|الي|هذول|هذني)|منهم|منهن|منها|بيهم|بيهن|بيناتهم)/.test(after)) continue;
+        const before = at.filter((x) => x.i + x.len <= pos).sort((a, b) => b.i - a.i)[0];
+        const subject = before?.c ?? at.filter((x) => x.i > pos).sort((a, b) => a.i - b.i)[0]?.c;
+        if (!subject) continue;
+        // «X أرخص من Y»: just those two; otherwise X against every car in the reply.
+        const other = at.find((x) => x.c.id !== subject.id && x.i > pos && /^\s*(?:بشوي\s+)?من\s/.test(clause.slice(pos + m[1].length, x.i)));
+        const rivals = (other ? [other.c] : inReply).filter((c) => c.id !== subject.id);
+        const mine = cmp.of(subject);
+        const theirs = rivals.map(cmp.of).filter((v): v is number => v !== null);
+        if (mine === null || !theirs.length) continue;
+        const holds = cmp.lowest ? theirs.every((v) => mine <= v) : theirs.every((v) => mine >= v);
+        if (!holds) {
+          const facts = [subject, ...rivals].map((c) => `${c.brand} ${c.model} ${c.year}: ${cmp.of(c)}`).join("; ");
+          problems.push(`«${clause.trim()}» is wrong for the ${cmp.what} (${facts})`);
+        }
+      }
+    }
+  }
+  return problems;
+}
+
 function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState, cars: CarRow[], buyerTexts: string[]): string[] {
   const problems = unsupportedFigures(reply, allowed).map((f) => `"${f}" is not a price from the tools`);
   problems.push(...specProblems(reply, state, cars, buyerTexts));
@@ -578,6 +682,19 @@ function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState,
       );
     }
   }
+  // Two counts that contradict each other: «عدنا 3 سيارات … وأكو 4 بهذي المواصفات».
+  if (state.counts.length) {
+    const total = state.counts.at(-1)!;
+    const shownCount = state.shownIds.length;
+    const said = new Set(
+      [...westernDigits(reply).matchAll(/(?:عدنا|عندنا|أكو|لگينا)\s+(\d+)(?!\s*(?:مقاعد|مقعد|ركاب|حصان|كم|ألف|مليون|دولار|دينار))/g)].map((m) => Number(m[1]))
+    );
+    if (shownCount < total && said.has(total) && said.has(shownCount)) {
+      problems.push(`it gives two counts (${shownCount} and ${total}): the search found ${total}; say «أكو ${total}» once and show the best ${shownCount} without another count`);
+    }
+  }
+  problems.push(...dialectProblems(reply));
+  problems.push(...comparisonProblems(reply, cars, state.found));
   // Its own workings («ما وصلتني كلها»، «قاعدة البيانات») are not for the buyer.
   const internal = INTERNAL_TALK.filter((w) => reply.includes(w));
   if (internal.length) problems.push(`it talks about your own workings (${internal.join("، ")}): answer the buyer only`);
