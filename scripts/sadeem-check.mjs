@@ -26,9 +26,11 @@ const num = (s) => Number(String(s).replace(/,/g, ""));
 const near = (a, b, tol) => Math.abs(a - b) <= Math.max(b * tol, 1);
 
 // Cars a buyer can have now, from the catalog the site is built from.
-const AVAILABLE = JSON.parse(readFileSync(new URL("../src/data/cars.json", import.meta.url), "utf8")).filter(
-  (c) => c.status === "متوفرة"
-).length;
+const CATALOG = JSON.parse(readFileSync(new URL("../src/data/cars.json", import.meta.url), "utf8"));
+const AVAILABLE = CATALOG.filter((c) => c.status === "متوفرة").length;
+// Latin words in a car's own data («دفع رباعي Super Select»، «2.0L»): the server lets a reply quote them.
+const dataLatin = (ids) =>
+  new Set(CATALOG.filter((c) => ids.includes(c.id)).flatMap((c) => `${c.features.join(" ")} ${c.engine} ${c.description}`.match(/[A-Za-z]{2,}/g) ?? []));
 
 const sessionId = () => `5ade7e57-${randomUUID().slice(9)}`;
 
@@ -80,7 +82,8 @@ function generalChecks(reply, userMessage) {
   if (reply.ms > 15_000) problems.push(`الرد تأخر ${(reply.ms / 1000).toFixed(1)} ثانية`);
   if (reply.cars.length > 3) problems.push(`عرض ${reply.cars.length} سيارات (الحد 3)`);
 
-  const english = (text.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !ENGLISH_OK.has(w));
+  const fromData = dataLatin(reply.cars.map((c) => c.id));
+  const english = (text.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !ENGLISH_OK.has(w) && !fromData.has(w));
   if (english.length) problems.push(`كلمات إنگليزية: ${[...new Set(english)].join("، ")}`);
 
   const internal = INTERNAL_TALK.filter((word) => text.includes(word));
