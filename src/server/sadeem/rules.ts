@@ -170,7 +170,11 @@ function parseIntent(catalog: Catalog, rawText: string): ParsedIntent {
 }
 
 function matchCars(catalog: Catalog, intent: ParsedIntent): Car[] {
-  let results = catalog.filterCars(intent.filters);
+  // «SUV» also covers the big cars filed as «دفع رباعي», as in Sadeem's search;
+  // the site's own SUV filter stays as it is.
+  const suv = intent.filters.bodyType === "SUV";
+  let results = catalog.filterCars(suv ? { ...intent.filters, bodyType: undefined } : intent.filters);
+  if (suv) results = results.filter((car) => car.bodyType === "SUV" || car.bodyType === "دفع رباعي");
 
   if (intent.model) {
     results = results.filter((car) => car.model.toLowerCase().includes(intent.model!));
