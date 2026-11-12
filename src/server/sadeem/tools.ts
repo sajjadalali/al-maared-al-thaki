@@ -1,7 +1,7 @@
 // The tools Sadeem (the LLM) can call. Each one runs against Supabase and
 // returns compact JSON; the model never sees or invents anything else.
-import { site } from "@/config/site";
 import { USD_TO_IQD } from "@/lib/format";
+import { iraqiMobile, isShowroomNumber } from "@/lib/phone";
 import { insert, rpc, select, type SupabaseEnv } from "@/server/supabase";
 import { after } from "next/server";
 import { notifyLead, type LeadNotice } from "@/server/telegram";
@@ -404,13 +404,12 @@ export async function runTool(
     }
 
     case "save_lead": {
-      const phone = String(args.phone ?? "").replace(/[^\d+]/g, "");
-      // An Iraqi mobile: 07XXXXXXXXX, or +9647XXXXXXXXX.
-      const local = phone.replace(/^\+?964/, "0");
-      if (!/^07\d{9}$/.test(local)) {
+      // An Iraqi mobile: 07XXXXXXXXX, or +9647XXXXXXXXX (the contact form checks it the same way).
+      const local = iraqiMobile(String(args.phone ?? ""));
+      if (!local) {
         return { saved: false, error: "Not a full Iraqi mobile number (11 digits starting 07). Ask for it again." };
       }
-      if (local === site.whatsapp.replace(/^964/, "0")) {
+      if (isShowroomNumber(local)) {
         return { saved: false, error: "That is the showroom's own number, not the buyer's. Ask for the buyer's number." };
       }
       const carId = typeof args.car_id === "string" && state.seenIds.has(args.car_id) ? args.car_id : null;
@@ -426,7 +425,7 @@ export async function runTool(
         note,
         message: state.message,
       };
-      const stored = await insert(env, "leads", { phone, name, car_id: carId, message: note, source: "chat" }).catch((error) => {
+      const stored = await insert(env, "leads", { phone: local, name, car_id: carId, message: note, source: "chat" }).catch((error) => {
         console.error("Saving lead:", error);
         return false;
       });
