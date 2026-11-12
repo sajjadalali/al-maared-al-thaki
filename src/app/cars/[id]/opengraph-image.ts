@@ -20,5 +20,6 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     .resize(size.width, size.height, { fit: "cover" })
     .jpeg({ quality: 78, mozjpeg: true })
     .toBuffer();
-  return new Response(new Uint8Array(jpeg), { headers: { "Content-Type": contentType } });
+  // Built on request; apps that fetch it again within the hour get the same picture.
+  return new Response(new Uint8Array(jpeg), { headers: { "Content-Type": contentType, "Cache-Control": "public, max-age=3600" } });
 }
