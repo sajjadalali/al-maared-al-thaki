@@ -311,6 +311,8 @@ const cleanReply = (text: string) =>
     // «أكو 2 سيارات» → «أكو سيارتين».
     .replace(/(أكو|عدنا|عندنا)\s+2\s+سيار(?:ات|ة)/g, "$1 سيارتين")
     .replace(/\[من قاعدة البيانات[^\]]*\]/g, "")
+    // A car id written into the text («[car-026]»): the card is the server's to place.
+    .replace(/[ \t]*\[{1,2}(?:car:)?car-\d{3}\]{1,2}/g, "")
     .split("\n")
     .filter((line) => /[\u0600-\u06FF]/.test(line) || line.includes("**") || !/([A-Za-z]+\W+){3}/.test(line))
     .join("\n")
