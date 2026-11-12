@@ -1,0 +1,14 @@
+name: Full audit (temporary)
+# Live check of the car link previews. This branch is deleted afterwards.
+on:
+  push:
+    branches:
+      - claude/lead-check-tmp
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 qa/og_check.py https://maared-al-thaki.duckdns.org
+      - run: curl -sI "https://maared-al-thaki.duckdns.org/cars/car-001/opengraph-image" | grep -i "^HTTP\|content-type\|cache-control\|content-length"
