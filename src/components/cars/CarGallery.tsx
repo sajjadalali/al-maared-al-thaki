@@ -6,6 +6,7 @@ import { CarImage } from "@/components/ui/CarImage";
 import { cn } from "@/lib/cn";
 import type { ImageCredit } from "@/data/imageCredits";
 import type { Car } from "@/types/car";
+import { carNameAr } from "@/lib/format";
 
 const linkClass = "underline-offset-2 hover:text-brand-900 hover:underline";
 
@@ -13,7 +14,7 @@ const linkClass = "underline-offset-2 hover:text-brand-900 hover:underline";
 export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCredit | undefined)[] }) {
   const images = car.images.length > 0 ? car.images : [undefined];
   const [active, setActive] = useState(0);
-  const alt = `${car.brand} ${car.model} ${car.year}`;
+  const alt = `${carNameAr(car)} ${car.year}`;
   const credit = credits[active];
 
   function next() {

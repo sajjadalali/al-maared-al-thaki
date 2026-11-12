@@ -3,7 +3,7 @@ import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { CarArt } from "@/components/ui/CarArt";
 import type { Catalog } from "@/data/cars";
 import { getCatalog } from "@/server/catalog";
-import { formatIQD } from "@/lib/format";
+import { carNameAr, formatIQD } from "@/lib/format";
 import { OpenChatButton } from "@/components/chat/OpenChatButton";
 import type { Car } from "@/types/car";
 
@@ -118,9 +118,7 @@ export async function HeroChatPreview() {
               </div>
               <div className="min-w-0 flex-1 py-1">
                 <p className="truncate text-[14px] font-bold leading-5">
-                  <bdi>
-                    {car.brand} {car.model}
-                  </bdi>{" "}
+                  <bdi>{carNameAr(car)}</bdi>{" "}
                   <span className="font-semibold text-neutral-500">{car.year}</span>
                 </p>
                 <p className="mt-0.5 text-[15px] font-bold text-brand-800">{formatIQD(car.price)}</p>

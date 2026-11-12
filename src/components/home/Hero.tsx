@@ -6,7 +6,7 @@ import { CarArt } from "@/components/ui/CarArt";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { toFacetCar, type Catalog } from "@/data/cars";
 import { getCatalog } from "@/server/catalog";
-import { formatNumber, originLabel } from "@/lib/format";
+import { carNameAr, formatNumber, originLabel } from "@/lib/format";
 
 const TRUST = [
   { icon: ClipboardCheck, text: "فحص فني قبل البيع" },
@@ -108,9 +108,7 @@ export async function Hero() {
               <div className="relative m-3 mt-2 flex items-center justify-between gap-4 rounded-[22px] bg-white px-5 py-4 shadow-sm ring-1 ring-black/5">
                 <div className="min-w-0">
                   <p className="text-[15px] font-bold leading-6 text-brand-950 sm:text-base">
-                    <bdi>
-                      {car.brand} {car.model}
-                    </bdi>
+                    <bdi>{carNameAr(car)}</bdi>
                   </p>
                   <p className="truncate text-xs text-neutral-500">
                     <bdi>{[car.trim, car.year].filter(Boolean).join(" · ")}</bdi> · {car.engine.split(" ")[0]}{" "}

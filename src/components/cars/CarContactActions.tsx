@@ -6,9 +6,10 @@ import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { phoneHref, whatsappHref } from "@/config/site";
 import { carWhatsappMessage } from "@/lib/carMessages";
 import type { Car } from "@/types/car";
+import { carNameAr } from "@/lib/format";
 
 export function CarContactActions({ car }: { car: Car }) {
-  const carLabel = `${car.brand} ${car.model} ${car.year}`;
+  const carLabel = `${carNameAr(car)} ${car.year}`;
 
   return (
     <div className="flex flex-col gap-2.5">

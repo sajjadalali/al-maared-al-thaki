@@ -1,6 +1,6 @@
 import { Cog, Gauge, Users, Zap } from "lucide-react";
 import { paintFor } from "@/components/ui/CarArt";
-import { drivetrainLabel, formatCarMileage, originLabel } from "@/lib/format";
+import { brandNameAr, drivetrainLabel, formatCarMileage, originLabel } from "@/lib/format";
 import type { Car } from "@/types/car";
 
 /** The four numbers buyers compare first, as large tiles. */
@@ -29,8 +29,8 @@ export function CarHighlights({ car }: { car: Car }) {
 
 export function CarSpecifications({ car }: { car: Car }) {
   const rows: { label: string; value?: string | number; swatch?: string }[] = [
-    { label: "الماركة", value: car.brand },
-    { label: "الموديل", value: car.model },
+    { label: "الماركة", value: brandNameAr(car) },
+    { label: "الموديل", value: car.modelAr ?? car.model },
     { label: "الفئة", value: car.trim },
     { label: "سنة الصنع", value: car.year },
     { label: "الحالة", value: car.condition },

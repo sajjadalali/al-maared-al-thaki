@@ -41,9 +41,14 @@ export function drivetrainLabel(drivetrain: string): string {
 }
 
 /** "≈ 24,500 $", rounded to the nearest hundred dollars. */
-/** The car's name as the chat's cards show it: «تويوتا كامري», «كيا EV6» (a model with no Arabic name keeps its own). */
+/** «تويوتا», from the catalog or the brand labels; the English name if neither has it. */
+export function brandNameAr(car: { brand: string; brandAr?: string }): string {
+  return car.brandAr ?? (brandLabels as Record<string, string>)[car.brand] ?? car.brand;
+}
+
+/** The car's name across the site: «تويوتا كامري», «كيا EV6» (a model with no Arabic name keeps its own). */
 export function carNameAr(car: { brand: string; model: string; brandAr?: string; modelAr?: string }): string {
-  return `${car.brandAr ?? (brandLabels as Record<string, string>)[car.brand] ?? car.brand} ${car.modelAr ?? car.model}`;
+  return `${brandNameAr(car)} ${car.modelAr ?? car.model}`;
 }
 
 export function formatUSD(priceIQD: number): string {
