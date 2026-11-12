@@ -671,7 +671,51 @@ function comparisonProblems(reply: string, cars: CarRow[], found: TurnState["fou
   return problems;
 }
 
-function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState, cars: CarRow[], buyerTexts: string[]): string[] {
+// Cities a reply may name: each car is in its own city («الكامري… ببغداد… لا، بكربلاء»
+// put a car in Karbala in Baghdad first). Matched folded, with و/ب/ف and ال in front.
+const CITIES = ["بغداد", "البصرة", "أربيل", "النجف", "كربلاء", "الموصل", "السليمانية", "كركوك", "دهوك", "الحلة", "بابل",
+  "الناصرية", "العمارة", "ميسان", "الديوانية", "الكوت", "واسط", "الرمادي", "الأنبار", "تكريت", "بعقوبة", "ديالى", "السماوة"];
+const placeRe = (name: string) => {
+  const base = fold(name).replace(/^ال/, "");
+  return new RegExp(`(?:^|[^${AR}])[وفب]?(?:ب)?(?:ال)?${base}(?![${AR}])`);
+};
+const CITY_RES = CITIES.map((city) => ({ city, re: placeRe(city) }));
+
+function cityProblems(reply: string, shown: CarRow[], buyerTexts: string[]): string[] {
+  if (!shown.length) return [];
+  const own = new Set(shown.map((c) => fold(c.city).replace(/^ال/, "")));
+  const asked = fold(buyerTexts.join(" "));
+  const text = fold(reply);
+  const wrong = CITY_RES.filter(({ city, re }) => !own.has(fold(city).replace(/^ال/, "")) && re.test(text) && !re.test(asked)).map((x) => x.city);
+  return wrong.length
+    ? [`it names ${wrong.join("، ")}, but the cars in this reply are in ${[...new Set(shown.map((c) => c.city))].join("، ")}: name only each car's own city`]
+    : [];
+}
+
+// A model the reply names that no tool returned this conversation («التوسان هذا
+// بأربيل» about the Sportage), unless the buyer named it.
+function strayModelProblems(reply: string, allNames: Map<string, ArabicName>, found: TurnState["found"], buyerTexts: string[]): string[] {
+  const byName = new Map<string, string[]>();
+  for (const [id, name] of allNames) {
+    if (!/[\u0621-\u064A]/.test(name.model)) continue;
+    byName.set(name.model, [...(byName.get(name.model) ?? []), id]);
+  }
+  const text = fold(reply);
+  const asked = fold(buyerTexts.join(" "));
+  const stray = [...byName]
+    .filter(([name, ids]) => !ids.some((id) => found.has(id)) && placeRe(name).test(text) && !placeRe(name).test(asked))
+    .map(([name]) => name);
+  return stray.length ? [`it names ${stray.join("، ")}, which no search returned: talk only about the cars in the tool results`] : [];
+}
+
+function replyProblems(
+  reply: string,
+  allowed: AllowedFigures,
+  state: TurnState,
+  cars: CarRow[],
+  buyerTexts: string[],
+  allNames: Map<string, ArabicName>
+): string[] {
   const problems = unsupportedFigures(reply, allowed).map((f) => `"${f}" is not a price from the tools`);
   problems.push(...specProblems(reply, state, cars, buyerTexts));
   if (state.overBudget.length && !mentionsOverBudget(reply)) {
@@ -708,6 +752,8 @@ function replyProblems(reply: string, allowed: AllowedFigures, state: TurnState,
   }
   problems.push(...dialectProblems(reply));
   problems.push(...comparisonProblems(reply, cars, state.found));
+  problems.push(...cityProblems(reply, cars.filter((c) => state.shownIds.includes(c.id)), buyerTexts));
+  problems.push(...strayModelProblems(reply, allNames, state.found, buyerTexts));
   // Its own workings («ما وصلتني كلها»، «قاعدة البيانات») are not for the buyer.
   const internal = INTERNAL_TALK.filter((w) => reply.includes(w));
   if (internal.length) problems.push(`it talks about your own workings (${internal.join("، ")}): answer the buyer only`);
@@ -881,7 +927,7 @@ export async function runSadeem(
   if (content) {
     const buyerTexts = [message, ...history.filter((m) => m.role === "user").map((m) => m.content)];
     const allowed = allowedFigures(state, buyerTexts);
-    const problems = replyProblems(content, allowed, state, rows, buyerTexts);
+    const problems = replyProblems(content, allowed, state, rows, buyerTexts, arabic);
     if (problems.length) {
       state.searches.push({ verify: problems });
       messages.push({ role: "assistant", content });
@@ -898,7 +944,7 @@ export async function runSadeem(
       const fixed = cleanReply(rewrite);
       if (fixed) {
         const rewritten = splitSuggestions(fixed);
-        const left = replyProblems(rewritten.text, allowed, state, rows, buyerTexts);
+        const left = replyProblems(rewritten.text, allowed, state, rows, buyerTexts, arabic);
         if (left.length) state.searches.push({ verify_after_rewrite: left });
         content = rewritten.text;
         if (rewritten.suggestions.length) suggestions = rewritten.suggestions;

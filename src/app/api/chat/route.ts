@@ -77,7 +77,11 @@ async function answer(
     return llm && db ? await runSadeem(llm, db, history, message, onEvent) : await rulesFallback(message, history);
   } catch (err) {
     console.error("[sadeem] LLM failed, answering with the rules:", err);
-    return rulesFallback(message, history);
+    const reply = await rulesFallback(message, history);
+    // Why, in the stored log too: the container logs are not always at hand.
+    const where = err instanceof Error ? (err.stack ?? "").split("\n").slice(1, 3).map((l) => l.trim()).join(" | ") : "";
+    const what = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    return { ...reply, searches: [{ rules: true, error: what.slice(0, 300), at: where.slice(0, 300) }] };
   }
 }
 
