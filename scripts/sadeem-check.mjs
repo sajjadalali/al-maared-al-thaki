@@ -26,9 +26,11 @@ const num = (s) => Number(String(s).replace(/,/g, ""));
 const near = (a, b, tol) => Math.abs(a - b) <= Math.max(b * tol, 1);
 
 // Cars a buyer can have now, from the catalog the site is built from.
-const AVAILABLE = JSON.parse(readFileSync(new URL("../src/data/cars.json", import.meta.url), "utf8")).filter(
-  (c) => c.status === "متوفرة"
-).length;
+const CATALOG = JSON.parse(readFileSync(new URL("../src/data/cars.json", import.meta.url), "utf8"));
+const AVAILABLE = CATALOG.filter((c) => c.status === "متوفرة").length;
+// Latin words in a car's own data («دفع رباعي Super Select»، «2.0L»): the server lets a reply quote them.
+const dataLatin = (ids) =>
+  new Set(CATALOG.filter((c) => ids.includes(c.id)).flatMap((c) => `${c.features.join(" ")} ${c.engine} ${c.description}`.match(/[A-Za-z]{2,}/g) ?? []));
 
 const sessionId = () => `5ade7e57-${randomUUID().slice(9)}`;
 
@@ -60,9 +62,10 @@ const BANNED_WORDS = [
   "عذراً", "اعتذر", "أعتذر", "عدنا أكو", "أكو عدنا", "أيه", "ايه",
   // Seen on 12 Nov in the model's own text («تحكي»، «أكلك»، «تم فحصها»، «وكم تحتاج»).
   "تحكي", "لقيت", "تبعي", "تبعك", "معانا", "أقولك", "أكلك", "بالوقت الحالي", "هل", "تم", "يتم", "أيضاً", "أيضا",
+  "يكلك", "وغلاي", "حق",
 ];
 // «ويا» as "and" or before a verb or noun («على الواتساب وياهم يردون عليك»، «وياهم تحجي»، «تحجي وياه الفريق»).
-const WAYA_MISUSE = [/واتساب\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![\u0621-\u064A])/, /ويا(?:هم|ك|نا|كم|ه|ها)\s+[يتن][\u0621-\u064A]{2,}/, /ويا(?:هم|ك|ه|ها)\s+ال[\u0621-\u064A]/];
+const WAYA_MISUSE = [/واتساب\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![\u0621-\u064A])/, /ويا(?:هم|ك|نا|كم|ه|ها)\s+[يتن][\u0621-\u064A]{2,}/, /ويا(?:هم|ك|ه|ها)\s+ال[\u0621-\u064A]/, /(?:أسجل|اسجل)[\u0621-\u064A]*\s+ويا(?:ك|كم)(?![\u0621-\u064A])/];
 // English that belongs in a reply: the body type SUV (as the catalog writes
 // it), and the models with no Arabic name in models.name_ar (EV6, GLE 450,
 // ES 350, RX 350; 520i has no two-letter word).
@@ -79,7 +82,8 @@ function generalChecks(reply, userMessage) {
   if (reply.ms > 15_000) problems.push(`الرد تأخر ${(reply.ms / 1000).toFixed(1)} ثانية`);
   if (reply.cars.length > 3) problems.push(`عرض ${reply.cars.length} سيارات (الحد 3)`);
 
-  const english = (text.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !ENGLISH_OK.has(w));
+  const fromData = dataLatin(reply.cars.map((c) => c.id));
+  const english = (text.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !ENGLISH_OK.has(w) && !fromData.has(w));
   if (english.length) problems.push(`كلمات إنگليزية: ${[...new Set(english)].join("، ")}`);
 
   const internal = INTERNAL_TALK.filter((word) => text.includes(word));
@@ -292,7 +296,7 @@ const CONVERSATIONS = [
   // 12 Nov: «الباجيرو أرخص» when it costs 38 million and the Explorer 37.
   {
     name: "مقارنة بالسعر",
-    turns: [{ say: "قارنلي بين الاكسبلورر والباجيرو", expect: [hasNot(/(?:ال)?باجيرو[^،.\n]{0,15}أرخص|أرخص[^،.\n]{0,10}(?:ال)?باجيرو/, "گال الباجيرو أرخص وهي أغلى")] }],
+    turns: [{ say: "قارنلي بين الاكسبلورر والباجيرو", expect: [hasNot(/(?:ال)?باجيرو[^،.\n]{0,15}(?:أرخص|أقل سعر|سعرها أقل)|أرخص[^،.\n]{0,10}(?:ال)?باجيرو/, "گال الباجيرو أرخص وهي أغلى"), cardsSome((c) => c.model === "Explorer", "ما عرض الاكسبلورر"), cardsSome((c) => c.model === "Pajero", "ما عرض الباجيرو")] }],
   },
   // 12 Nov: «اكتبلهم على الواتساب وياهم…» in 4 of 6 replies that send the buyer to WhatsApp.
   {

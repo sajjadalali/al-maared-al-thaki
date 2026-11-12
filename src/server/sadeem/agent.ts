@@ -266,7 +266,7 @@ const IRAQI_WORDS = (
     ["تبعي", "مالتي"], ["تبعك", "مالتك"], ["تبعنا", "مالتنا"], ["تبعكم", "مالتكم"],
     ["معانا", "ويانا"], ["معاك", "وياك"], ["معاهم", "وياهم"], ["فيك", "بيك"], ["فينا", "بينا"],
     ["لقيت", "لگيت"], ["لقيتها", "لگيتها"], ["لقيته", "لگيته"], ["لقيتلك", "لگيتلك"], ["لقينا", "لگينا"],
-    ["أقولك|اقولك|أقلك|اقلك|أكلك|اكلك", "أگلك"], ["نقولك|نقلك", "نگلك"], ["يقولون", "يگولون"], ["قلّي|قلي", "گلّي"],
+    ["أقولك|اقولك|أقلك|اقلك|أكلك|اكلك", "أگلك"], ["نقولك|نقلك", "نگلك"], ["يقولون", "يگولون"], ["قلّي|قلي", "گلّي"], ["يكلك", "يگلك"], ["يكلي", "يگلي"], ["تكلي", "تگلي"],
     ["أبحث لك|أبحثلك|ابحث لك|ابحثلك", "أدورلك"], ["أبحث|ابحث", "أدوّر"], ["نبحث", "ندوّر"], ["تبحث", "تدوّر"], ["يبحث", "يدوّر"],
     ["بالوقت الحالي|في الوقت الحالي", "هسه"], ["هلق|هلأ", "هسه"], ["كتير", "هواية"], ["هيك", "هيچ"],
   ] as const
@@ -303,6 +303,9 @@ const cleanReply = (text: string) =>
     .replace(/(?<=[\u0621-\u064A])ـ+(?=[\u0621-\u064A])/g, "")
     // «تحب أعرف تفاصيل…» says "would you like me to know": the model means «أگلك».
     .replace(/(تحب|تريد|تحبون|تريدون)\s+أعرف(?=\s+(?:تفاصيل|شي|أكثر|اكثر|عن|مواصفات|تجهيزات))/g, "$1 أگلك")
+    // A tag word left alone before the closing question («اقتصادية.. تحب أگلك…»).
+    .replace(/(^|\n)[ \t]*(?:اقتصادية|فاخرة|فخمة)[ \t]*(?:\.{2,}|…)[ \t]*/g, "$1")
+    .replace(/هلا وغلاي/g, "هلا وغلا")
     // «وياكد لك» is «ويأكد لك» misspelled.
     .replace(/(^|[^\u0621-\u064A])وياكد/g, "$1ويأكد")
     // «أكو 2 سيارات» → «أكو سيارتين».
@@ -341,10 +344,14 @@ type FoundCar = TurnState["found"] extends Map<string, infer C> ? C : never;
 
 // A line that names the car: its year and its name in any form ("شيري تيغو",
 // just "التيغو", or the Latin model).
+// For matching car names: case and the alef forms the model writes either way
+// («الإكسبلورر» for «اكسبلورر»). One letter for one, so positions stay the same.
+const fold = (text: string) => text.toLowerCase().replace(/[أإآ]/g, "ا");
+
 function namesCar(line: string, car: FoundCar): boolean {
-  const lower = line.toLowerCase();
+  const lower = fold(line);
   const names = [car.model, car.name?.full, car.name?.model].filter((n): n is string => Boolean(n));
-  return lower.includes(String(car.year)) && names.some((n) => lower.includes(n.toLowerCase()));
+  return lower.includes(String(car.year)) && names.some((n) => lower.includes(fold(n)));
 }
 
 /** Cars the tools returned that the reply names, in reply order. */
@@ -550,9 +557,9 @@ function specProblems(reply: string, state: TurnState, cars: CarRow[], buyerText
   const problems: string[] = [];
   for (const paragraph of westernDigits(reply).split(/\n\s*\n/)) {
     // Cars the paragraph talks about, by any form of their name (with or without the year).
-    const lower = paragraph.toLowerCase();
+    const lower = fold(paragraph);
     const named = [...state.found]
-      .filter(([id, car]) => byId.has(id) && [car.model, car.name?.model].some((n) => n && lower.includes(n.toLowerCase())))
+      .filter(([id, car]) => byId.has(id) && [car.model, car.name?.model].some((n) => n && lower.includes(fold(n))))
       .map(([id]) => byId.get(id)!);
     const pool = named.length ? named : cars;
     const inText = textNumbers(pool);
@@ -580,10 +587,11 @@ const WAYA_MISUSE = [
   new RegExp(`واتساب\\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![${AR}])`, "g"),
   new RegExp(`ويا(?:هم|ك|نا|كم|ه|ها)\\s+[يتن][${AR}]{2,}`, "g"),
   new RegExp(`ويا(?:هم|ك|ه|ها)\\s+ال[${AR}]+`, "g"),
+  new RegExp(`(?:أسجل|اسجل)[${AR}]*\\s+ويا(?:ك|كم)(?![${AR}])`, "g"),
 ];
 // Formal, Levantine or Egyptian words with no one-word Iraqi swap (the sentence
 // needs rewording): هل، تم، أيضاً… «كم» is checked apart: after a number it is كيلومتر.
-const NOT_IRAQI = word("هل|تم|يتم|أيضاً|أيضا|ايضاً|ايضا|لذلك|بالإضافة|بالاضافة|حيث|بدي|شو|عايز|عاوز|إزاي|ازاي|ليه|إيش|ايش");
+const NOT_IRAQI = word("هل|تم|يتم|أيضاً|أيضا|ايضاً|ايضا|لذلك|بالإضافة|بالاضافة|حيث|بدي|شو|عايز|عاوز|إزاي|ازاي|ليه|إيش|ايش|حق");
 
 function dialectProblems(reply: string): string[] {
   const found = new Set<string>();
@@ -607,21 +615,23 @@ function dialectProblems(reply: string): string[] {
 // their prices, years, power and mileage: the model has called the dearer one
 // the cheaper one.
 const COMPARATIVES: { re: RegExp; of: (c: CarRow) => number | null; lowest: boolean; what: string }[] = [
-  { re: word("أرخص|ارخص"), of: (c) => c.price_iqd, lowest: true, what: "price" },
-  { re: word("أغلى|اغلى"), of: (c) => c.price_iqd, lowest: false, what: "price" },
-  { re: word("أحدث|احدث"), of: (c) => c.year, lowest: false, what: "year" },
-  { re: word("أقدم|اقدم"), of: (c) => c.year, lowest: true, what: "year" },
-  { re: word("أقوى|اقوى"), of: (c) => c.horsepower ?? null, lowest: false, what: "horsepower" },
-  { re: word("أقل ممشى|ممشاه أقل|ممشاها أقل"), of: (c) => c.mileage_km, lowest: true, what: "mileage" },
-  { re: word("أكثر ممشى|ممشاه أكثر|ممشاها أكثر"), of: (c) => c.mileage_km, lowest: false, what: "mileage" },
+  // Matched against the folded reply (أ/إ/آ → ا), so the words are written with «ا».
+  { re: word("ارخص|اقل سعر|سعره اقل|سعرها اقل|بسعر اقل"), of: (c) => c.price_iqd, lowest: true, what: "price" },
+  { re: word("اغلى|اعلى سعر|سعره اعلى|سعرها اعلى|بسعر اعلى"), of: (c) => c.price_iqd, lowest: false, what: "price" },
+  { re: word("احدث"), of: (c) => c.year, lowest: false, what: "year" },
+  { re: word("اقدم"), of: (c) => c.year, lowest: true, what: "year" },
+  { re: word("اقوى|قوته اعلى|قوتها اعلى|اعلى قوة|قوة اعلى"), of: (c) => c.horsepower ?? null, lowest: false, what: "horsepower" },
+  { re: word("اضعف|قوته اقل|قوتها اقل|اقل قوة"), of: (c) => c.horsepower ?? null, lowest: true, what: "horsepower" },
+  { re: word("اقل ممشى|ممشاه اقل|ممشاها اقل|ممشى اقل"), of: (c) => c.mileage_km, lowest: true, what: "mileage" },
+  { re: word("اكثر ممشى|ممشاه اكثر|ممشاها اكثر|ممشى اكثر|ممشى اعلى"), of: (c) => c.mileage_km, lowest: false, what: "mileage" },
 ];
 
 function comparisonProblems(reply: string, cars: CarRow[], found: TurnState["found"]): string[] {
   const names = (id: string) => {
     const car = found.get(id);
-    return [car?.name?.model, car?.model].filter((n): n is string => Boolean(n && n.length > 1)).map((n) => n.toLowerCase());
+    return [car?.name?.model, car?.model].filter((n): n is string => Boolean(n && n.length > 1)).map(fold);
   };
-  const lower = reply.toLowerCase();
+  const lower = fold(reply);
   const inReply = cars.filter((c) => names(c.id).some((n) => lower.includes(n)));
   if (inReply.length < 2) return [];
   const problems: string[] = [];
