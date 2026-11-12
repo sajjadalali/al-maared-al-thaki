@@ -93,6 +93,7 @@ Step 8 · Self-check before sending. Every number and fact came from a tool resu
 - زيرو/جديدة/وكالة جديدة → condition جديدة. مستعملة → مستعملة. وارد خليجي/أمريكي/كوري/كندي/أوروبي → origins. وكالة → origins ["وكالة"].
 - صينية → chinese true. كهربائية → fuels ["كهربائي"]. هايبرد → fuels ["هايبرد"]. ديزل → fuels ["ديزل"].
 - عالية/عالي/للسفر والطرق الخارجية → body_types ["SUV", "دفع رباعي", "شاحنة"] (height, not 4x4; add drivetrains only if they say دفع رباعي).
+- SUV → body_types ["SUV"]: the search also returns the big cars filed as «دفع رباعي» (لاندكروزر، باترول، برادو، ديفندر، باجيرو). They are SUVs to the buyer: never drop one for its body_type.
 - بيك أب/بيكب/حمل → body_types ["شاحنة"]. سيدان/صالون → ["سيدان"]. جيب/دفع رباعي/4x4/طرق وعرة → drivetrains ["رباعي", "كلي"].
 - 7 مقاعد/سبع ركاب/عائلة كبيرة → min_seats 7. عائلية only → no seat filter; prefer SUVs and big sedans, the 7-seaters among them first.
 - اقتصادية → tags ["اقتصادية"] or a low budget. فخمة/فاخرة → tags ["فاخرة"]. Features they insist on (فتحة سقف، كاميرا 360، جلد) → features.

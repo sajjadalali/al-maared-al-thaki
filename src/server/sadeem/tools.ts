@@ -363,6 +363,10 @@ export async function runTool(
         if (param && !empty) params[param] = value;
       }
       params.p_limit = Math.min(Math.max(Number(params.p_limit) || 6, 1), 10);
+      // To a buyer «SUV» is any tall family car, and the big ones (لاندكروزر، باترول،
+      // برادو، ديفندر، باجيرو) are filed as «دفع رباعي»: an SUV search covers both.
+      const bodies = params.p_body_types;
+      if (Array.isArray(bodies) && bodies.includes("SUV") && !bodies.includes("دفع رباعي")) params.p_body_types = [...bodies, "دفع رباعي"];
       state.searches.push(args);
       const [rows, names] = await Promise.all([rpc<SearchRow[]>(env, "search_cars", params), arabicNames(env)]);
       rows.forEach((row) => {
