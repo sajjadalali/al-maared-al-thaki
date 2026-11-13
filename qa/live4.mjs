@@ -1,11 +1,11 @@
-// Live check of PRs #75-#77: the buyer's own 16 messages, 3 rounds (one per rate-limit window). This branch is deleted afterwards.
+// Live check of PRs #75-#78: the buyer's own 16 messages, 3 rounds (one per rate-limit window). This branch is deleted afterwards.
 const SITE = "https://maared-al-thaki.duckdns.org";
 const ROUND = Number(process.env.ROUND ?? 1);
 const sid = () => `5ade7e57-${crypto.randomUUID().slice(9)}`;
 const wa = (d) => { const h = d.actions?.find((a) => a.kind === "whatsapp")?.href; return h ? new URL(h).searchParams.get("text") : null; };
 const AR = "\\u0620-\\u065F\\u066E-\\u06D3\\u06FA-\\u06FF";
-const BANNED = ["عشان", "أعطيك", "اعطيك", "إياه", "اياه", "شاشتان", "يكدرون", "تكدر", "خذ كلامك", "ما آسف", "معليك", "تبي", "الحين", "وايد", "هل", "تم", "أيضاً", "لماذا", "ماذا", "فقط", "لكن", "معك", "فيه", "فيها", "تحكي", "لقيت", "أقدر", "تقدر", "يقدر", "تقول", "يقول", "عبر", "لدينا", "يوجد", "سوف", "جداً", "الآن", "أوريك", "وياك حق", "هلا وياك", "الرد السابق", "مساعدة المبيعات", "أكول"];
-const bannedIn = (t) => BANNED.filter((w) => new RegExp(`(^|[^${AR}])[وفب]?${w}(?![${AR}])`).test(t));
+const BANNED = ["عشان", "أعطيك", "اعطيك", "إياه", "اياه", "شاشتان", "يكدرون", "تكدر", "خذ كلامك", "ما آسف", "معليك", "تبي", "الحين", "وايد", "هل", "تم", "أيضاً", "لماذا", "ماذا", "فقط", "لكن", "معك", "فيه", "فيها", "تحكي", "لقيت", "أقدر", "تقدر", "يقدر", "تقول", "يقول", "عبر", "لدينا", "يوجد", "سوف", "جداً", "الآن", "أوريك", "وياك حق", "هلا وياك", "الرد السابق", "مساعدة المبيعات", "أكول", "ماكو غيرهم", "حق"];
+const bannedIn = (t) => { const x = t.replace(/(?:عندك|عندكم|عنده|عندها|عندي)\s+حق|الحق\s+ويا\S*/g, " "); return BANNED.filter((w) => new RegExp(`(^|[^${AR}])[وفب]?${w}(?![${AR}])`).test(x)); };
 const SELF_FIX = /(?:\.{2,}|…)\s*لا[،,]/;
 const WAYA = /ويا(?:هم|ك|نا|كم|ه|ها)\s+[يتن][ء-يچگپ]{2,}|واتساب\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![ء-ي])/;
 const DEAREST = "car-003,car-012,car-019";
