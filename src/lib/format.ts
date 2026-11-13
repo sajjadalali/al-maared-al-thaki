@@ -51,6 +51,17 @@ export function carNameAr(car: { brand: string; model: string; brandAr?: string;
   return `${brandNameAr(car)} ${car.modelAr ?? car.model}`;
 }
 
+/**
+ * A number of cars with the noun Arabic puts after it: «سيارة واحدة»،
+ * «سيارتان» (or «سيارتين» after a word like «عرض»)، «5 سيارات»، «14 سيارة».
+ */
+export function carCount(n: number, form: "subject" | "after" = "subject"): string {
+  if (n === 1) return "سيارة واحدة";
+  if (n === 2) return form === "subject" ? "سيارتان" : "سيارتين";
+  const lastTwo = n % 100;
+  return lastTwo >= 3 && lastTwo <= 10 ? `${n} سيارات` : `${n} سيارة`;
+}
+
 export function formatUSD(priceIQD: number): string {
   return `≈ ${formatNumber(Math.round(priceIQD / USD_TO_IQD / 100) * 100)} $`;
 }

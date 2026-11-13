@@ -5,7 +5,7 @@ import { RichText } from "./RichText";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { cn } from "@/lib/cn";
 import { MAX_CHAT_CARS, type ChatMessage } from "@/services/ai";
-import { splitAtCars } from "@/services/ai/carMarkers";
+import { joinCarBlocks, splitAtCars } from "@/services/ai/carMarkers";
 import type { Car } from "@/types/car";
 
 function formatTime(iso: string) {
@@ -18,12 +18,17 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   const cars = (message.cars ?? []).slice(0, MAX_CHAT_CARS);
   // The reply's paragraphs with each car's card right under the paragraph
   // about it; cards without a place in the text come after the reply.
-  const parts = splitAtCars(message.content);
+  // A car's name and lines go into its card, so the car is named once.
+  const { parts, notes } = joinCarBlocks(splitAtCars(message.content));
   const placed = new Set(parts.flatMap((part) => ("carId" in part ? [part.carId] : [])));
   const rest = cars.filter((car) => !placed.has(car.id));
   const lastText = parts.findLastIndex((part) => "text" in part);
   const card = (car: Car) =>
-    cars.length === 1 ? <CarDetailChatCard car={car} /> : <CarRecommendationCard car={car} />;
+    cars.length === 1 ? (
+      <CarDetailChatCard car={car} note={notes.get(car.id)} />
+    ) : (
+      <CarRecommendationCard car={car} note={notes.get(car.id)} />
+    );
   // The cards arrive one after another, after the reply's first lines.
   const order = [...placed, ...rest.map((car) => car.id)];
   const arrive = (carId: string) => ({ animationDelay: `${120 + order.indexOf(carId) * 70}ms` });
@@ -107,7 +112,7 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
                 target={action.kind === "whatsapp" ? "_blank" : undefined}
                 rel={action.kind === "whatsapp" ? "noopener noreferrer" : undefined}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-bold shadow-sm transition",
+                  "flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-bold shadow-sm transition",
                   action.kind === "whatsapp"
                     ? "bg-[#1fa855] text-white hover:bg-[#1a9149]"
                     : "border border-brand-200 bg-white text-brand-800 hover:bg-brand-50"

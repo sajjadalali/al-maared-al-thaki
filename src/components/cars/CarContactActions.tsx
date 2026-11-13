@@ -42,7 +42,7 @@ export function CarContactActions({ car }: { car: Car }) {
       <button
         type="button"
         onClick={() => askSadeem(`أريد حجز تجربة قيادة لسيارة ${carLabel}`)}
-        className="flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-bold text-neutral-600 transition hover:bg-surface hover:text-brand-950"
+        className="flex min-h-11 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-bold text-neutral-600 transition hover:bg-surface hover:text-brand-950"
       >
         <CalendarClock className="h-4 w-4" />
         احجز تجربة قيادة

@@ -79,11 +79,11 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
   return (
     <div className="mx-auto max-w-7xl px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-16">
       <nav className="mb-5 flex items-center gap-1.5 text-[13px] text-neutral-500">
-        <Link href="/" className="hover:text-brand-950">الرئيسية</Link>
+        <Link href="/" className="tap-target relative hover:text-brand-950">الرئيسية</Link>
         <ChevronLeft className="h-3.5 w-3.5" />
-        <Link href="/cars" className="hover:text-brand-950">السيارات</Link>
+        <Link href="/cars" className="tap-target relative hover:text-brand-950">السيارات</Link>
         <ChevronLeft className="h-3.5 w-3.5" />
-        <Link href={`/cars?brand=${encodeURIComponent(car.brand)}`} className="hover:text-brand-950">
+        <Link href={`/cars?brand=${encodeURIComponent(car.brand)}`} className="tap-target relative hover:text-brand-950">
           {brandNameAr(car)}
         </Link>
         <ChevronLeft className="h-3.5 w-3.5" />
@@ -190,7 +190,7 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
         <section className="mt-16">
           <div className="mb-5 flex items-end justify-between gap-4">
             <h2 className="text-xl font-bold text-brand-950 sm:text-2xl">سيارات قد تعجبك أيضاً</h2>
-            <Link href="/cars" className="text-sm font-bold text-brand-600 hover:text-brand-950">
+            <Link href="/cars" className="tap-target relative text-sm font-bold text-brand-600 hover:text-brand-950">
               كل السيارات
             </Link>
           </div>

@@ -97,7 +97,7 @@ export function Header() {
             <Link
               href="/favorites"
               aria-label="المفضلة"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full text-brand-900 transition hover:bg-surface"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full text-brand-900 transition hover:bg-surface"
             >
               <Heart className="h-5 w-5" />
               {favorites.length > 0 && (
@@ -131,7 +131,7 @@ export function Header() {
               onClick={() => setOpen((v) => !v)}
               aria-label="القائمة"
               aria-expanded={open}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-brand-900 transition hover:bg-surface lg:hidden"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-brand-900 transition hover:bg-surface lg:hidden"
             >
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>

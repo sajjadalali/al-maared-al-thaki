@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCatalog } from "@/server/catalog";
 import { brandLabel } from "@/lib/filterOptions";
+import { carCount } from "@/lib/format";
 import { SectionHeading } from "@/components/home/SectionHeading";
 
 export async function Brands() {
@@ -25,7 +26,7 @@ export async function Brands() {
               {brand}
             </span>
             <span className="mt-2 text-[11.5px] font-semibold text-brand-600">
-              {count === 1 ? "سيارة واحدة" : count === 2 ? "سيارتان" : `${count} سيارات`}
+              {carCount(count)}
             </span>
           </Link>
         ))}

@@ -2,6 +2,17 @@
 
 /* Phones on a car page: Sadeem's button sits in the price bar at the bottom
    instead of floating over the page (MobileContactBar keeps room for it). */
+/* A small control's tap area grows to 44px (the size a finger needs) without
+   changing how it looks. The element must be positioned (relative, absolute…). */
+@utility tap-target {
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: min(0px, calc((100% - 2.75rem) / 2));
+    inset-inline: min(0px, calc((100% - 2.75rem) / 2));
+  }
+}
+
 @custom-variant docked {
   @media (width < 64rem) {
     body:has([data-contact-bar]) & {

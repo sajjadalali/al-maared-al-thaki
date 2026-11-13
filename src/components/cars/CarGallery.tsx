@@ -43,7 +43,7 @@ export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCr
               type="button"
               onClick={prev}
               aria-label="الصورة السابقة"
-              className="absolute start-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-900 shadow-md hover:bg-white"
+              className="tap-target absolute start-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-900 shadow-md hover:bg-white"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -51,7 +51,7 @@ export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCr
               type="button"
               onClick={next}
               aria-label="الصورة التالية"
-              className="absolute end-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-900 shadow-md hover:bg-white"
+              className="tap-target absolute end-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-900 shadow-md hover:bg-white"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>

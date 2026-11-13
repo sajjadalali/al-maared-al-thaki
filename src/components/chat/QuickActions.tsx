@@ -14,7 +14,7 @@ export function QuickActions({
           key={option}
           type="button"
           onClick={() => onSelect(option)}
-          className="rounded-full border border-brand-200 bg-brand-50/70 px-3.5 py-1.5 text-[13px] font-semibold text-brand-800 transition hover:border-brand-300 hover:bg-brand-100"
+          className="tap-target relative min-h-10 rounded-full border border-brand-200 bg-brand-50/70 px-3.5 py-1.5 text-[13px] font-semibold text-brand-800 transition hover:border-brand-300 hover:bg-brand-100"
         >
           {option}
         </button>

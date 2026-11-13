@@ -47,7 +47,7 @@ function countMessages(n: number): string {
 }
 
 const headerButton =
-  "flex h-9 w-9 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white";
+  "flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white";
 
 // Loaded on demand by ChatWidget (client-only), so reading localStorage while
 // initialising state is safe here. Once opened it stays mounted and is only
@@ -233,7 +233,7 @@ export default function ChatPanel({
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </p>
             <p className="truncate text-[12px] leading-5 text-white/70">
-              متصل الآن<span className="max-[379px]:hidden"> · مساعد المبيعات الذكي</span>
+              متصل الآن<span className="max-[419px]:hidden"> · مساعد المبيعات الذكي</span>
             </p>
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function ChatPanel({
               type="button"
               onClick={startNew}
               disabled={atLimit && hasUserMessages(active)}
-              className="flex items-center gap-1.5 rounded-full bg-brand-900 px-3.5 py-2 text-[13px] font-bold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex min-h-11 items-center gap-1.5 rounded-full bg-brand-900 px-3.5 py-2 text-[13px] font-bold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <SquarePen className="h-4 w-4" />
               محادثة جديدة
@@ -303,7 +303,7 @@ export default function ChatPanel({
                   type="button"
                   onClick={() => remove(chat.id)}
                   aria-label={`حذف المحادثة: ${conversationTitle(chat)}`}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-danger/10 hover:text-danger"
+                  className="tap-target relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-danger/10 hover:text-danger"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
