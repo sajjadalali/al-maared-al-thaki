@@ -1,5 +1,6 @@
 import type { Catalog } from "@/data/cars";
-import { USD_TO_IQD, formatIQD, originLabel } from "@/lib/format";
+import { USD_TO_IQD, carNameAr, formatIQD, originLabel } from "@/lib/format";
+import { contactMessage } from "./contact";
 import { site, phoneHref, whatsappHref } from "@/config/site";
 import {
   BODY_TYPE_ALIASES,
@@ -242,7 +243,7 @@ function describeIntent(catalog: Catalog, intent: ParsedIntent): string[] {
   return parts;
 }
 
-const carLabel = (car: Car) => `${car.brand} ${car.model} ${car.year}`;
+const carLabel = (car: Car) => `${carNameAr(car)} ${car.year}`;
 
 function countCars(n: number): string {
   if (n === 1) return "سيارة وحدة";
@@ -307,6 +308,14 @@ function lastShownCars(catalog: Catalog, history: RulesHistory[]): Car[] {
   return (msg?.cars ?? []).map((c) => catalog.getCarById(c.id)).filter((c): c is Car => Boolean(c));
 }
 
+// The car the buyer picked: the one their message names, or the one car the
+// last reply showed on its own. The first car of a list is not a choice.
+function chosenCar(matches: Car[], catalog: Catalog, history: RulesHistory[]): Car | undefined {
+  if (matches.length === 1) return matches[0];
+  const previous = [...history].reverse().find((m) => m.role === "assistant");
+  return previous?.cars?.length === 1 ? catalog.getCarById(previous.cars[0].id) : undefined;
+}
+
 function lastSearchIntent(catalog: Catalog, history: RulesHistory[]): ParsedIntent | undefined {
   for (const m of [...history].reverse()) {
     if (m.role !== "user") continue;
@@ -333,7 +342,7 @@ function singleCarReply(car: Car, intro?: string): ChatMessage {
     {
       cars: [car],
       quickReplies: SINGLE_CAR_QUICK_REPLIES,
-      actions: contactActions(`مرحباً، أنا مهتم بسيارة ${carLabel(car)} بسعر ${formatIQD(car.price)}`),
+      actions: contactActions(contactMessage(carLabel(car))),
     }
   );
 }
@@ -359,28 +368,25 @@ export function rulesReply(catalog: Catalog, message: string, history: RulesHist
   const intent = parseIntent(catalog, message);
   const matches = hasAnyFilter(intent) ? matchCars(catalog, intent) : [];
   const focusCar = matches.length === 1 ? matches[0] : lastShownCars(catalog, history)[0];
+  const picked = chosenCar(matches, catalog, history);
 
   if (includesAny(text, TEST_DRIVE_WORDS)) {
-    if (!focusCar) {
+    if (!picked) {
       return reply("أكيد! بس گلّي أي سيارة تريد تجربها حتى أرتبلك الموضوع.", {
         quickReplies: DEFAULT_QUICK_REPLIES,
       });
     }
     return reply(
-      `حلو اختيارك! تجربة قيادة **${carLabel(focusCar)}** نرتبها ويه فريق المبيعات ب${focusCar.city}.\nدز رسالة على واتساب وحدد الوقت الي يناسبك، وهمه يأكدولك الموعد.`,
-      { actions: contactActions(`مرحباً، أريد حجز تجربة قيادة لسيارة ${carLabel(focusCar)}`) }
+      `حلو اختيارك! تجربة قيادة **${carLabel(picked)}** نرتبها ويه فريق المبيعات ب${picked.city}.\nدز رسالة على واتساب وحدد الوقت الي يناسبك، وهمه يأكدولك الموعد.`,
+      { actions: contactActions(contactMessage(carLabel(picked), "test_drive")) }
     );
   }
 
   if (includesAny(text, AGENT_WORDS)) {
-    const about = focusCar ? ` بخصوص **${carLabel(focusCar)}**` : "";
+    const about = picked ? ` بخصوص **${carLabel(picked)}**` : "";
     return reply(
-      `أكيد! تكدر تتواصل ويا فريق المبيعات مباشرة${about}.\n- الرقم: ${site.phone}\n- الدوام: ${site.hours}`,
-      {
-        actions: contactActions(
-          focusCar ? `مرحباً، أستفسر عن سيارة ${carLabel(focusCar)}` : "مرحباً، عندي استفسار عن سيارة"
-        ),
-      }
+      `أكيد! تگدر تتواصل ويا فريق المبيعات مباشرة${about}.\n- الرقم: ${site.phone}\n- الدوام: ${site.hours}`,
+      { actions: contactActions(contactMessage(picked ? carLabel(picked) : undefined)) }
     );
   }
 
