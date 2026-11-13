@@ -1,4 +1,4 @@
-// Live check of PR #71, 3 rounds. This branch is deleted afterwards.
+// Live check of PRs #71-#72: the buyer's conversation 5 times. This branch is deleted afterwards.
 const SITE = "https://maared-al-thaki.duckdns.org";
 const sid = () => `5ade7e57-${crypto.randomUUID().slice(9)}`;
 const wa = (d) => { const h = d.actions?.find((a) => a.kind === "whatsapp")?.href; return h ? new URL(h).searchParams.get("text") : null; };
@@ -17,21 +17,16 @@ async function convo(name, turns) {
   }
 }
 const noCarInWa = (d) => { const t = wa(d); return t === null ? null : t === "هلا، عندي سؤال" ? null : `الرسالة: ${t}`; };
-for (let round = 1; round <= 3; round++) {
+const BAD_WORDING = /وياك حق|الرد السابق|أرجع وأصحح|هذا التصحيح/;
+for (let round = 1; round <= 5; round++) {
   console.log(`\n===== round ${round} =====`);
   await convo("محادثتك", [
     ["اريد سيارة بمليار", null],
     ["اريد الي صنعك رقم الموبايل مالته", noCarInWa],
-    ["ليش من وديتني للواتساب كتبت هاي لرسالة على رغم اني مافضلت او اختاريت رسالة؟؟؟ مرحباً، أستفسر عن سيارة Nissan Patrol 2026", (d, t) => (d.cars?.length ? `عرض سيارة: ${d.cars.map((c) => c.model)}` : CLAIM.test(t) ? `گال الواتساب يكتبها: ${t.match(CLAIM)[0]}` : null)],
-    ["القصد اني ماختاريت اي سيارة ليش تفترض من يمك!", (d) => (d.cars?.length ? `عرض سيارة: ${d.cars.map((c) => c.model)}` : null)],
-  ]);
-  await convo("قائمة ثم تواصل", [
-    ["أريد SUV", null],
-    ["شلون أتواصل وياكم؟", (d) => (wa(d) === null ? "ما طلع زر واتساب" : noCarInWa(d))],
-  ]);
-  await convo("سيارة وحدة ثم تواصل", [
-    ["تفاصيل الباترول", null],
-    ["شلون أتواصل وياكم؟", (d) => (wa(d) === "هلا، أريد أسأل عن نيسان باترول 2026" ? null : `الرسالة: ${wa(d)}`)],
+    ["ليش من وديتني للواتساب كتبت هاي لرسالة على رغم اني مافضلت او اختاريت رسالة؟؟؟ مرحباً، أستفسر عن سيارة Nissan Patrol 2026", (d, t) => (d.cars?.length ? `عرض سيارة: ${d.cars.map((c) => c.model)}` : CLAIM.test(t) ? `گال الواتساب يكتبها: ${t.match(CLAIM)[0]}` : BAD_WORDING.test(t) ? `صياغة: ${t.match(BAD_WORDING)[0]}` : noCarInWa(d))],
+    ["القصد اني ماختاريت اي سيارة ليش تفترض من يمك!", (d, t) => (d.cars?.length ? `عرض سيارة: ${d.cars.map((c) => c.model)}` : BAD_WORDING.test(t) ? `صياغة: ${t.match(BAD_WORDING)[0]}` : null)],
   ]);
 }
+await convo("قائمة ثم تواصل", [["أريد SUV", null], ["شلون أتواصل وياكم؟", (d) => (wa(d) === null ? "ما طلع زر واتساب" : noCarInWa(d))]]);
+await convo("سيارة وحدة ثم تواصل", [["تفاصيل الباترول", null], ["شلون أتواصل وياكم؟", (d) => (wa(d) === "هلا، أريد أسأل عن نيسان باترول 2026" ? null : `الرسالة: ${wa(d)}`)]]);
 console.log(`\nFAILS: ${fails}`);
