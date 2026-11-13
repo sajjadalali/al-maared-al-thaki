@@ -321,6 +321,12 @@ const CONVERSATIONS = [
         say: "ليش رسالة الواتساب بيها اسم سيارة؟ آني ما اخترت سيارة",
         expect: [noCards("عرض سيارة الزبون ما اختارها"), hasNot(/تنكتب[^\n]{0,30}من\s*(?:ال)?واتساب|(?:ال)?واتساب\s+(?:هو\s+)?(?:اللي\s+)?يكتب/, "گال الواتساب هو اللي يكتب الرسالة")],
       },
+      // 13 Nov: the right answer («معك حق…») became «وياك حق», was sent back as
+      // not Iraqi, and the rewrite listed the cars from earlier again.
+      {
+        say: "القصد اني ماختاريت اي سيارة ليش تفترض من يمك!",
+        expect: [noCards("رجّع عرض سيارات الزبون ما اختارها"), hasNot(/وياك حق|الرد السابق|أرجع وأصحح/, "صياغة غلط")],
+      },
     ],
   },
   // 12 Nov: «اكتبلهم على الواتساب وياهم…» in 4 of 6 replies that send the buyer to WhatsApp.

@@ -276,8 +276,15 @@ const IRAQI_WORDS = (
 
 // Persian kaf and yeh the model sometimes writes («کامری»); گ and چ are Iraqi and stay.
 // Money in words, as the site writes it: دينار and دولار, not «د.ع» and «$».
+// «معك حق» is "you're right": Iraqis say «عندك حق». Before the word list, which
+// would make it «وياك حق» (13 Nov), a phrase no Iraqi says.
+const YOU_ARE_RIGHT = new RegExp(`(^|[^${AR_LETTER}])(?:معك|معاك|وياك)\\s+حق(?![${AR_LETTER}])`, "g");
+const YOU_ARE_RIGHT_ALL = new RegExp(`(^|[^${AR_LETTER}])(?:معكم|معاكم|وياكم)\\s+حق(?![${AR_LETTER}])`, "g");
 const toIraqi = (text: string) =>
-  IRAQI_WORDS.reduce((out, [re, iraqi]) => out.replace(re, iraqi), text)
+  IRAQI_WORDS.reduce(
+    (out, [re, iraqi]) => out.replace(re, iraqi),
+    text.replace(YOU_ARE_RIGHT, "$1عندك حق").replace(YOU_ARE_RIGHT_ALL, "$1عندكم حق")
+  )
     .replace(/ک/g, "ك")
     .replace(/ی/g, "ي")
     .replace(/د\.ع\.?/g, "دينار")
@@ -546,7 +553,11 @@ function collectDataLatin(value: unknown, key: string, into: Set<string>) {
   }
 }
 
-const INTERNAL_TALK = ["استدعاء", "الأداة", "أداة", "قاعدة البيانات", "وصلتني", "وصلني من البحث", "الحفظ فشل", "غلط مني"];
+const INTERNAL_TALK = [
+  "استدعاء", "الأداة", "أداة", "قاعدة البيانات", "وصلتني", "وصلني من البحث", "الحفظ فشل", "غلط مني",
+  // About its own earlier reply, from a rewrite (13 Nov: «أرجع وأصحح: الرد السابق ما كان بالعراقي الصحيح»).
+  "الرد السابق", "ردي السابق", "أرجع وأصحح", "هذا التصحيح",
+];
 
 // ---------------------------------------------------------------------------
 // Specs the reply quotes (horsepower, mileage, seats, cylinders) must be the
@@ -609,10 +620,13 @@ const WAYA_MISUSE = [
 // needs rewording): هل، تم، أيضاً… «كم» is checked apart: after a number it is كيلومتر.
 const NOT_IRAQI = word("هل|تم|يتم|أيضاً|أيضا|ايضاً|ايضا|لذلك|بالإضافة|بالاضافة|حيث|بدي|شو|عايز|عاوز|إزاي|ازاي|ليه|إيش|ايش|حق");
 
+const RIGHT_PHRASES = new RegExp(`(?:عندك|عندكم|عنده|عندها|عندي)\\s+(?:ال)?حق(?![${AR_LETTER}])|الحق\\s+ويا[${AR_LETTER}]*`, "g");
+
 function dialectProblems(reply: string): string[] {
   const found = new Set<string>();
   for (const re of WAYA_MISUSE) for (const m of reply.matchAll(re)) found.add(m[0].trim());
-  for (const m of reply.matchAll(NOT_IRAQI)) found.add(m[1]);
+  // «حق» as "of" («مساعد حق المعرض») is Gulf; «عندك حق» ("you're right") and «الحق وياك» are Iraqi.
+  for (const m of reply.replace(RIGHT_PHRASES, " ").matchAll(NOT_IRAQI)) found.add(m[1]);
   for (const m of reply.matchAll(word("كم"))) {
     const before = reply.slice(0, m.index + m[0].indexOf(m[1])).trimEnd();
     // «21,000 كم»، «15 ألف كم»: kilometres.
@@ -964,9 +978,17 @@ export async function runSadeem(
         const rewritten = splitSuggestions(fixed);
         const left = replyProblems(rewritten.text, allowed, state, rows, buyerTexts, arabic);
         if (left.length) state.searches.push({ verify_after_rewrite: left });
-        content = rewritten.text;
-        if (rewritten.suggestions.length) suggestions = rewritten.suggestions;
-        showNamed(content);
+        // A rewrite that fixed nothing, or added a problem, is no better than the
+        // reply it replaces and has drifted from it (13 Nov: a correct «ما اخترت
+        // أي سيارة» reply came back as a list of the cars from earlier).
+        const fixedSome = problems.some((p) => !left.includes(p));
+        if (fixedSome && left.length <= problems.length) {
+          content = rewritten.text;
+          if (rewritten.suggestions.length) suggestions = rewritten.suggestions;
+          showNamed(content);
+        } else {
+          state.searches.push({ rewrite_dropped: true });
+        }
       }
     }
   }
