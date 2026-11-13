@@ -291,10 +291,17 @@ const YOU_ARE_RIGHT_ALL = new RegExp(`(^|[^${AR_LETTER}])(?:معكم|معاكم|
 // «مال». A rewrite asked to fix it kept it (13 Nov), so the server does it.
 // «عندك حق» and «الحق» are left alone.
 const HAQ_OF = new RegExp(`(^|[^${AR_LETTER}])(?<!(?:عندك|عندكم|عنده|عندها|عندي)\\s+)حق(?![${AR_LETTER}])`, "g");
+// «كم» asking how many is «شكد» («وكم مقعد تحتاج» → «وشكد مقعد تحتاج»); after a
+// number it is kilometres («21,000 كم»، «21 ألف كم») and stays.
+const KAM_QUESTION = new RegExp(`(?<!(?:\\d|ألف|الف|آلاف)[\\s,،]*)(^|[^${AR_LETTER}\\d])(و?)كم(?=\\s+[${AR_LETTER}])`, "g");
 const toIraqi = (text: string) =>
   IRAQI_WORDS.reduce(
     (out, [re, iraqi]) => out.replace(re, iraqi),
-    text.replace(YOU_ARE_RIGHT, "$1عندك حق").replace(YOU_ARE_RIGHT_ALL, "$1عندكم حق").replace(HAQ_OF, "$1مال")
+    text
+      .replace(YOU_ARE_RIGHT, "$1عندك حق")
+      .replace(YOU_ARE_RIGHT_ALL, "$1عندكم حق")
+      .replace(HAQ_OF, "$1مال")
+      .replace(KAM_QUESTION, "$1$2شكد")
   )
     .replace(/ک/g, "ك")
     .replace(/ی/g, "ي")
@@ -1053,8 +1060,10 @@ export async function runSadeem(
         // A rewrite that fixed nothing, or added a problem, is no better than the
         // reply it replaces and has drifted from it (13 Nov: a correct «ما اخترت
         // أي سيارة» reply came back as a list of the cars from earlier).
-        const fixedSome = problems.some((p) => !left.includes(p));
-        if (fixedSome && left.length <= problems.length) {
+        // Swapping one problem for another is no fix either (13 Nov: «وكم مقعد»
+        // fixed, «الرد السابق» and the Chinese cars from earlier added).
+        const added = left.some((p) => !problems.includes(p));
+        if (!added && left.length < problems.length) {
           content = rewritten.text;
           if (rewritten.suggestions.length) suggestions = rewritten.suggestions;
           // The cards follow the rewritten text: a car it no longer names loses its card.
