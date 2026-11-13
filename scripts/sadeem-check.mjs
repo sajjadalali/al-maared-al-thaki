@@ -228,6 +228,17 @@ const noWithinOver = (budget) => (r) => {
   return bad.length ? `گال «ضمن» عن سعر أغلى من الميزانية: «${bad[0].trim()}»` : null;
 };
 
+// The message the WhatsApp button under the reply starts.
+const waText = (r) => {
+  const href = r.actions?.find((a) => a.kind === "whatsapp")?.href;
+  return href ? decodeURIComponent(new URL(href).searchParams.get("text") ?? "") : null;
+};
+const waMessage = (ok, why) => (r) => {
+  const text = waText(r);
+  if (text === null) return "ما طلعت أزرار الواتساب تحت الرد";
+  return ok(text) ? null : `${why}: «${text}»`;
+};
+
 const notInvented = has(/ما عندي|ما أعرف|ما اعرف|معلومة|نتأكد|تتأكد|المعاينة|معاينة|الفحص|فحص|واتساب|تواصل|اتصل/);
 // "No paint / no accidents" is fine when a shown car's description says it
 // (the used Camry's does); otherwise Sadeem must not claim it and should hedge.
@@ -297,6 +308,20 @@ const CONVERSATIONS = [
   {
     name: "مقارنة بالسعر",
     turns: [{ say: "قارنلي بين الاكسبلورر والباجيرو", expect: [hasNot(/(?:ال)?باجيرو[^،.\n]{0,15}(?:أرخص|أقل سعر|سعرها أقل)|أرخص[^،.\n]{0,10}(?:ال)?باجيرو/, "گال الباجيرو أرخص وهي أغلى"), cardsSome((c) => c.model === "Explorer", "ما عرض الاكسبلورر"), cardsSome((c) => c.model === "Pajero", "ما عرض الباجيرو")] }],
+  },
+  // 13 Nov: the WhatsApp button's message named the first car of an older list
+  // («مرحباً، أستفسر عن سيارة Nissan Patrol 2026») for a buyer who never picked
+  // one; asked about it, Sadeem said WhatsApp writes it and showed the Patrol.
+  {
+    name: "رسالة الواتساب",
+    turns: [
+      { say: "اريد سيارة بمليار", expect: [] },
+      { say: "شلون أتواصل وياكم؟", expect: [waMessage((t) => t === "هلا، عندي سؤال", "رسالة الواتساب ذكرت سيارة الزبون ما اختارها")] },
+      {
+        say: "ليش رسالة الواتساب بيها اسم سيارة؟ آني ما اخترت سيارة",
+        expect: [noCards("عرض سيارة الزبون ما اختارها"), hasNot(/تنكتب[^\n]{0,30}من\s*(?:ال)?واتساب|(?:ال)?واتساب\s+(?:هو\s+)?(?:اللي\s+)?يكتب/, "گال الواتساب هو اللي يكتب الرسالة")],
+      },
+    ],
   },
   // 12 Nov: «اكتبلهم على الواتساب وياهم…» in 4 of 6 replies that send the buyer to WhatsApp.
   {

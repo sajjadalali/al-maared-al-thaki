@@ -4,6 +4,8 @@
 import { phoneHref, site, whatsappHref } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
 import { carMarker, stripCarMarkers } from "@/services/ai/carMarkers";
+import { carNameAr } from "@/lib/format";
+import { contactMessage } from "./contact";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
 import { overviewAvailable, overviewPrices, systemPrompt } from "./prompt";
@@ -486,19 +488,30 @@ function spellDrivetrain(reply: string): string {
 // The showroom's number as the reply writes it, digits only ("7838548091").
 const SHOWROOM_DIGITS = site.whatsapp.replace(/^964/, "");
 
-// A reply that hands the buyer to the team gets WhatsApp and call buttons
-// under it, with a WhatsApp message about the car they were looking at.
-function contactActions(reply: string, state: TurnState, cars: Car[], history: HistoryMessage[]): ChatAction[] | undefined {
+// The car the WhatsApp message names: one the buyer was looking at on its own,
+// in this reply or the one just before it. A list of cars, or a car from
+// further back, is not their choice (13 Nov: a buyer who never picked a car got
+// «أستفسر عن سيارة Nissan Patrol 2026», the first car of an older list).
+export function contactCar(cars: Car[], history: HistoryMessage[], arabic: Map<string, ArabicName>): string | undefined {
+  if (cars.length === 1) return `${arabic.get(cars[0].id)?.full ?? carNameAr(cars[0])} ${cars[0].year}`;
+  if (cars.length) return undefined;
+  const previous = [...history].reverse().find((m) => m.role === "assistant");
+  const only = previous?.cars?.length === 1 ? previous.cars[0] : undefined;
+  return only ? noteName(only.id, only.name, arabic).split(" – ")[0] : undefined;
+}
+
+// A reply that hands the buyer to the team gets WhatsApp and call buttons under it.
+function contactActions(
+  reply: string,
+  state: TurnState,
+  cars: Car[],
+  history: HistoryMessage[],
+  arabic: Map<string, ArabicName>
+): ChatAction[] | undefined {
   const givesContact = reply.replace(/\D/g, "").includes(SHOWROOM_DIGITS) || state.request?.intent === "contact";
   if (!givesContact) return undefined;
-  const lastShown = [...history].reverse().find((m) => m.role === "assistant" && m.cars?.length)?.cars?.[0];
-  const car = cars.length === 1 ? `${cars[0].brand} ${cars[0].model} ${cars[0].year}` : lastShown?.name.split(" – ")[0];
   return [
-    {
-      kind: "whatsapp",
-      label: "راسلنا واتساب",
-      href: whatsappHref(car ? `مرحباً، أستفسر عن سيارة ${car}` : "مرحباً، عندي استفسار عن سيارة"),
-    },
+    { kind: "whatsapp", label: "راسلنا واتساب", href: whatsappHref(contactMessage(contactCar(cars, history, arabic))) },
     { kind: "phone", label: "اتصل بنا", href: phoneHref },
   ];
 }
@@ -755,6 +768,11 @@ function replyProblems(
   problems.push(...cityProblems(reply, cars.filter((c) => state.shownIds.includes(c.id)), buyerTexts));
   problems.push(...strayModelProblems(reply, allNames, state.found, buyerTexts));
   // Its own workings («ما وصلتني كلها»، «قاعدة البيانات») are not for the buyer.
+  // This site writes the WhatsApp button's message, not WhatsApp (13 Nov:
+  // «الرسالة الجاهزة تنكتب تلقائياً من الواتساب»).
+  if (/(?:تنكتب|ينكتب)[^\n]{0,30}(?:من|ب)\s*(?:ال)?واتساب|(?:ال)?واتساب\s+(?:هو\s+)?(?:اللي\s+)?(?:يكتبها|كتبها|يكتب\s+الرسالة)/.test(reply)) {
+    problems.push("the WhatsApp message is written by this site, not by WhatsApp: say the site writes it ready and the buyer can change it before sending");
+  }
   const internal = INTERNAL_TALK.filter((w) => reply.includes(w));
   if (internal.length) problems.push(`it talks about your own workings (${internal.join("، ")}): answer the buyer only`);
   // English words: only a model name with no Arabic one (كيا EV6) may stay in Latin letters.
@@ -970,7 +988,7 @@ export async function runSadeem(
     quickReplies: suggestions,
     leadSaved: state.leadSaved,
     matchCount: cars.length ? state.matchCount : undefined,
-    actions: contactActions(finalContent, state, cars, history),
+    actions: contactActions(finalContent, state, cars, history, arabic),
     searches: state.searches,
   };
 }
