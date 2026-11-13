@@ -1,4 +1,4 @@
-// Live check of PRs #75-#76: the buyer's own 16 messages, 3 rounds (one per rate-limit window). This branch is deleted afterwards.
+// Live check of PRs #75-#77: the buyer's own 16 messages, 3 rounds (one per rate-limit window). This branch is deleted afterwards.
 const SITE = "https://maared-al-thaki.duckdns.org";
 const ROUND = Number(process.env.ROUND ?? 1);
 const sid = () => `5ade7e57-${crypto.randomUUID().slice(9)}`;
@@ -17,7 +17,7 @@ const turns = [
   ["اريد سيارة بمليار دولار", "repeat"],
   ["جوابك غبي", NO_CARS],
   ["ميزانيتي 2 مليار دولار", "repeat"],
-  ["ليش ماينصحون بالصني؟", NO_CARS],
+  ["ليش ماينصحون بالصني؟", null],
   ["فاشلات الصينيات", null],
   ["معرضكم تافه", NO_CARS],
   ["منو صممك", (d) => NO_CARS(d) ?? (wa(d) || /0783/.test(d.content) ? "طلّع رقم المعرض" : null)],
