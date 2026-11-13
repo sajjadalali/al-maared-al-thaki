@@ -60,7 +60,7 @@ export function SadeemSection() {
                 <OpenChatButton
                   key={prompt}
                   prompt={prompt}
-                  className="rounded-full bg-white/[0.07] px-4 py-2 text-[13px] font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15"
+                  className="min-h-11 rounded-full bg-white/[0.07] px-4 py-2 text-[13px] font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15"
                 >
                   {prompt}
                 </OpenChatButton>

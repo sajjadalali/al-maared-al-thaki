@@ -28,8 +28,13 @@ function Title({ car }: { car: Car }) {
   );
 }
 
+/** Sadeem's own lines about the car (what made it fit), in place of the stock summary. */
+function Note({ note }: { note: string }) {
+  return <p className="line-clamp-3 whitespace-pre-line text-[11.5px] leading-5 text-neutral-600">{note.replace(/\*\*/g, "")}</p>;
+}
+
 /** One row in a list reply: thumbnail, name, price and a one-line summary. */
-export function CarRecommendationCard({ car }: { car: Car }) {
+export function CarRecommendationCard({ car, note }: { car: Car; note?: string }) {
   return (
     <Link
       href={`/cars/${car.id}`}
@@ -39,9 +44,13 @@ export function CarRecommendationCard({ car }: { car: Car }) {
       <div className="min-w-0 flex-1">
         <Title car={car} />
         <p className="text-[14px] font-bold leading-5 text-brand-800">{formatIQD(car.price)}</p>
-        <p className="truncate text-[11.5px] leading-5 text-neutral-500">
-          {car.condition} · {formatCarMileage(car.mileage)} · {car.city}
-        </p>
+        {note ? (
+          <Note note={note} />
+        ) : (
+          <p className="truncate text-[11.5px] leading-5 text-neutral-500">
+            {car.condition} · {formatCarMileage(car.mileage)} · {car.city}
+          </p>
+        )}
       </div>
       <ChevronLeft className="h-4 w-4 shrink-0 text-neutral-300 transition group-hover:text-brand-600" />
     </Link>
@@ -49,7 +58,7 @@ export function CarRecommendationCard({ car }: { car: Car }) {
 }
 
 /** A reply about one specific car: the same compact row plus its key specs. */
-export function CarDetailChatCard({ car }: { car: Car }) {
+export function CarDetailChatCard({ car, note }: { car: Car; note?: string }) {
   const specs = [
     ...(car.origin ? [originLabel(car.origin)] : []),
     formatCarMileage(car.mileage),
@@ -65,9 +74,13 @@ export function CarDetailChatCard({ car }: { car: Car }) {
         <div className="min-w-0 flex-1">
           <Title car={car} />
           <p className="text-[14px] font-bold leading-5 text-brand-800">{formatIQD(car.price)}</p>
-          <p className="truncate text-[11.5px] leading-5 text-neutral-500">
-            {car.condition} · {car.city}
-          </p>
+          {note ? (
+            <Note note={note} />
+          ) : (
+            <p className="truncate text-[11.5px] leading-5 text-neutral-500">
+              {car.condition} · {car.city}
+            </p>
+          )}
         </div>
         <ChevronLeft className="h-4 w-4 shrink-0 text-neutral-300 transition group-hover:text-brand-600" />
       </Link>

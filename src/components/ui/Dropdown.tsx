@@ -333,7 +333,7 @@ export function Dropdown({
       return (
         <button
           {...common}
-          className="flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2 text-start transition hover:bg-surface focus-visible:bg-surface focus-visible:outline-none"
+          className="flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2 text-start transition pointer-coarse:min-h-11 hover:bg-surface focus-visible:bg-surface focus-visible:outline-none"
         >
           <span className="min-w-0 flex-1">
             <span id={labelId} className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-400">
@@ -356,7 +356,7 @@ export function Dropdown({
       return (
         <button
           {...common}
-          className="flex max-w-full items-center gap-2 rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm font-semibold text-brand-950 transition hover:border-brand-200 focus-visible:border-brand-400 focus-visible:outline-none"
+          className="flex min-h-11 max-w-full items-center gap-2 rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm font-semibold text-brand-950 transition hover:border-brand-200 focus-visible:border-brand-400 focus-visible:outline-none"
         >
           <span id={labelId} className="sr-only">
             {label}
@@ -374,7 +374,7 @@ export function Dropdown({
       <button
         {...common}
         className={cn(
-          "flex w-full items-center gap-2 rounded-xl border px-3.5 py-2.5 text-start text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200",
+          "flex min-h-11 w-full items-center gap-2 rounded-xl border px-3.5 py-2.5 text-start text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200",
           hasValue
             ? "border-brand-300 bg-brand-50/60 font-bold text-brand-900"
             : "border-black/10 bg-white text-neutral-700 hover:border-brand-200"

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { PRICE_BANDS, priceBandIndex, type FilterOptionSets } from "@/lib/filterOptions";
+import { carCount } from "@/lib/format";
 
 // URL keys that count as a user-chosen filter (sorting doesn't).
 const FILTER_KEYS = [
@@ -73,7 +74,7 @@ export function CarFilters({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="ماركة، موديل، مدينة..."
-            className="w-full rounded-xl border border-black/10 bg-white py-2.5 pe-3.5 ps-9 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+            className="min-h-11 w-full rounded-xl border border-black/10 bg-white py-2.5 pe-3.5 ps-9 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
           />
         </div>
       </div>
@@ -161,7 +162,7 @@ export function CarFilters({
         <button
           type="button"
           onClick={clearAll}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-black/10 py-2.5 text-sm font-semibold text-neutral-600 transition hover:bg-surface sm:col-span-2 lg:col-span-1"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-black/10 py-2.5 text-sm font-semibold text-neutral-600 transition hover:bg-surface sm:col-span-2 lg:col-span-1"
         >
           <X className="h-4 w-4" />
           مسح كل الفلاتر
@@ -196,7 +197,7 @@ export function CarFilters({
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
-        className="flex items-center justify-center gap-2 rounded-full bg-brand-950 px-5 py-2.5 text-sm font-bold text-white lg:hidden"
+        className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-brand-950 px-5 py-2.5 text-sm font-bold text-white lg:hidden"
       >
         <SlidersHorizontal className="h-4 w-4" />
         الفلاتر
@@ -217,7 +218,7 @@ export function CarFilters({
                 type="button"
                 onClick={() => setMobileOpen(false)}
                 aria-label="إغلاق"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-surface"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-neutral-500 hover:bg-surface"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -231,7 +232,7 @@ export function CarFilters({
                 onClick={() => setMobileOpen(false)}
                 className="w-full rounded-2xl bg-brand-950 py-3.5 text-[15px] font-bold text-white"
               >
-                {resultCount === 0 ? "لا توجد نتائج" : `عرض ${resultCount} سيارة`}
+                {resultCount === 0 ? "لا توجد نتائج" : `عرض ${carCount(resultCount, "after")}`}
               </button>
             </div>
           </div>

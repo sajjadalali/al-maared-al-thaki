@@ -37,10 +37,10 @@ function LinkColumn({ title, links }: { title: string; links: { href: string; la
   return (
     <div>
       <h3 className="text-sm font-bold text-white">{title}</h3>
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-4 space-y-2.5 pointer-coarse:mt-2 pointer-coarse:space-y-0">
         {links.map((link) => (
           <li key={link.href}>
-            <Link href={link.href} className="text-sm text-white/55 transition hover:text-white">
+            <Link href={link.href} className="inline-flex items-center text-sm text-white/55 transition hover:text-white pointer-coarse:min-h-11 pointer-coarse:min-w-11">
               {link.label}
             </Link>
           </li>
@@ -68,7 +68,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] ring-1 ring-white/10 transition hover:bg-white/15"
+                className="tap-target relative flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] ring-1 ring-white/10 transition hover:bg-white/15"
               >
                 <Icon className="h-4 w-4" />
               </a>
@@ -81,24 +81,24 @@ export function Footer() {
 
         <div>
           <h3 className="text-sm font-bold text-white">تواصل معنا</h3>
-          <ul className="mt-4 space-y-3 text-sm text-white/55">
+          <ul className="mt-4 space-y-3 text-sm text-white/55 pointer-coarse:mt-2 pointer-coarse:space-y-0">
             <li>
-              <a href={phoneHref} className="flex items-center gap-2.5 transition hover:text-white">
+              <a href={phoneHref} className="flex items-center gap-2.5 transition hover:text-white pointer-coarse:min-h-11">
                 <Phone className="h-4 w-4 shrink-0 text-accent-300" />
                 <span dir="ltr">{site.phone}</span>
               </a>
             </li>
             <li>
-              <a href={`mailto:${site.email}`} className="flex items-center gap-2.5 transition hover:text-white">
+              <a href={`mailto:${site.email}`} className="flex items-center gap-2.5 transition hover:text-white pointer-coarse:min-h-11">
                 <Mail className="h-4 w-4 shrink-0 text-accent-300" />
                 <span dir="ltr">{site.email}</span>
               </a>
             </li>
-            <li className="flex items-center gap-2.5">
+            <li className="flex items-center gap-2.5 pointer-coarse:min-h-11">
               <MapPin className="h-4 w-4 shrink-0 text-accent-300" />
               {site.address}
             </li>
-            <li className="flex items-center gap-2.5">
+            <li className="flex items-center gap-2.5 pointer-coarse:min-h-11">
               <Clock className="h-4 w-4 shrink-0 text-accent-300" />
               <span>
                 {site.hours}

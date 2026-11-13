@@ -6,7 +6,7 @@ import { CarArt } from "@/components/ui/CarArt";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { toFacetCar, type Catalog } from "@/data/cars";
 import { getCatalog } from "@/server/catalog";
-import { carNameAr, formatNumber, originLabel } from "@/lib/format";
+import { carCount, carNameAr, formatNumber, originLabel } from "@/lib/format";
 
 const TRUST = [
   { icon: ClipboardCheck, text: "فحص فني قبل البيع" },
@@ -40,7 +40,7 @@ export async function Hero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-60 motion-safe:animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
             </span>
-            {available} سيارة متوفرة الآن في المعرض
+            {carCount(available)} {available === 2 ? "متوفرتان" : "متوفرة"} الآن في المعرض
           </span>
 
           <h1 className="mt-5 text-[34px] font-bold leading-[1.25] text-brand-950 sm:text-5xl sm:leading-[1.2] lg:text-[56px]">

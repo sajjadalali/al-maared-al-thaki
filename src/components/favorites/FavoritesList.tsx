@@ -35,7 +35,7 @@ export function FavoritesList({ cars }: { cars: CarSummary[] }) {
           </p>
           <Link
             href="/cars"
-            className="mt-2 flex items-center gap-1.5 rounded-xl bg-brand-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-800"
+            className="mt-2 flex min-h-11 items-center gap-1.5 rounded-xl bg-brand-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-800"
           >
             <ArrowLeft className="h-4 w-4" />
             تصفح السيارات

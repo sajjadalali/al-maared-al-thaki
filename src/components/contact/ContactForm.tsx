@@ -177,7 +177,7 @@ function Field({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${name}-error` : undefined}
         onInput={onInput}
-        className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-brand-400 ${error ? "border-danger" : "border-black/10"}`}
+        className={`min-h-11 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-brand-400 ${error ? "border-danger" : "border-black/10"}`}
       />
       {error && (
         <p id={`${name}-error`} role="alert" className="mt-1.5 text-xs font-semibold text-danger">

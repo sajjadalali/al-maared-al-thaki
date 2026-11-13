@@ -19,7 +19,7 @@ export function CategoryPills({ active }: { active?: string }) {
             key={pill.key}
             href={hrefFor(pill.key)}
             className={cn(
-              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
+              "flex min-h-11 shrink-0 items-center rounded-full border px-4 py-2 text-sm font-semibold transition",
               isActive
                 ? "border-brand-950 bg-brand-950 text-white"
                 : "border-black/10 bg-white text-neutral-600 hover:border-black/20 hover:text-brand-950"
