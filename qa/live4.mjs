@@ -1,4 +1,4 @@
-// Live check of PRs #75-#78: the buyer's own 16 messages, 3 rounds (one per rate-limit window). This branch is deleted afterwards.
+// Live check of PRs #75-#79: the buyer's own 16 messages, 3 rounds (one per rate-limit window). This branch is deleted afterwards.
 const SITE = "https://maared-al-thaki.duckdns.org";
 const ROUND = Number(process.env.ROUND ?? 1);
 const sid = () => `5ade7e57-${crypto.randomUUID().slice(9)}`;
