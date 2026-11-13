@@ -80,8 +80,9 @@ export const TOOL_DEFINITIONS = [
           exclude_ids: list(str, "Car ids already shown, to get other options."),
           sort: {
             type: "string",
-            enum: ["relevance", "price_asc", "price_desc", "year_desc", "mileage_asc"],
-            description: "price_asc for cheapest, price_desc to use the budget fully.",
+            enum: ["relevance", "price_asc", "price_desc", "year_desc", "mileage_asc", "spread"],
+            description:
+              "price_asc for cheapest, price_desc to use the budget fully. spread when there is no budget (or one above our dearest car): returns the cheapest, a middle one and the dearest of ALL matches, and their price_range.",
           },
           limit: { type: "integer", description: "1-10, default 6." },
         },
@@ -158,6 +159,34 @@ export async function arabicNames(env: SupabaseEnv): Promise<Map<string, ArabicN
 
 // budgetMax: the buyer's budget, so a car above it says by how much (the
 // reply quotes these figures instead of working them out).
+// No budget, or one above our dearest car: the cheapest, the middle and the
+// dearest of every match, picked here. With a capped list the model can't see
+// the dearest car (13 Nov: it gave «لحد 135 مليون» while the Patrol is 160).
+async function spreadSearch(env: SupabaseEnv, params: Record<string, unknown>, state: TurnState) {
+  const search = (sort: string) => rpc<SearchRow[]>(env, "search_cars", { ...params, p_sort: sort, p_limit: 20 });
+  const [cheap, dear, names] = await Promise.all([search("price_asc"), search("price_desc"), arabicNames(env)]);
+  const byId = new Map([...cheap, ...dear].filter((row) => row.status === "متوفرة").map((row) => [row.id, row]));
+  const all = [...byId.values()].sort((a, b) => a.price_iqd - b.price_iqd);
+  const available = cheap[0]?.available_count ?? all.length;
+  // With more than 40 matches the middle of the two ends is still a fair middle.
+  const picked = all.length <= 3 ? all : [all[0], all[Math.floor(all.length / 2)], all[all.length - 1]];
+  picked.forEach((row) => {
+    state.seenIds.add(row.id);
+    state.seenPrices.set(row.id, row.price_iqd);
+    state.found.set(row.id, { model: row.model, name: names.get(row.id), year: row.year });
+  });
+  state.matchCount = available;
+  state.counts.push(available);
+  const min = all[0]?.price_iqd;
+  const max = all[all.length - 1]?.price_iqd;
+  return {
+    total: available,
+    ...(min !== undefined && max !== undefined ? { price_range: { from_iqd: min, to_iqd: max } } : {}),
+    cars: picked.map((row) => brief(row, names.get(row.id)?.full, buyerBudget(state.request))),
+    note: "Show exactly these cars, cheapest first, and say the price range from price_range in line 1.",
+  };
+}
+
 function brief(row: SearchRow | CarRow, arabicName?: string, budgetMax?: number) {
   const overBy = budgetMax && row.price_iqd > budgetMax ? row.price_iqd - budgetMax : 0;
   return {
@@ -368,6 +397,7 @@ export async function runTool(
       const bodies = params.p_body_types;
       if (Array.isArray(bodies) && bodies.includes("SUV") && !bodies.includes("دفع رباعي")) params.p_body_types = [...bodies, "دفع رباعي"];
       state.searches.push(args);
+      if (params.p_sort === "spread") return spreadSearch(env, params, state);
       const [rows, names] = await Promise.all([rpc<SearchRow[]>(env, "search_cars", params), arabicNames(env)]);
       rows.forEach((row) => {
         state.seenIds.add(row.id);
