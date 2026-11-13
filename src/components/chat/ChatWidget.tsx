@@ -8,6 +8,7 @@ import { onSadeemOpen, onSadeemPrompt } from "@/lib/chatBus";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { cn } from "@/lib/cn";
 import { CHAT_FRAME_CLASS, CHAT_HEADER_CLASS, chatFrameMotion } from "./chatFrame";
+import { testMode } from "./testMode";
 import type { ChatPrompt } from "./ChatPanel";
 
 // The panel carries the conversation UI. Every page only ships this small
@@ -73,6 +74,11 @@ export function ChatWidget() {
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
+
+  // ?test or ?test=0 on the page the visitor landed on, before they move on and the address loses it.
+  useEffect(() => {
+    testMode();
+  }, []);
 
   // The back button closes the chat instead of leaving the page: opening adds
   // a history entry (Next.js keeps its own state in it), closing removes it.
