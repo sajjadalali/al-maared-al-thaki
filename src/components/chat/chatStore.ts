@@ -1,6 +1,7 @@
 // The visitor's conversations with Sadeem, kept in this browser (localStorage).
 // Each conversation's id is also its session id in the chat logs.
 import { aiService, type ChatMessage } from "@/services/ai";
+import { TEST_SESSION_PREFIX, testMode } from "./testMode";
 
 /** How many conversations a visitor can keep; a new one needs a free slot. */
 export const MAX_CHATS = 10;
@@ -24,14 +25,16 @@ export interface ChatStore {
 }
 
 function newId(): string {
+  let id: string;
   try {
-    return crypto.randomUUID();
+    id = crypto.randomUUID();
   } catch {
     // crypto.randomUUID needs a secure context; a UUID-shaped id is enough here
-    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+    id = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
       (Number(c) ^ (Math.random() * 16) >> (Number(c) / 4)).toString(16)
     );
   }
+  return testMode() ? TEST_SESSION_PREFIX + id.slice(9) : id;
 }
 
 export function newConversation(): Conversation {

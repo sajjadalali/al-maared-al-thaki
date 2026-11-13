@@ -85,10 +85,15 @@ async function answer(
   }
 }
 
+// Test chats start their session id with this (scripts/sadeem-check.mjs, and
+// the site's test mode in chatStore.ts), so the log keeps them apart from buyers.
+const TEST_SESSION_PREFIX = "5ade7e57-";
+
 // Keeps the conversation for tuning Sadeem.
 async function logChat(db: SupabaseEnv, sessionId: string, message: string, reply: Reply) {
   try {
-    await insert(db, "chat_sessions", { id: sessionId }, true);
+    // The first message of a session decides; later ones leave the row as it is.
+    await insert(db, "chat_sessions", { id: sessionId, is_test: sessionId.startsWith(TEST_SESSION_PREFIX) }, true);
     // A bulk insert needs the same keys on every row, or PostgREST answers 400.
     await insert(db, "chat_messages", [
       { session_id: sessionId, role: "user", content: message, car_ids: [], tool_calls: null },

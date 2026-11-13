@@ -8,6 +8,7 @@
 // Every test conversation is logged on the site like a real one, with a
 // session id starting "5ade7e57-", so a reviewer can read the whole run in
 // Supabase: select … from chat_messages where session_id::text like '5ade7e57-%'.
+// The server marks those sessions is_test, which keeps them out of customer_chats.
 // About 14 replies a run (the site allows 30 per 10 minutes per visitor).
 // Exit code 1 when a check fails, so the GitHub workflow shows red.
 
