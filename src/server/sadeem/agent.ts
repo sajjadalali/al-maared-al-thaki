@@ -272,7 +272,7 @@ const IRAQI_WORDS = (
     ["أبحث لك|أبحثلك|ابحث لك|ابحثلك", "أدورلك"], ["أبحث|ابحث", "أدوّر"], ["نبحث", "ندوّر"], ["تبحث", "تدوّر"], ["يبحث", "يدوّر"],
     ["بالوقت الحالي|في الوقت الحالي", "هسه"], ["هلق|هلأ", "هسه"], ["كتير", "هواية"], ["هيك", "هيچ"],
     // From a buyer's own test (13 Nov): «يكدرون»، «أعطيك»، «أوريك إياه»، «شاشتان».
-    ["يكدرون|يقدرون", "يگدرون"], ["تكدرون|تقدرون", "تگدرون"],
+    ["يكدرون|يقدرون", "يگدرون"], ["تكدرون|تقدرون", "تگدرون"], ["أكول|اكول", "أگول"], ["مساعدة المبيعات", "مساعد المبيعات"],
     ["أعطيك|اعطيك", "أنطيك"], ["أعطيكم|اعطيكم", "أنطيكم"], ["نعطيك", "ننطيك"], ["يعطيك", "ينطيك"], ["تعطيني", "تنطيني"],
     ["أوريك|اوريك", "أراويك"], ["أوريكم|اوريكم", "أراويكم"], ["نوريك", "نراويك"],
     ["إياه|اياه", "ياه"], ["إياها|اياها", "ياها"], ["إياهم|اياهم", "ياهم"],
@@ -508,6 +508,7 @@ function spellDrivetrain(reply: string): string {
 
 // The showroom's number as the reply writes it, digits only ("7838548091").
 const SHOWROOM_DIGITS = site.whatsapp.replace(/^964/, "");
+const CREATOR_QUESTION = /صممك|صمّمك|صنعك|سواك|سوّاك|برمجك|طورك|طوّرك|مطورك|مطوّرك|صانعك|مبرمجك|سوّتك|سوتك/;
 
 // The car the WhatsApp message names: one the buyer was looking at on its own,
 // in this reply or the one just before it. A list of cars, or a car from
@@ -527,9 +528,12 @@ function contactActions(
   state: TurnState,
   cars: Car[],
   history: HistoryMessage[],
-  arabic: Map<string, ArabicName>
+  arabic: Map<string, ArabicName>,
+  message: string
 ): ChatAction[] | undefined {
-  const givesContact = reply.replace(/\D/g, "").includes(SHOWROOM_DIGITS) || state.request?.intent === "contact";
+  // A question about who built Sadeem is not a contact request, even when the model files it as one.
+  const askedTeam = state.request?.intent === "contact" && !CREATOR_QUESTION.test(message);
+  const givesContact = reply.replace(/\D/g, "").includes(SHOWROOM_DIGITS) || askedTeam;
   if (!givesContact) return undefined;
   return [
     { kind: "whatsapp", label: "راسلنا واتساب", href: whatsappHref(contactMessage(contactCar(cars, history, arabic))) },
@@ -637,7 +641,7 @@ const NOT_IRAQI = word("هل|تم|يتم|أيضاً|أيضا|ايضاً|ايضا
 
 // Phrases that make no sense in Iraqi, from a buyer's own test (13 Nov):
 // «معليك 🙏 خذ كلامك»، «آسف... لا، ما آسف».
-const NONSENSE = [/خذ كلامك/, /معليك/, /لا،?\s*ما آسف/, /ما آسف/];
+const NONSENSE = [/خذ كلامك/, /معليك/, /لا،?\s*ما آسف/, /ما آسف/, /(?:\.{2,}|…)\s*لا[،,]/];
 
 const RIGHT_PHRASES = new RegExp(`(?:عندك|عندكم|عنده|عندها|عندي)\\s+(?:ال)?حق(?![${AR_LETTER}])|الحق\\s+ويا[${AR_LETTER}]*`, "g");
 
@@ -805,6 +809,11 @@ function replyProblems(
   problems.push(...cityProblems(reply, cars.filter((c) => state.shownIds.includes(c.id)), buyerTexts));
   problems.push(...strayModelProblems(reply, allNames, state.found, buyerTexts));
   // Its own workings («ما وصلتني كلها»، «قاعدة البيانات») are not for the buyer.
+  // Asked about whoever built Sadeem, it gave the showroom's number (13 Nov,
+  // twice): the team sells cars, they don't answer for the assistant.
+  if (CREATOR_QUESTION.test(buyerTexts[0] ?? "") && reply.replace(/\D/g, "").includes(SHOWROOM_DIGITS)) {
+    problems.push("the buyer asked about who built you, not about the cars: no showroom number; one line that you are Sadeem, the showroom's sales assistant, with no details about who built you, then ask what car they want");
+  }
   // This site writes the WhatsApp button's message, not WhatsApp (13 Nov:
   // «الرسالة الجاهزة تنكتب تلقائياً من الواتساب»).
   if (/(?:تنكتب|ينكتب)[^\n]{0,30}(?:من|ب)\s*(?:ال)?واتساب|(?:ال)?واتساب\s+(?:هو\s+)?(?:اللي\s+)?(?:يكتبها|كتبها|يكتب\s+الرسالة)/.test(reply)) {
@@ -1033,7 +1042,7 @@ export async function runSadeem(
     quickReplies: suggestions,
     leadSaved: state.leadSaved,
     matchCount: cars.length ? state.matchCount : undefined,
-    actions: contactActions(finalContent, state, cars, history, arabic),
+    actions: contactActions(finalContent, state, cars, history, arabic, message),
     searches: state.searches,
   };
 }
