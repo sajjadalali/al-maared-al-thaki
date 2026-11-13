@@ -135,8 +135,11 @@ function generalChecks(reply, userMessage) {
   const persian = text.match(/[کیپژ]/g);
   if (persian) problems.push(`حروف فارسية: ${[...new Set(persian)].join("، ")}`);
 
+  // «حق» as "of" (حق المعرض) is Gulf; «عندك حق» ("you're right") and «الحق وياك» are Iraqi,
+  // as in the server's dialect check (src/server/sadeem/agent.ts, RIGHT_PHRASES).
+  const scanned = text.replace(new RegExp(`(?:عندك|عندكم|عنده|عندها|عندي)\\s+(?:ال)?حق(?![${AR_LETTER}])|الحق\\s+ويا[${AR_LETTER}]*`, "g"), " ");
   for (const word of BANNED_WORDS) {
-    if (new RegExp(`(^|[^${AR_LETTER}])[وفب]?${word}(?![${AR_LETTER}])`).test(text)) problems.push(`كلمة مو عراقية: «${word}»`);
+    if (new RegExp(`(^|[^${AR_LETTER}])[وفب]?${word}(?![${AR_LETTER}])`).test(scanned)) problems.push(`كلمة مو عراقية: «${word}»`);
   }
   for (const re of WAYA_MISUSE) {
     const m = text.match(re);
