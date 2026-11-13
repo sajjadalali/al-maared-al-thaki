@@ -287,10 +287,14 @@ const IRAQI_WORDS = (
 // would make it «وياك حق» (13 Nov), a phrase no Iraqi says.
 const YOU_ARE_RIGHT = new RegExp(`(^|[^${AR_LETTER}])(?:معك|معاك|وياك)\\s+حق(?![${AR_LETTER}])`, "g");
 const YOU_ARE_RIGHT_ALL = new RegExp(`(^|[^${AR_LETTER}])(?:معكم|معاكم|وياكم)\\s+حق(?![${AR_LETTER}])`, "g");
+// «حق» as "of" («التجهيزات حق وحدة منهم»، «مساعد حق المعرض») is Gulf: Iraqis say
+// «مال». A rewrite asked to fix it kept it (13 Nov), so the server does it.
+// «عندك حق» and «الحق» are left alone.
+const HAQ_OF = new RegExp(`(^|[^${AR_LETTER}])(?<!(?:عندك|عندكم|عنده|عندها|عندي)\\s+)حق(?![${AR_LETTER}])`, "g");
 const toIraqi = (text: string) =>
   IRAQI_WORDS.reduce(
     (out, [re, iraqi]) => out.replace(re, iraqi),
-    text.replace(YOU_ARE_RIGHT, "$1عندك حق").replace(YOU_ARE_RIGHT_ALL, "$1عندكم حق")
+    text.replace(YOU_ARE_RIGHT, "$1عندك حق").replace(YOU_ARE_RIGHT_ALL, "$1عندكم حق").replace(HAQ_OF, "$1مال")
   )
     .replace(/ک/g, "ك")
     .replace(/ی/g, "ي")
@@ -307,10 +311,24 @@ const boldCarsOnly = (text: string) =>
     /(19|20)\d\d/.test(inner) || /[:：]\s*$/.test(inner) || colon ? all : inner
   );
 
+// A car named in bold twice («أرخص شي عندنا **كيا بيكانتو 2024**…» and then its
+// block): the last one is the block, where the card goes; the earlier ones go plain.
+const boldOnce = (text: string) => {
+  const seen = new Map<string, number>();
+  for (const m of text.matchAll(/\*\*([^*\n]+)\*\*/g)) seen.set(m[1].trim(), (seen.get(m[1].trim()) ?? 0) + 1);
+  return text.replace(/\*\*([^*\n]+)\*\*/g, (all, inner: string) => {
+    const name = inner.trim();
+    const left = seen.get(name) ?? 0;
+    if (left <= 1 || !/(19|20)\d\d/.test(name)) return all;
+    seen.set(name, left - 1);
+    return inner;
+  });
+};
+
 // Card markers are placed by the server only: any the model copies from a
 // history that still had them would show the cards twice.
 const cleanReply = (text: string) =>
-  boldCarsOnly(toIraqi(stripCarMarkers(text)))
+  boldOnce(boldCarsOnly(toIraqi(stripCarMarkers(text))))
     // "بـ" glued to a word once its bold is gone: «بـبغداد» → «ببغداد».
     .replace(/بـ(?=[\u0621-\u064A])/g, "ب")
     // «بـ» before a word that already has its «ب» («بـ**ببغداد**» → «بببغداد»): Arabic never has three in a row.
@@ -785,7 +803,8 @@ function replyProblems(
     named.every((id) => previousIds.includes(id))
   ) {
     problems.push(
-      "it lists the same cars as your previous reply: don't list them again. Say in one line that it's the same cars as above (نفس السيارات اللي فوگ) and ask the one thing that narrows it (use, seats, type)"
+      `it lists the same cars the buyer just saw: don't list them again. Say in one line that it's the same cars as above (نفس السيارات اللي فوگ) and ask the one thing that narrows it (use, seats, type). ` +
+        `Never say there are no others («ماكو غيرهم»): the showroom has ${overviewAvailable()} cars`
     );
   }
   problems.push(...specProblems(reply, state, cars, buyerTexts));
@@ -1008,7 +1027,9 @@ export async function runSadeem(
   if (content) {
     const buyerTexts = [message, ...history.filter((m) => m.role === "user").map((m) => m.content)];
     const allowed = allowedFigures(state, buyerTexts);
-    const previous = [...history].reverse().find((m) => m.role === "assistant");
+    // The last cars the buyer saw, within the last three replies (13 Nov: an
+    // insult in between, and «2 مليار دولار» got the «بمليار» cars again).
+    const previous = history.filter((m) => m.role === "assistant").slice(-3).reverse().find((m) => m.cars?.length);
     const previousIds = (previous?.cars ?? []).map((c) => c.id);
     const problems = replyProblems(content, allowed, state, rows, buyerTexts, arabic, previousIds);
     if (problems.length) {
