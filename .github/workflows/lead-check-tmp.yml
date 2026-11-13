@@ -1,5 +1,5 @@
 name: Live check (temporary)
-# Live check of PRs #75-#79: the buyer's 16 messages, 3 rounds 10 minutes apart. This branch is deleted afterwards.
+# Live check of PR #82. This branch is deleted afterwards.
 on:
   push:
     branches:
@@ -7,14 +7,10 @@ on:
 jobs:
   live:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: ROUND=1 node qa/live4.mjs
-      - run: sleep 620
-      - run: ROUND=2 node qa/live4.mjs
-      - run: sleep 620
-      - run: ROUND=3 node qa/live4.mjs
+      - run: node qa/live4.mjs
