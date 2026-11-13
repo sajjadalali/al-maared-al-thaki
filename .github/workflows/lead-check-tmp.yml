@@ -1,5 +1,5 @@
 name: Live check (temporary)
-# Live check of PR #70. This branch is deleted afterwards.
+# Live check of PR #71. This branch is deleted afterwards.
 on:
   push:
     branches:
