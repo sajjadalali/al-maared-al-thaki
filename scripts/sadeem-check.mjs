@@ -64,9 +64,11 @@ const BANNED_WORDS = [
   // Seen on 12 Nov in the model's own text («تحكي»، «أكلك»، «تم فحصها»، «وكم تحتاج»).
   "تحكي", "لقيت", "تبعي", "تبعك", "معانا", "أقولك", "أكلك", "بالوقت الحالي", "هل", "تم", "يتم", "أيضاً", "أيضا",
   "يكلك", "وغلاي", "حق",
+  // Seen on 13 Nov in a buyer's own test («عشان تقارنها»، «أعطيك»، «أوريك إياه»، «شاشتان»، «خذ كلامك»).
+  "عشان", "أعطيك", "اعطيك", "إياه", "اياه", "شاشتان", "يكدرون", "خذ كلامك", "ما آسف",
 ];
 // «ويا» as "and" or before a verb or noun («على الواتساب وياهم يردون عليك»، «وياهم تحجي»، «تحجي وياه الفريق»).
-const WAYA_MISUSE = [/واتساب\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![\u0621-\u064A])/, /ويا(?:هم|ك|نا|كم|ه|ها)\s+[يتن][\u0621-\u064A]{2,}/, /ويا(?:هم|ك|ه|ها)\s+ال[\u0621-\u064A]/, /(?:أسجل|اسجل)[\u0621-\u064A]*\s+ويا(?:ك|كم)(?![\u0621-\u064A])/, /ويا(?:ه|ها|هم)\s+(?:فريق|الفريق)/];
+const WAYA_MISUSE = [/واتساب\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![\u0621-\u064A])/, /ويا(?:هم|ك|نا|كم|ه|ها)\s+[يتن][\u0621-\u064A\u0686\u06AF\u067E]{2,}/, /ويا(?:هم|ك|ه|ها)\s+ال[\u0621-\u064A]/, /(?:أسجل|اسجل)[\u0621-\u064A]*\s+ويا(?:ك|كم)(?![\u0621-\u064A])/, /ويا(?:ه|ها|هم)\s+(?:فريق|الفريق)/];
 // English that belongs in a reply: the body type SUV (as the catalog writes
 // it), and the models with no Arabic name in models.name_ar (EV6, GLE 450,
 // ES 350, RX 350; 520i has no two-letter word).
@@ -330,6 +332,31 @@ const CONVERSATIONS = [
       {
         say: "القصد اني ماختاريت اي سيارة ليش تفترض من يمك!",
         expect: [noCards("رجّع عرض سيارات الزبون ما اختارها"), hasNot(/وياك حق|الرد السابق|أرجع وأصحح/, "صياغة غلط")],
+      },
+    ],
+  },
+  // 13 Nov: asked for the number of whoever built Sadeem, it gave the showroom's.
+  {
+    name: "منو صممك",
+    turns: [
+      {
+        say: "منو صممك؟ اريد رقمه",
+        expect: [(r) => (waText(r) !== null || /0783|07838548091/.test(r.content) ? "طلّع رقم المعرض لسؤال عن اللي صمم سديم" : null)],
+      },
+    ],
+  },
+  // 13 Nov: with no budget it showed the three dearest cars (Patrol, GLE, Land Cruiser) every time.
+  {
+    name: "زيرو بدون ميزانية",
+    turns: [
+      {
+        say: "أريد سيارة زيرو",
+        expect: [
+          (r) => {
+            const ids = (r.cars ?? []).map((c) => c.id).sort().join();
+            return ids === ["car-003", "car-012", "car-019"].sort().join() ? "عرض أغلى 3 سيارات بدون ميزانية" : null;
+          },
+        ],
       },
     ],
   },

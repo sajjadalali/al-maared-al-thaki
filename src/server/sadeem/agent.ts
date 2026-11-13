@@ -271,6 +271,13 @@ const IRAQI_WORDS = (
     ["أقولك|اقولك|أقلك|اقلك|أكلك|اكلك", "أگلك"], ["نقولك|نقلك", "نگلك"], ["يقولون", "يگولون"], ["قلّي|قلي", "گلّي"], ["يكلك", "يگلك"], ["يكلي", "يگلي"], ["تكلي", "تگلي"], ["قولي", "گلّي"], ["اتنين", "ثنين"],
     ["أبحث لك|أبحثلك|ابحث لك|ابحثلك", "أدورلك"], ["أبحث|ابحث", "أدوّر"], ["نبحث", "ندوّر"], ["تبحث", "تدوّر"], ["يبحث", "يدوّر"],
     ["بالوقت الحالي|في الوقت الحالي", "هسه"], ["هلق|هلأ", "هسه"], ["كتير", "هواية"], ["هيك", "هيچ"],
+    // From a buyer's own test (13 Nov): «يكدرون»، «أعطيك»، «أوريك إياه»، «شاشتان».
+    ["يكدرون|يقدرون", "يگدرون"], ["تكدرون|تقدرون", "تگدرون"],
+    ["أعطيك|اعطيك", "أنطيك"], ["أعطيكم|اعطيكم", "أنطيكم"], ["نعطيك", "ننطيك"], ["يعطيك", "ينطيك"], ["تعطيني", "تنطيني"],
+    ["أوريك|اوريك", "أراويك"], ["أوريكم|اوريكم", "أراويكم"], ["نوريك", "نراويك"],
+    ["إياه|اياه", "ياه"], ["إياها|اياها", "ياها"], ["إياهم|اياهم", "ياهم"],
+    ["شاشتان", "شاشتين"], ["سيارتان", "سيارتين"], ["كاميرتان", "كاميرتين"], ["فتحتان", "فتحتين"], ["مرتان", "مرتين"],
+    ["مقعدان", "مقعدين"], ["بابان", "بابين"], ["لونان", "لونين"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^${AR_LETTER}])([وف]?)(?:${words})(?![${AR_LETTER}])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -315,6 +322,13 @@ const cleanReply = (text: string) =>
     // A tag word left alone before the closing question («اقتصادية.. تحب أگلك…»).
     .replace(/(^|\n)[ \t]*(?:اقتصادية|فاخرة|فخمة)[ \t]*(?:\.{2,}|…)[ \t]*/g, "$1")
     .replace(/هلا وغلاي/g, "هلا وغلا")
+    // «هلا وياك» (from «هلا معك»): the greeting is «هلا بيك».
+    .replace(/هلا وياك(?![\u0621-\u064A])/g, "هلا بيك")
+    // «عشان» is Gulf: «حتى» before a verb («عشان تقارن» → «حتى تقارن»), «لأن» otherwise.
+    .replace(/(^|[^\u0621-\u064A])(و?)(?:عشان|علشان)(?=\s+[تيأن])/g, "$1$2حتى")
+    .replace(/(^|[^\u0621-\u064A])(و?)(?:عشان|علشان)(?![\u0621-\u064A])/g, "$1$2لأن")
+    // «ببحدود»: «ب» written before «بحدود».
+    .replace(/ببحدود/g, "بحدود")
     // «وياكد لك» is «ويأكد لك» misspelled.
     .replace(/(^|[^\u0621-\u064A])وياكد/g, "$1ويأكد")
     // «أكو 2 سيارات» → «أكو سيارتين».
@@ -603,7 +617,8 @@ function specProblems(reply: string, state: TurnState, cars: CarRow[], buyerText
   return problems;
 }
 
-const AR = "\\u0621-\\u064A";
+// With the Persian letters of Iraqi words (چ گ پ): «وياهم تحچي» slipped past without them (13 Nov).
+const AR = "\\u0621-\\u064A\\u0686\\u06AF\\u067E";
 const word = (words: string) => new RegExp(`(?:^|[^${AR}])([وف]?(?:${words}))(?![${AR}])`, "g");
 
 // «ويا» means "with" and follows a verb that takes it (تواصل وياهم، يتفقون وياك).
@@ -620,11 +635,19 @@ const WAYA_MISUSE = [
 // needs rewording): هل، تم، أيضاً… «كم» is checked apart: after a number it is كيلومتر.
 const NOT_IRAQI = word("هل|تم|يتم|أيضاً|أيضا|ايضاً|ايضا|لذلك|بالإضافة|بالاضافة|حيث|بدي|شو|عايز|عاوز|إزاي|ازاي|ليه|إيش|ايش|حق");
 
+// Phrases that make no sense in Iraqi, from a buyer's own test (13 Nov):
+// «معليك 🙏 خذ كلامك»، «آسف... لا، ما آسف».
+const NONSENSE = [/خذ كلامك/, /معليك/, /لا،?\s*ما آسف/, /ما آسف/];
+
 const RIGHT_PHRASES = new RegExp(`(?:عندك|عندكم|عنده|عندها|عندي)\\s+(?:ال)?حق(?![${AR_LETTER}])|الحق\\s+ويا[${AR_LETTER}]*`, "g");
 
 function dialectProblems(reply: string): string[] {
   const found = new Set<string>();
   for (const re of WAYA_MISUSE) for (const m of reply.matchAll(re)) found.add(m[0].trim());
+  for (const re of NONSENSE) {
+    const m = reply.match(re);
+    if (m) found.add(m[0]);
+  }
   // «حق» as "of" («مساعد حق المعرض») is Gulf; «عندك حق» ("you're right") and «الحق وياك» are Iraqi.
   for (const m of reply.replace(RIGHT_PHRASES, " ").matchAll(NOT_IRAQI)) found.add(m[1]);
   for (const m of reply.matchAll(word("كم"))) {
