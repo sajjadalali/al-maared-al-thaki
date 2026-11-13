@@ -1,11 +1,12 @@
-// Live check of PR #75: the buyer's own 16 messages, 3 rounds (one per rate-limit window). This branch is deleted afterwards.
+// Live check of PRs #75-#76: the buyer's own 16 messages, 3 rounds (one per rate-limit window). This branch is deleted afterwards.
 const SITE = "https://maared-al-thaki.duckdns.org";
 const ROUND = Number(process.env.ROUND ?? 1);
 const sid = () => `5ade7e57-${crypto.randomUUID().slice(9)}`;
 const wa = (d) => { const h = d.actions?.find((a) => a.kind === "whatsapp")?.href; return h ? new URL(h).searchParams.get("text") : null; };
 const AR = "\\u0620-\\u065F\\u066E-\\u06D3\\u06FA-\\u06FF";
-const BANNED = ["عشان", "أعطيك", "اعطيك", "إياه", "اياه", "شاشتان", "يكدرون", "تكدر", "خذ كلامك", "ما آسف", "معليك", "تبي", "الحين", "وايد", "هل", "تم", "أيضاً", "لماذا", "ماذا", "فقط", "لكن", "معك", "فيه", "فيها", "تحكي", "لقيت", "أقدر", "تقدر", "يقدر", "تقول", "يقول", "عبر", "لدينا", "يوجد", "سوف", "جداً", "الآن", "أوريك", "وياك حق", "هلا وياك", "الرد السابق"];
+const BANNED = ["عشان", "أعطيك", "اعطيك", "إياه", "اياه", "شاشتان", "يكدرون", "تكدر", "خذ كلامك", "ما آسف", "معليك", "تبي", "الحين", "وايد", "هل", "تم", "أيضاً", "لماذا", "ماذا", "فقط", "لكن", "معك", "فيه", "فيها", "تحكي", "لقيت", "أقدر", "تقدر", "يقدر", "تقول", "يقول", "عبر", "لدينا", "يوجد", "سوف", "جداً", "الآن", "أوريك", "وياك حق", "هلا وياك", "الرد السابق", "مساعدة المبيعات", "أكول"];
 const bannedIn = (t) => BANNED.filter((w) => new RegExp(`(^|[^${AR}])[وفب]?${w}(?![${AR}])`).test(t));
+const SELF_FIX = /(?:\.{2,}|…)\s*لا[،,]/;
 const WAYA = /ويا(?:هم|ك|نا|كم|ه|ها)\s+[يتن][ء-يچگپ]{2,}|واتساب\s+ويا(?:هم|ك|نا|كم|ه|ها)(?![ء-ي])/;
 const DEAREST = "car-003,car-012,car-019";
 const NO_CARS = (d) => (d.cars?.length ? `عرض سيارات: ${d.cars.map((c) => c.model)}` : null);
@@ -25,7 +26,12 @@ const turns = [
   ["القصد اني ماختاريت اي سيارة ليش تفترض من يمك!", NO_CARS],
   ["احجي عراقي لك", NO_CARS],
   ["اريد راحة البال", null],
-  ["أريد سيارة زيرو", (d) => ((d.cars ?? []).map((c) => c.id).sort().join() === DEAREST ? "أغلى 3 بدون ميزانية" : null)],
+  ["أريد سيارة زيرو", (d) => {
+    const ids = (d.cars ?? []).map((c) => c.id);
+    if (ids.sort().join() === DEAREST) return "أغلى 3 بدون ميزانية";
+    if (!ids.includes("car-031") || !ids.includes("car-012")) return `مو الأرخص (كولراي) والأغلى (باترول): ${ids}`;
+    return /160/.test(d.content) ? null : "مدى الأسعار ما بيه 160";
+  }],
 ];
 let fails = 0; const session = sid(); const history = []; let prevIds = "";
 console.log(`===== round ${ROUND} =====`);
@@ -38,6 +44,7 @@ for (const [say, check] of turns) {
   if (r.status !== 200) problems.push(`HTTP ${r.status}`);
   const words = bannedIn(text); if (words.length) problems.push(`كلمات: ${words.join("، ")}`);
   const w = text.match(WAYA); if (w) problems.push(`ويا: ${w[0]}`);
+  if (SELF_FIX.test(text)) problems.push("يصحح نفسه بنص الجملة");
   const c = check === "repeat" ? (ids && ids === prevIds ? "نفس سيارات الرد اللي قبله" : null) : check ? check(d) : null;
   if (c) problems.push(c);
   if (problems.length) fails++;
