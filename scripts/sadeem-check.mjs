@@ -246,7 +246,7 @@ const waMessage = (ok, why) => (r) => {
 const notInvented = has(/ما عندي|ما أعرف|ما اعرف|معلومة|نتأكد|تتأكد|المعاينة|معاينة|الفحص|فحص|واتساب|تواصل|اتصل/);
 // "No paint / no accidents" is fine when a shown car's description says it
 // (the used Camry's does); otherwise Sadeem must not claim it and should hedge.
-const NO_DAMAGE = /(ما بيها|بدون|خالية من)\s*(أي\s*)?(ضربة|صبغ|حوادث|حادث)/;
+const NO_DAMAGE = /(ما بيها|ما عليها|ما بيه|ما عليه|بدون|خالية من)\s*(أي\s*)?(ضربة|صبغ|حوادث|حادث)/;
 const damageAnswer = (r) => {
   const m = r.text.match(NO_DAMAGE);
   if (!m) return notInvented(r);
