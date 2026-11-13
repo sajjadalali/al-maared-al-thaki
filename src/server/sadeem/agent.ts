@@ -768,9 +768,26 @@ function replyProblems(
   state: TurnState,
   cars: CarRow[],
   buyerTexts: string[],
-  allNames: Map<string, ArabicName>
+  allNames: Map<string, ArabicName>,
+  previousIds: string[] = []
 ): string[] {
   const problems = unsupportedFigures(reply, allowed).map((f) => `"${f}" is not a price from the tools`);
+  // The same cars as the previous reply: the buyer has them already (13 Nov:
+  // «بمليار»، «بمليار دولار»، «2 مليار دولار» and then «جوابك غبي» got the same three).
+  const named = mentionedCars(reply, state.found);
+  // Details or a comparison of those same cars is fine; anything else (a new
+  // search, an insult answered with the list again) is not.
+  if (
+    state.request?.intent !== "details" &&
+    state.request?.intent !== "compare" &&
+    named.length &&
+    previousIds.length === named.length &&
+    named.every((id) => previousIds.includes(id))
+  ) {
+    problems.push(
+      "it lists the same cars as your previous reply: don't list them again. Say in one line that it's the same cars as above (نفس السيارات اللي فوگ) and ask the one thing that narrows it (use, seats, type)"
+    );
+  }
   problems.push(...specProblems(reply, state, cars, buyerTexts));
   if (state.overBudget.length && !mentionsOverBudget(reply)) {
     problems.push(
@@ -991,7 +1008,9 @@ export async function runSadeem(
   if (content) {
     const buyerTexts = [message, ...history.filter((m) => m.role === "user").map((m) => m.content)];
     const allowed = allowedFigures(state, buyerTexts);
-    const problems = replyProblems(content, allowed, state, rows, buyerTexts, arabic);
+    const previous = [...history].reverse().find((m) => m.role === "assistant");
+    const previousIds = (previous?.cars ?? []).map((c) => c.id);
+    const problems = replyProblems(content, allowed, state, rows, buyerTexts, arabic, previousIds);
     if (problems.length) {
       state.searches.push({ verify: problems });
       messages.push({ role: "assistant", content });
@@ -1008,7 +1027,7 @@ export async function runSadeem(
       const fixed = cleanReply(rewrite);
       if (fixed) {
         const rewritten = splitSuggestions(fixed);
-        const left = replyProblems(rewritten.text, allowed, state, rows, buyerTexts, arabic);
+        const left = replyProblems(rewritten.text, allowed, state, rows, buyerTexts, arabic, previousIds);
         if (left.length) state.searches.push({ verify_after_rewrite: left });
         // A rewrite that fixed nothing, or added a problem, is no better than the
         // reply it replaces and has drifted from it (13 Nov: a correct «ما اخترت
@@ -1017,6 +1036,8 @@ export async function runSadeem(
         if (fixedSome && left.length <= problems.length) {
           content = rewritten.text;
           if (rewritten.suggestions.length) suggestions = rewritten.suggestions;
+          // The cards follow the rewritten text: a car it no longer names loses its card.
+          state.shownIds.length = 0;
           showNamed(content);
         } else {
           state.searches.push({ rewrite_dropped: true });
