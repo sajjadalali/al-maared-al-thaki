@@ -1,39 +1,19 @@
-// Finds candidate hero photos on Wikimedia Commons (free licences, large, landscape)
-// and saves small previews to qa/hero/. This branch is deleted afterwards.
+// Previews of Unsplash candidates for the hero photo. This branch is deleted afterwards.
 import { mkdirSync, writeFileSync } from "node:fs";
 import sharp from "sharp";
-const UA = "al-maared-al-thaki/1.0 (https://maared-al-thaki.duckdns.org; photo search)";
-const api = async (params) => (await (await fetch(`https://commons.wikimedia.org/w/api.php?${new URLSearchParams({ format: "json", origin: "*", ...params })}`, { headers: { "User-Agent": UA } })).json());
-const queries = [
-  "aerial view car park rows new cars", "new cars port storage aerial", "car lot drone", "Dubai International Motor Show",
-  "Qatar Motor Show", "Saudi motor show cars", "Toyota showroom interior", "Lexus showroom", "Nissan showroom interior",
-  "car exhibition hall cars", "Kurdistan car dealer", "Iraq cars showroom", "Baghdad cars street new", "Erbil cars",
-  "SUV row parked", "Land Cruiser row", "Toyota Land Cruiser 300 showroom", "new car delivery center",
-];
+const ids = { "RVEdgp-dkYY": "Kenjiro Yagi", ccgjEBvHTIU: "Dextar Studio", "A-6ymDPGMbU": "Mubashir Shoukat", PmQ6hzofXSc: "Ositadinma Onyeobi", euFJPwObDWI: "Ivan Kazlouskij", LI3tAqwLmdA: "Crosby Hinze", "3WAMh1omVAY": "Erik Mclean", AmFj7Xn9x_k: "Portafolio fotográfico automotriz", PoPsSRju8Y8: "Felix", UlQE9rNwXHQ: "Erik Mclean", "1h491Giz9CU": "Rob Dean", FBXvA9RmjvI: "Alexander Psiuk", lsXEOVFOrhw: "azmar za", bC5NNbwuoB0: "Crosby Hinze" };
 mkdirSync("qa/hero", { recursive: true });
-const seen = new Map();
-const old = new Set(JSON.parse(await (await import("node:fs/promises")).readFile("qa/old.json", "utf8").catch(() => "[]")));
-for (const q of queries) {
-  const r = await api({ action: "query", generator: "search", gsrsearch: `${q} filetype:bitmap`, gsrnamespace: "6", gsrlimit: "25", prop: "imageinfo", iiprop: "url|size|extmetadata", iiurlwidth: "480" });
-  for (const p of Object.values(r.query?.pages ?? {})) {
-    const ii = p.imageinfo?.[0]; if (!ii) continue;
-    const lic = ii.extmetadata?.LicenseShortName?.value ?? "";
-    if (!/^(CC0|CC BY(-SA)? \d|Public domain)/i.test(lic)) continue;
-    if (ii.width < 2000 || ii.width / ii.height < 1.3) continue;
-    if (!seen.has(p.title) && !old.has(p.title)) seen.set(p.title, { q, title: p.title, w: ii.width, h: ii.height, lic, author: (ii.extmetadata?.Artist?.value ?? "").replace(/<[^>]+>/g, "").trim().slice(0, 60), date: ii.extmetadata?.DateTimeOriginal?.value?.slice(0, 10) ?? "", thumb: ii.thumburl, page: ii.descriptionurl });
-  }
-  await new Promise((r) => setTimeout(r, 300));
-}
-const list = [...seen.values()];
-console.log("candidates:", list.length);
+const out = [];
 let n = 0;
-for (const c of list.slice(0, 80)) {
+for (const [id, author] of Object.entries(ids)) {
   try {
-    const buf = Buffer.from(await (await fetch(c.thumb, { headers: { "User-Agent": UA } })).arrayBuffer());
-    c.file = `qa/hero/${String(++n).padStart(2, "0")}.jpg`;
-    await sharp(buf).resize(480).jpeg({ quality: 70 }).toFile(c.file);
-  } catch (e) { c.error = String(e); }
-  await new Promise((r) => setTimeout(r, 150));
+    const r = await fetch(`https://unsplash.com/photos/${id}/download?force=true&w=900`, { redirect: "follow" });
+    const buf = Buffer.from(await r.arrayBuffer());
+    const meta = await sharp(buf).metadata();
+    const file = `qa/hero/u${String(++n).padStart(2, "0")}.jpg`;
+    await sharp(buf).resize(480).jpeg({ quality: 72 }).toFile(file);
+    out.push({ id, author, file, finalUrl: r.url.split("?")[0], w: meta.width, h: meta.height });
+  } catch (e) { out.push({ id, author, error: String(e) }); }
 }
-writeFileSync("qa/hero/list.json", JSON.stringify(list.filter((c) => c.file), null, 1));
-console.log("saved:", list.filter((c) => c.file).length);
+writeFileSync("qa/hero/unsplash.json", JSON.stringify(out, null, 1));
+console.log(JSON.stringify(out.map((o) => `${o.file ?? "ERR"} ${o.id} ${o.w}x${o.h} ${o.error ?? ""}`)));
