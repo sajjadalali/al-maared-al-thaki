@@ -14,7 +14,7 @@ for (const [name, vp, dsf] of [["d", { width: 1440, height: 900 }, 1], ["m", { w
   const img = await p.$eval("section picture img", (i) => ({ src: i.currentSrc, ok: i.complete && i.naturalWidth > 0 }));
   const s = p.locator("section", { hasText: "تعرّف على سديم" }).first();
   await s.scrollIntoViewIfNeeded(); await p.waitForTimeout(800);
-  await s.screenshot({ path: `qa/out/${name}-sadeem.png` });
+  await p.waitForTimeout(300); await s.screenshot({ path: `qa/out/${name}-sadeem.png` });
   const cards = await s.locator("a[href^='/cars/']").count();
   await p.evaluate(() => window.scrollTo(0, 0)); await p.waitForTimeout(400);
   const credits = await (await b.newPage()).goto("https://maared-al-thaki.duckdns.org/credits");
