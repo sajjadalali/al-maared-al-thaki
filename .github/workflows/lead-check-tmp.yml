@@ -1,5 +1,5 @@
 name: Live check (temporary)
-# Hero photo search on Wikimedia Commons. This branch is deleted afterwards.
+# Live check of the new home page. This branch is deleted afterwards.
 on:
   push:
     branches:
@@ -15,8 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm i --no-save sharp@0.34
-      - run: node qa/live4.mjs
+      - run: npm i --no-save playwright@1 && npx playwright install --with-deps chromium
+      - run: node qa/live5.mjs
       - run: |
           git config user.name "Claude"; git config user.email "noreply@anthropic.com"
-          git add qa/hero && git commit -q -m "Temporary: hero photo candidates 7" && git push -q origin HEAD:claude/lead-check-tmp-out -f
+          git add -f qa/out && git commit -q -m "Temporary: live home check" && git push -q origin HEAD:claude/lead-check-tmp-out -f
