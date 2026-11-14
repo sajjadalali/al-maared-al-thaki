@@ -17,10 +17,20 @@ import type { ChatPrompt } from "./ChatPanel";
 // to open (hover, focus or touch on the button).
 const loadPanel = () => import("./ChatPanel");
 
-/** The panel's own header and first bubble, so the swap to the real panel doesn't jump. */
+/**
+ * The panel's own header and first bubble, so the swap to the real panel
+ * doesn't jump. It shows only while the chat is open: the panel is also loaded
+ * ahead of time on an idle page, and this must not flash there.
+ */
 function PanelLoading() {
   return (
-    <div role="dialog" aria-label="محادثة سديم" aria-busy data-sadeem-chat className={cn(CHAT_FRAME_CLASS, chatFrameMotion(false))}>
+    <div
+      role="dialog"
+      aria-label="محادثة سديم"
+      aria-busy
+      data-sadeem-chat
+      className={cn(CHAT_FRAME_CLASS, chatFrameMotion(false), "invisible group-data-[open]/sadeem:visible")}
+    >
       <div className={CHAT_HEADER_CLASS}>
         <div className="flex items-center gap-3">
           <span data-sadeem-avatar className={CHAT_AVATAR_CLASS}>
@@ -367,7 +377,7 @@ export function ChatWidget() {
   const label = unread ? "سديم رد عليك" : started ? "كمّل مع سديم" : "تحدث مع سديم";
 
   return (
-    <div className="group/sadeem contents" data-flight={flight ?? undefined}>
+    <div className="group/sadeem contents" data-flight={flight ?? undefined} data-open={phase === "open" || undefined}>
       {phase !== "open" && (
         // Sadeem's head: a white circle sending out rings of colour. It stays
         // hidden while its flying copy is on the way back from the chat.
