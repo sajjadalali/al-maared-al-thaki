@@ -14,19 +14,19 @@ export async function SadeemSection() {
           scenes={scenes}
           intro={
             <>
-              <h2 className="text-3xl font-bold leading-tight sm:text-[40px] sm:leading-[1.2]">سديم، موظف المبيعات أونلاين</h2>
+              <h2 className="text-3xl font-bold leading-tight sm:text-[40px] sm:leading-[1.2]">سديم، مساعدك الشخصي لشراء سيارتك</h2>
               <p className="mt-4 max-w-xl text-[15px] leading-8 text-white/65">
-                يعمل كما يعمل موظف المبيعات في المعرض: يسمع طلبك، يرشّح لك من السيارات المتوفرة، يقارن بينها، ويسجّل
-                طلبك لتجربة القيادة. وهو أيضاً من يجيبك عن أسئلة المعرض نفسه.
+                تحچي وياه بكلامك مثل ما تحچي ويا واحد يفتهم بالسيارات: يسمع طلبك، يجيبلك اللي يناسبك من السيارات
+                المتوفرة، يقارنلك ويحللك الفرق، ويبقى وياك لحد ما تختار. وإذا عندك سؤال عن المعرض نفسه، هم يجاوبك.
               </p>
             </>
           }
           outro={
             <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
               <OpenChatButton className="min-h-12 rounded-full bg-white px-6 text-[15px] font-bold text-brand-950 transition hover:bg-brand-100 active:scale-95">
-                اكتب سؤالك أنت
+                اكتب سؤالك إنت
               </OpenChatButton>
-              <p className="text-sm text-white/45">يجيب في أي وقت، من سيارات المعرض فقط.</p>
+              <p className="text-sm text-white/45">يجاوبك بأي وقت، ومن سيارات المعرض بس.</p>
             </div>
           }
         />
