@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getCatalog } from "@/server/catalog";
 import { getImageCredit } from "@/data/imageCredits";
-import { SITE_PHOTOS } from "@/data/sitePhotos";
 
 export const metadata: Metadata = {
   title: "حقوق الصور",
@@ -21,33 +20,10 @@ export default async function CreditsPage() {
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <h1 className="text-3xl font-bold text-brand-950">حقوق الصور</h1>
       <p className="mt-4 max-w-2xl text-[15px] leading-8 text-neutral-600">
-        صورة الواجهة وبعض صور السيارات في الموقع من ويكيميديا كومنز، منشورة برخص المشاع
+        بعض صور السيارات في الموقع من ويكيميديا كومنز، منشورة برخص المشاع
         الإبداعي التي تسمح باستخدامها مع ذكر المصوّر والرخصة. اللون والتجهيزات في الصورة قد تختلف عن
         السيارة المعروضة في المعرض.
       </p>
-
-      <h2 className="mt-10 text-lg font-bold text-brand-950">صور الموقع</h2>
-      <ul className="mt-3 divide-y divide-black/[0.06] rounded-2xl ring-1 ring-black/[0.07]">
-        {SITE_PHOTOS.map((photo) => (
-          <li key={photo.source} className="flex flex-col gap-1 px-5 py-3.5 text-sm">
-            <span className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <span className="font-semibold text-brand-950">{photo.usedFor}</span>
-              <span className="text-neutral-600">
-                <a href={photo.source} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                  <bdi>{photo.author}</bdi>
-                </a>{" "}
-                ·{" "}
-                <a href={photo.licenseUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                  <bdi>{photo.license}</bdi>
-                </a>
-              </span>
-            </span>
-            <span className="text-xs text-neutral-500">
-              {photo.changes}، والنسخة المعدّلة منشورة بنفس الرخصة.
-            </span>
-          </li>
-        ))}
-      </ul>
 
       <h2 className="mt-10 text-lg font-bold text-brand-950">صور السيارات</h2>
       {rows.length === 0 ? (
