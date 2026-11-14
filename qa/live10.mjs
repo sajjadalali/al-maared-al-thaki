@@ -16,7 +16,7 @@ for (const [name, vp, dsf] of [["d", { width: 1440, height: 1000 }, 1], ["m", { 
     has: Object.fromEntries(["لا تدوخ وتدوّر", "سديم يلگيلك سيارتك", "احچي ويا سديم", "دايخ وتدوّر على سيارة؟", "يجيبلك، يقارن ويحلل", "تاخذ سيارتك المناسبة", "سديم، مساعدك الشخصي لشراء سيارتك", "موظف المبيعات", "تحجز تجربة قيادة"].map((t) => [t, text.includes(t)])) };
   if (name === "m") {
     await p.locator("[data-sadeem-head] > button").click(); await p.waitForTimeout(1500);
-    const box = p.locator("[data-sadeem-chat] textarea, [data-sadeem-chat] input[type=text]").first();
+    const box = p.locator("[data-sadeem-chat] input, [data-sadeem-chat] textarea").first();
     await box.fill("منو انت؟ وشنو شغلك؟"); await box.press("Enter"); await p.waitForTimeout(15000);
     log.chat = await p.evaluate(() => document.querySelector("[data-sadeem-chat]").innerText.slice(0, 900));
     await p.screenshot({ path: "qa/out/m-chat.png" });
