@@ -1,0 +1,33 @@
+{
+ "laptop": [
+  "first load 13ms no frame",
+  "first load: chat frame ever visible = false",
+  "refresh 27ms no frame",
+  "refresh 469ms placeholder hidden",
+  "refresh 769ms panel hidden",
+  "refresh: chat frame ever visible = false",
+  "tap opens the chat = true"
+ ],
+ "android": [
+  "first load 9ms no frame",
+  "first load 1239ms placeholder hidden",
+  "first load 1530ms panel hidden",
+  "first load: chat frame ever visible = false",
+  "refresh 61ms no frame",
+  "refresh 149ms placeholder hidden",
+  "refresh 436ms panel hidden",
+  "refresh: chat frame ever visible = false",
+  "tap opens the chat = true"
+ ],
+ "iphone": [
+  "first load 6ms no frame",
+  "first load 3414ms placeholder hidden",
+  "first load 3733ms panel hidden",
+  "first load: chat frame ever visible = false",
+  "refresh 21ms no frame",
+  "refresh 2829ms placeholder hidden",
+  "refresh 3128ms panel hidden",
+  "refresh: chat frame ever visible = false",
+  "tap opens the chat = true"
+ ]
+}
