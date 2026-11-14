@@ -7,18 +7,19 @@ const out = [];
 let n = 0;
 for (const [id, author] of Object.entries(ids)) {
   try {
-    const UA = { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36", "Accept-Language": "en" };
-    const page = await (await fetch(`https://unsplash.com/photos/${id}`, { headers: UA })).text();
-    const og = page.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)?.[1] ?? page.match(/https:\/\/images\.unsplash\.com\/photo-[\w-]+/)?.[0];
-    if (!og) throw new Error("no og:image; page starts: " + page.slice(0, 120).replace(/\s+/g, " "));
-    const raw = og.replace(/&amp;/g, "&").split("?")[0];
-    const r = await fetch(`${raw}?w=900&q=75&fm=jpg`, { headers: UA });
+    const UA = { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36", Accept: "application/json" };
+    const jr = await fetch(`https://unsplash.com/napi/photos/${id}`, { headers: UA });
+    const txt = await jr.text();
+    let j; try { j = JSON.parse(txt); } catch { throw new Error(`napi ${jr.status}: ${txt.slice(0, 100)}`); }
+    if (j.premium || j.plus) throw new Error("Unsplash+ photo");
+    const raw = j.urls?.raw; if (!raw) throw new Error("no urls.raw");
+    const r = await fetch(`${raw}&w=900&q=75&fm=jpg`);
     const buf = Buffer.from(await r.arrayBuffer());
     const meta = await sharp(buf).metadata();
     const file = `qa/hero/u${String(++n).padStart(2, "0")}.jpg`;
     await sharp(buf).resize(480).jpeg({ quality: 72 }).toFile(file);
-    out.push({ id, author, file, finalUrl: r.url.split("?")[0], w: meta.width, h: meta.height });
+    out.push({ id, author: j.user?.name ?? author, file, raw: raw.split("?")[0], fullW: j.width, fullH: j.height, desc: j.alt_description, location: j.location?.title ?? null });
   } catch (e) { out.push({ id, author, error: String(e) }); }
 }
 writeFileSync("qa/hero/unsplash.json", JSON.stringify(out, null, 1));
-console.log(JSON.stringify(out.map((o) => `${o.file ?? "ERR"} ${o.id} ${o.w}x${o.h} ${o.error ?? ""}`)));
+console.log(JSON.stringify(out.map((o) => `${o.file ?? "ERR"} ${o.id} ${o.fullW}x${o.fullH} ${o.location ?? ""} ${o.error ?? ""}`)));
