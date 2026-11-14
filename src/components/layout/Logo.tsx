@@ -24,7 +24,16 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({ tone = "dark", className }: { tone?: "dark" | "light"; className?: string }) {
+export function Logo({
+  tone = "dark",
+  tagline = true,
+  className,
+}: {
+  tone?: "dark" | "light";
+  /** The header shows the name only; the footer keeps the tagline. */
+  tagline?: boolean;
+  className?: string;
+}) {
   return (
     <Link href="/" className={cn("flex min-w-0 items-center gap-2.5", className)}>
       <LogoMark className={cn("h-10 w-10 shrink-0", tone === "dark" ? "text-brand-950" : "text-white/10")} />
@@ -33,14 +42,16 @@ export function Logo({ tone = "dark", className }: { tone?: "dark" | "light"; cl
           {site.name}
         </span>
         {/* A long tagline wraps to two lines on phones instead of pushing the menu off the screen. */}
-        <span
-          className={cn(
-            "mt-1 max-w-[14rem] text-[11px] font-normal leading-[1.4] sm:max-w-none sm:text-[11.5px] sm:leading-none",
-            tone === "dark" ? "text-neutral-500" : "text-white/50"
-          )}
-        >
-          {site.tagline}
-        </span>
+        {tagline && (
+          <span
+            className={cn(
+              "mt-1 max-w-[14rem] text-[11px] font-normal leading-[1.4] sm:max-w-none sm:text-[11.5px] sm:leading-none",
+              tone === "dark" ? "text-neutral-500" : "text-white/50"
+            )}
+          >
+            {site.tagline}
+          </span>
+        )}
       </span>
     </Link>
   );
