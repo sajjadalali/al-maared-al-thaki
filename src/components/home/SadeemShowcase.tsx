@@ -276,7 +276,7 @@ export function SadeemShowcase({ scenes, intro, outro }: { scenes: Scene[]; intr
       </div>
 
       <div className="lg:self-start">
-        <p className="text-sm font-semibold text-white/55">اضغط سؤالاً، وسديم يجيبك عليه الآن:</p>
+        <p className="text-sm font-semibold text-white/55">اضغط على سؤال، وسديم يجاوبك عليه هسه:</p>
         <ul className="mt-3 border-t border-white/10">
           {scenes.map((scene, i) => {
             const on = i === active;

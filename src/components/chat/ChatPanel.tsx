@@ -233,7 +233,7 @@ export default function ChatPanel({
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </p>
             <p className="truncate text-[12px] leading-5 text-white/70">
-              متصل الآن<span className="max-[359px]:hidden"> · موظف المبيعات</span>
+              متصل الآن<span className="max-[359px]:hidden"> · مساعدك الشخصي</span>
             </p>
           </div>
         </div>

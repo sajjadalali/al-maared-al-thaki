@@ -71,9 +71,9 @@ export function sadeemScenes({ getAllCars, getFeaturedCars }: Catalog): Scene[] 
   if (family.length > 0) {
     scenes.push({
       kind: "cars",
-      verb: "يرشّح",
+      verb: "يجيبلك",
       ask: "أريد سيارة عائلية 7 مقاعد بحدود 50 مليون",
-      does: "يرشّح لك من سيارات المعرض حسب ميزانيتك",
+      does: "يجيبلك من سيارات المعرض على گد ميزانيتك",
       reply:
         family.length > 3
           ? `عدنا ${carCount(family.length)} 7 مقاعد ضمن 50 مليون، وهذي الأقرب لميزانيتك:`
@@ -87,9 +87,9 @@ export function sadeemScenes({ getAllCars, getFeaturedCars }: Catalog): Scene[] 
     const gap = Math.abs(a.price - b.price);
     scenes.push({
       kind: "compare",
-      verb: "يقارن",
+      verb: "يقارنلك",
       ask: `قارنلي بين ${theModel(a)} ${andModel(b)}`,
-      does: "يقارن بين سيارتين بالأرقام",
+      does: "يقارنلك بين سيارتين بالأرقام",
       reply: gap > 0 ? `الفرق بيناتهن بالسعر ${millions(gap)} دينار. وهذي المقارنة:` : "سعرهن واحد. وهذي المقارنة:",
       cars: [sceneCar(a), sceneCar(b)],
       rows: [
@@ -105,9 +105,9 @@ export function sadeemScenes({ getAllCars, getFeaturedCars }: Catalog): Scene[] 
   if (drive) {
     scenes.push({
       kind: "booking",
-      verb: "يحجز",
+      verb: "يحجزلك",
       ask: `أريد أحجز تجربة قيادة ${forModel(drive)}`,
-      does: "يسجّل طلب تجربة القيادة ويوصله لفريق المبيعات",
+      does: "يسجّل طلب تجربة القيادة ويوصله للفريق",
       reply: "دزلي رقمك، والفريق يتصل بيك ويتفق وياك على الوقت.",
       phone: "07•• ••• ••••",
       car: `${carNameAr(drive)} ${drive.year}`,
@@ -117,9 +117,9 @@ export function sadeemScenes({ getAllCars, getFeaturedCars }: Catalog): Scene[] 
 
   scenes.push({
     kind: "hours",
-    verb: "يجاوب",
+    verb: "يجاوبك",
     ask: "شوكت دوامكم؟ وشلون أتواصل وياكم؟",
-    does: "ويجيب عن أسئلة المعرض: الدوام والتواصل",
+    does: "ويجاوبك عن المعرض: الدوام والتواصل",
     reply: "هذا دوامنا ورقمنا:",
     hours: site.hours,
     support: site.support,

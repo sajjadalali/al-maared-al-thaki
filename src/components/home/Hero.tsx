@@ -12,7 +12,7 @@ const millions = (iqd: number) => String(Math.round(iqd / 100_000) / 10);
 
 export async function Hero() {
   const catalog = await getCatalog();
-  const { available, brands, cities } = catalog.getCatalogStats();
+  const { available, brands } = catalog.getCatalogStats();
   const prices = catalog
     .getAllCars()
     .filter((car) => car.status === "متوفرة")
@@ -26,28 +26,28 @@ export async function Hero() {
       <div className="relative isolate overflow-hidden">
         <div className="relative mx-auto grid max-w-7xl items-center gap-x-12 gap-y-12 px-4 pb-24 pt-28 sm:px-6 lg:min-h-[720px] lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:px-8 lg:pb-28 lg:pt-28">
           <div className="max-w-xl text-white">
-            <h1 className="text-[36px] font-bold leading-[1.18] sm:text-5xl lg:text-[64px] lg:leading-[1.12]">
-              سيارات مفحوصة،
+            <h1 className="text-[36px] font-bold leading-[1.22] sm:text-5xl sm:leading-[1.2] lg:text-[60px] lg:leading-[1.18]">
+              لا تدوخ وتدوّر،
               <br />
-              بأسعار واضحة
+              سديم يلگيلك سيارتك
             </h1>
             <p className="mt-5 max-w-lg text-base leading-8 text-white/75 sm:text-lg sm:leading-9">
-              جديدة ومستعملة، وكالة ووارد خليجي وأمريكي وكوري. تصفّح المعرض بنفسك، أو اسأل سديم، موظف المبيعات أونلاين،
-              ليرشّح لك الأنسب لميزانيتك خلال ثوانٍ.
+              المعرض الذكي بيه سديم، مساعدك الشخصي لشراء السيارة. تحچي وياه بكلامك، يجيبلك اللي يناسبك من سياراتنا،
+              يقارنلك ويحللك الفرق، ويبقى وياك لحد ما تاخذ سيارتك المناسبة.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <OpenChatButton className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-7 text-[15px] font-bold text-brand-950 transition hover:bg-white/90">
+                <Sparkles className="h-4 w-4 text-accent-500" />
+                احچي ويا سديم
+              </OpenChatButton>
               <Link
                 href="/cars"
-                className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-7 text-[15px] font-bold text-brand-950 transition hover:bg-white/90"
+                className="flex min-h-12 items-center justify-center gap-2 rounded-full px-7 text-[15px] font-bold text-white ring-1 ring-white/40 transition hover:bg-white/10"
               >
                 تصفّح السيارات
                 <ArrowLeft className="h-4 w-4" />
               </Link>
-              <OpenChatButton className="flex min-h-12 items-center justify-center gap-2 rounded-full px-7 text-[15px] font-bold text-white ring-1 ring-white/40 backdrop-blur-sm transition hover:bg-white/10">
-                <Sparkles className="h-4 w-4 text-accent-300" />
-                اسأل سديم
-              </OpenChatButton>
             </div>
 
             <p className="mt-7 flex items-center gap-2.5 text-[14px] text-white/70">
@@ -57,14 +57,14 @@ export async function Hero() {
               </span>
               <span>
                 <span className="font-semibold text-white">
-                  {carCount(available)} {available === 2 ? "متوفرتان" : "متوفرة"} الآن
+                  {carCount(available)} {available === 2 ? "متوفرتين" : "متوفرة"} هسه
                 </span>
-                {from && to && `، من ${from} إلى ${to} مليون دينار.`}
+                {from && to && `، من ${from} لحد ${to} مليون دينار.`}
               </span>
             </p>
           </div>
 
-          <HeroInfographic available={available} brands={brands} cities={cities} />
+          <HeroInfographic available={available} brands={brands} />
         </div>
       </div>
 
