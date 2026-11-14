@@ -64,38 +64,30 @@
   /* Sadeem's chat. One curve for everything it does (the iOS sheet curve):
      quick to start, soft to land. Exits are shorter than entrances. */
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
-  --animate-sheet-up: sheet-up 0.34s var(--ease-sheet) both;
-  --animate-sheet-down: sheet-down 0.24s cubic-bezier(0.4, 0, 1, 1) both;
-  --animate-panel-in: panel-in 0.28s var(--ease-sheet) both;
-  --animate-panel-out: panel-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+  --animate-chat-open: chat-open 0.36s var(--ease-sheet) both;
+  --animate-chat-close: chat-close 0.24s cubic-bezier(0.4, 0, 1, 1) both;
+  --animate-scene-in: scene-in 0.5s var(--ease-sheet) both;
+  --animate-scene-ask: scene-ask 0.45s var(--ease-sheet) both;
+  --animate-scene-out: scene-out 0.36s ease-in both;
+  --animate-scene-typing: scene-typing 0.9s linear both;
+  --animate-scene-ring: head-pulse 0.9s cubic-bezier(0.2, 0.6, 0.3, 1) both;
+  --animate-scene-progress: scene-progress 7s linear both;
+  --animate-head-pulse: head-pulse 2.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
   --animate-msg-in: msg-in 0.26s var(--ease-sheet) both;
   --animate-msg-mine: msg-mine 0.22s var(--ease-sheet) both;
   --animate-loading-bar: loading-bar 1.1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 
-  /* Phones: the chat is a sheet that rises from the bottom edge. */
-  @keyframes sheet-up {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: none;
-    }
-  }
-
-  @keyframes sheet-down {
-    from {
-      transform: none;
-    }
-    to {
-      transform: translateY(100%);
-    }
-  }
-
-  /* Larger screens: the panel grows out of the launcher's corner. */
-  @keyframes panel-in {
+  /* The chat grows out of Sadeem's head (the launcher) and shrinks back into
+     it, like a chat head: the frame's transform-origin is the head's centre.
+     The corners start round and settle to the frame's own radius. */
+  @keyframes chat-open {
     from {
       opacity: 0;
-      transform: translateY(14px) scale(0.94);
+      transform: scale(0.16);
+      border-radius: 4rem;
+    }
+    30% {
+      opacity: 1;
     }
     to {
       opacity: 1;
@@ -103,14 +95,84 @@
     }
   }
 
-  @keyframes panel-out {
+  @keyframes chat-close {
     from {
       opacity: 1;
       transform: none;
     }
+    60% {
+      opacity: 1;
+    }
     to {
       opacity: 0;
-      transform: translateY(14px) scale(0.94);
+      transform: scale(0.16);
+      border-radius: 4rem;
+    }
+  }
+
+  /* The home page's picture of Sadeem at work: his pieces rise in one after
+     another, the buyer's words come in from their side, and the whole scene
+     fades before the next one. */
+  @keyframes scene-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes scene-ask {
+    from {
+      opacity: 0;
+      transform: translateX(28px) scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes scene-out {
+    to {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  /* Sadeem's dots while he writes: there for a moment, gone as his line arrives. */
+  @keyframes scene-typing {
+    from,
+    to {
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scene-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  /* The launcher sends out a ring of colour, rests, and sends another. */
+  @keyframes head-pulse {
+    from {
+      opacity: 0.9;
+      transform: scale(1);
+    }
+    65%,
+    to {
+      opacity: 0;
+      transform: scale(1.7);
     }
   }
 
@@ -241,6 +303,12 @@ body {
 
 /* Motion turned off on the device: everything still works, just without it. */
 @media (prefers-reduced-motion: reduce) {
+  [data-sadeem-head] [data-pulse] {
+    display: none;
+  }
+
+  [data-sadeem-head],
+  [data-sadeem-head] *,
   [data-sadeem-chat],
   [data-sadeem-chat] * {
     animation-duration: 1ms !important;
