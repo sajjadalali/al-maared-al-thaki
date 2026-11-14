@@ -787,6 +787,11 @@ function strayModelProblems(reply: string, allNames: Map<string, ArabicName>, fo
   return stray.length ? [`it names ${stray.join("، ")}, which no search returned: talk only about the cars in the tool results`] : [];
 }
 
+// A question about the cars just shown («الأولى شكد ماشية؟»، «هاي بيها صبغ؟»):
+// the answer names the same cars, and that is the point, not a repeat.
+const ABOUT_SHOWN =
+  /(?:^|\s)(?:ال)?(?:اولى|اول وحده|اول وحدة|ثانيه|ثانية|ثالثه|ثالثة|اخيره|اخيرة|هاي|هذي|هاذي|هاذ|هذا|هيه|هيا|بيها|منهن|منهم)(?=\s|[؟?،.!]|$)|ماشي|ممشى|ممشاه|كيلو|عداد|لونها|لونه|صبغ|ضرب|حادث|محرك|ماطور|سلندر|استهلاك|سعرها|سعره|ضمان|كمرك|تجربه|تجربة|مواصفات/;
+
 function replyProblems(
   reply: string,
   allowed: AllowedFigures,
@@ -805,6 +810,7 @@ function replyProblems(
   if (
     state.request?.intent !== "details" &&
     state.request?.intent !== "compare" &&
+    !ABOUT_SHOWN.test(fold(buyerTexts[0] ?? "")) &&
     named.length &&
     previousIds.length === named.length &&
     named.every((id) => previousIds.includes(id))
