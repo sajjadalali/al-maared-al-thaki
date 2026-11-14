@@ -25,6 +25,10 @@ interface Shape {
   taillight: string;
   mirror: string;
   extra?: string;
+  /** Everything above this y is a contrast roof (the boxy 4x4's white top). */
+  roofY?: number;
+  /** A dark piece outside the body, e.g. the spare wheel on a tailgate. */
+  rear?: string;
 }
 
 const SHAPES: Record<string, Shape> = {
@@ -66,53 +70,52 @@ const SHAPES: Record<string, Shape> = {
     taillight: "M396 96C402 100 406 106 407 112L396 112Z",
     mirror: "M209 87C201 87 196 91 196 96L213 96L215 89Z",
   },
+  // A crossover as they are built now: a high waist, a roof that falls away
+  // behind the rear door, and one tapering rear window.
   suv: {
-    top: "M34 142C25 140 22 132 23 120C24 106 28 94 42 89L144 80C160 78 174 72 188 62L224 42C232 37 240 35 252 35L382 35C396 35 404 38 412 46L438 76C450 88 456 102 456 116C456 128 455 136 449 142",
+    top: "M34 142C25 140 22 132 23 120C24 106 30 96 44 92L140 82C158 80 172 74 186 64L226 44C236 38 246 36 258 36L346 36C366 36 382 40 396 50L432 78C446 84 454 96 456 110C457 124 455 136 449 142",
     sill: 142,
     nose: 23,
     windows: [
-      "M203 71L230 48C237 43 244 41 254 41L296 41L296 75Z",
-      "M304 41L370 41L370 75L304 75Z",
-      "M378 41C389 41 396 44 402 50L424 76L378 75Z",
+      "M204 73L234 50C241 45 248 43 258 43L296 43L296 76Z",
+      "M304 43L344 43C360 43 372 46 384 54L412 76L304 76Z",
     ],
-    wheels: [102, 364],
-    wheelY: 142,
-    wheelR: 33,
-    archR: 41,
-    cladding: true,
-    belt: "M186 82C270 80 360 80 434 84",
-    seams: ["M196 82C188 106 186 126 190 146", "M300 82L298 146", "M374 82C376 104 378 118 384 130"],
-    handles: [[256, 94], [344, 94]],
-    headlight: "M25 99C33 94 49 92 67 91L63 102C49 104 35 104 25 103Z",
-    taillight: "M444 84C450 90 454 98 456 108L444 106Z",
-    mirror: "M206 72C198 72 192 77 192 83L210 83L212 75Z",
-    extra: "M248 31L388 31",
-  },
-  offroad: {
-    top: "M30 140C24 139 22 132 22 124L22 92C22 86 26 82 34 81L150 76C160 75 168 72 174 66L204 34C208 30 214 28 222 28L408 28C418 28 424 32 427 40L446 76C452 88 454 100 454 112L454 128C454 135 452 139 448 140",
-    sill: 140,
-    nose: 21,
-    windows: [
-      "M188 68L210 40C214 36 219 34 226 34L288 34L288 70Z",
-      "M296 34L364 34L364 70L296 70Z",
-      "M372 34L408 34C415 34 419 37 422 43L436 70L372 70Z",
-    ],
-    wheels: [106, 362],
+    wheels: [104, 364],
     wheelY: 140,
     wheelR: 35,
-    archR: 44,
+    archR: 42,
     cladding: true,
-    belt: "M176 76C270 74 360 74 440 78",
-    seams: [
-      "M182 76C176 100 176 122 182 140",
-      "M292 74L292 140",
-      "M368 74L370 100",
+    belt: "M186 83C270 81 360 81 438 86",
+    seams: ["M196 83C188 106 186 126 190 146", "M300 82L298 146", "M404 82C402 104 402 118 406 130"],
+    handles: [[256, 95], [346, 95]],
+    headlight: "M25 101C33 96 49 94 69 93L64 102C49 104 35 105 25 104Z",
+    taillight: "M440 86C448 90 453 98 455 108L441 104Z",
+    mirror: "M207 74C199 74 193 79 193 85L211 85L213 77Z",
+  },
+  // A boxy 4x4: flat bonnet, upright screen, flat contrast roof, a squared
+  // tail with the spare wheel on it, and tall tyres.
+  offroad: {
+    top: "M26 140C22 139 20 134 20 128L20 98C20 90 24 86 32 85L150 79L170 77L187 39C189 33 193 30 199 30L434 30C441 30 445 34 445 41L445 128C445 135 443 139 439 140",
+    sill: 140,
+    nose: 19,
+    windows: [
+      "M180 74L195 43C197 39 200 37 205 37L262 37L262 74Z",
+      "M271 37L342 37L342 74L271 74Z",
+      "M351 37L428 37C433 37 435 39 435 44L435 74L351 74Z",
     ],
-    handles: [[250, 88], [334, 88]],
-    headlight: "M23 96C30 92 46 90 62 89L60 101C46 103 32 103 23 102Z",
-    taillight: "M446 80C450 86 452 94 453 104L445 104Z",
-    mirror: "M192 70C184 70 178 75 178 81L196 81L198 73Z",
-    extra: "M226 23L410 23",
+    wheels: [108, 366],
+    wheelY: 138,
+    wheelR: 38,
+    archR: 46,
+    cladding: true,
+    belt: "M172 81C260 79 360 79 445 81",
+    seams: ["M176 80C172 102 172 122 178 140", "M266 78L266 140", "M346 78L348 100"],
+    handles: [[236, 91], [318, 91]],
+    headlight: "M21 94L46 93L46 107L21 108Z",
+    taillight: "M437 84L445 84L445 106L437 106Z",
+    mirror: "M186 73C178 73 173 78 173 84L190 84L192 76Z",
+    roofY: 36,
+    rear: "M445 62L455 62C459 62 462 65 462 69L462 113C462 117 459 120 455 120L445 120Z",
   },
   pickup: {
     top: "M30 140C22 138 20 130 21 120C22 108 28 100 44 96L140 86C156 84 168 78 178 68L206 42C212 36 220 34 230 34L330 34C338 34 343 38 345 46L350 84L456 84C460 84 462 88 462 92L462 134C462 138 459 140 454 140",
@@ -189,6 +192,8 @@ const PAINT: Record<string, string> = {
 
 export function paintFor(color?: string): string {
   if (!color) return PAINT["فضي"];
+  // A drawing (not a stock car) may name its paint directly.
+  if (color.startsWith("#")) return color;
   return PAINT[color.trim()] ?? PAINT[color.trim().split(" ")[0]] ?? PAINT["فضي"];
 }
 
@@ -263,8 +268,10 @@ export function CarArt({ bodyType = "سيدان", color, ...props }: CarArtProps
       {shape.wheels.map((cx) => (
         <path key={cx} d={well(cx)} fill="#0d0f13" />
       ))}
+      {shape.rear && <path d={shape.rear} fill="#1b1e24" />}
       <path d={body} fill={paint} />
       <g clipPath={`url(#${ids.clip})`}>
+        {shape.roofY && <rect x="0" y="0" width="480" height={shape.roofY} fill={light ? "#1b1e24" : "#f3f4f6"} />}
         <rect x="0" y="0" width="480" height="200" fill={`url(#${ids.shade})`} />
         <rect x="0" y={sill - 15} width="480" height="15" fill="#000" opacity={light ? 0.1 : 0.22} />
         {shape.cladding && <rect x="0" y={sill - 10} width="480" height="10" fill="#22262d" />}

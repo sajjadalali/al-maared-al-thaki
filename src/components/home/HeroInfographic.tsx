@@ -12,7 +12,7 @@ const STOPS = [
   { y: 58, x: 48, color: "#ff7a66" }, // coral: the trouble
   { y: 196, x: 84, color: "#f6a723" }, // amber: the buyer's words
   { y: 362, x: 46, color: "#4fb3ff" }, // sky: Sadeem's search and comparison
-  { y: 536, x: 84, color: "#2ec27e" }, // green: the right car
+  { y: 528, x: 84, color: "#2ec27e" }, // green: the right car
 ] as const;
 
 function Road() {
@@ -111,15 +111,15 @@ export function HeroInfographic({ available, brands }: { available: number; bran
         <Stop index={2} icon={Scale} title="يجيبلك، يقارن ويحلل" text={`${stock}، ويگلك الفرق`}>
           <span className="flex gap-2">
             <MiniCar bodyType="سيدان" color="فضي" />
-            <MiniCar bodyType="SUV" color="أحمر" picked />
-            <MiniCar bodyType="دفع رباعي" color="أبيض" />
+            <MiniCar bodyType="دفع رباعي" color="#5f7f63" picked />
+            <MiniCar bodyType="SUV" color="#2f7fd6" />
           </span>
         </Stop>
         <Stop index={3} icon={KeyRound} title="تاخذ سيارتك المناسبة" text="سديم وياك لحد ما تختار">
           {/* the stop's picture: the car that turned out to be the one */}
-          <span className="relative block w-[min(100%,230px)]">
-            <CarArt bodyType="SUV" color="أحمر" className="w-full" />
-            <span className="absolute -top-1 left-0 inline-flex items-center gap-1.5 rounded-full bg-[#2ec27e] py-1 pe-3.5 ps-1 text-[12.5px] font-bold leading-6 text-brand-950 shadow-[0_8px_20px_-6px_rgba(46,194,126,0.8)]">
+          <span className="relative block mt-7 w-[min(100%,240px)]">
+            <CarArt bodyType="دفع رباعي" color="#5f7f63" className="w-full" />
+            <span className="absolute -top-5 left-0 inline-flex items-center gap-1.5 rounded-full bg-[#2ec27e] py-1 pe-3.5 ps-1 text-[12.5px] font-bold leading-6 text-brand-950 shadow-[0_8px_20px_-6px_rgba(46,194,126,0.8)]">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-950 text-[#2ec27e]">
                 <Check className="h-3.5 w-3.5" strokeWidth={3.5} />
               </span>

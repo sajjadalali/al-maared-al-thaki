@@ -27,9 +27,9 @@ export async function Hero() {
         <div className="relative mx-auto grid max-w-7xl items-center gap-x-12 gap-y-12 px-4 pb-24 pt-28 sm:px-6 lg:min-h-[720px] lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:px-8 lg:pb-28 lg:pt-28">
           <div className="max-w-xl text-white">
             <h1 className="text-[36px] font-bold leading-[1.22] sm:text-5xl sm:leading-[1.2] lg:text-[60px] lg:leading-[1.18]">
-              لا تدوخ وتدوّر،
+              سيارتك المناسبة،
               <br />
-              سديم يلگيلك سيارتك
+              بأقصر طريق
             </h1>
             <p className="mt-5 max-w-lg text-base leading-8 text-white/75 sm:text-lg sm:leading-9">
               المعرض الذكي بيه سديم، مساعدك الشخصي لشراء السيارة. تحچي وياه بكلامك، يجيبلك اللي يناسبك من سياراتنا،
