@@ -38,7 +38,7 @@ export function CarQuickSearch({ cars }: { cars: FacetCar[] }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-2 gap-1 rounded-3xl bg-white p-2.5 shadow-[0_30px_60px_-30px_rgba(11,19,34,0.4)] ring-1 ring-black/5 sm:grid-cols-2 sm:gap-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-center lg:gap-0"
+      className="grid grid-cols-2 gap-1 rounded-3xl bg-white p-2.5 shadow-[0_18px_40px_-28px_rgba(11,19,34,0.22)] ring-1 ring-black/[0.04] sm:grid-cols-2 sm:gap-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-center lg:gap-0"
     >
       <Dropdown
         variant="hero"

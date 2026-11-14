@@ -234,13 +234,23 @@ export function ChatWidget() {
     return () => clearTimeout(timer);
   }, [phase, finishLeaving]);
 
+  // The page on screen, for the history handler (which runs before the next page renders).
+  const pathname = usePathname();
+  const pathRef = useRef(pathname);
+  useEffect(() => {
+    pathRef.current = pathname;
+  }, [pathname]);
+
   useEffect(() => {
     const onPop = () => {
-      // Back onto the chat's entry (from a car page): the chat comes back.
-      if (window.history.state?.sadeemChat) {
-        setKeepOpenOn(window.location.pathname);
-        openChat(true);
-      } else closeChat(false);
+      if (!window.history.state?.sadeemChat) return closeChat(false);
+      // Back onto the chat's entry from another page (a car the chat showed):
+      // the chat comes back. Onto it from the same page is the browser's
+      // forward button or a stray swipe after the chat was closed: nobody
+      // asked for the chat, so it stays closed.
+      if (window.location.pathname === pathRef.current) return;
+      setKeepOpenOn(window.location.pathname);
+      openChat(true);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -248,7 +258,6 @@ export function ChatWidget() {
 
   // A new page (a car card in the chat, the header, the back button): the
   // chat slides away once it is there, so that page is what the buyer sees.
-  const pathname = usePathname();
   const [shownPath, setShownPath] = useState(pathname);
   // (Next.js adds the new page's history entry only after this render, so the
   // entry can't tell a new page from a return; the back button's flag does.)
