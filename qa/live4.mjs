@@ -1,25 +1,24 @@
-// Previews of Unsplash candidates for the hero photo. This branch is deleted afterwards.
+// Hero photo: the two best Commons candidates at full preview size, with their credits. Deleted afterwards.
 import { mkdirSync, writeFileSync } from "node:fs";
 import sharp from "sharp";
-const ids = { "RVEdgp-dkYY": "Kenjiro Yagi", ccgjEBvHTIU: "Dextar Studio", "A-6ymDPGMbU": "Mubashir Shoukat", PmQ6hzofXSc: "Ositadinma Onyeobi", euFJPwObDWI: "Ivan Kazlouskij", LI3tAqwLmdA: "Crosby Hinze", "3WAMh1omVAY": "Erik Mclean", AmFj7Xn9x_k: "Portafolio fotográfico automotriz", PoPsSRju8Y8: "Felix", UlQE9rNwXHQ: "Erik Mclean", "1h491Giz9CU": "Rob Dean", FBXvA9RmjvI: "Alexander Psiuk", lsXEOVFOrhw: "azmar za", bC5NNbwuoB0: "Crosby Hinze" };
+const UA = "al-maared-al-thaki/1.0 (https://maared-al-thaki.duckdns.org; photo search)";
+const api = async (params) => (await (await fetch(`https://commons.wikimedia.org/w/api.php?${new URLSearchParams({ format: "json", origin: "*", ...params })}`, { headers: { "User-Agent": UA } })).json());
 mkdirSync("qa/hero", { recursive: true });
-const out = [];
-let n = 0;
-for (const [id, author] of Object.entries(ids)) {
-  try {
-    const UA = { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36", Accept: "application/json" };
-    const jr = await fetch(`https://unsplash.com/napi/photos/${id}`, { headers: UA });
-    const txt = await jr.text();
-    let j; try { j = JSON.parse(txt); } catch { throw new Error(`napi ${jr.status}: ${txt.slice(0, 100)}`); }
-    if (j.premium || j.plus) throw new Error("Unsplash+ photo");
-    const raw = j.urls?.raw; if (!raw) throw new Error("no urls.raw");
-    const r = await fetch(`${raw}&w=900&q=75&fm=jpg`);
-    const buf = Buffer.from(await r.arrayBuffer());
-    const meta = await sharp(buf).metadata();
-    const file = `qa/hero/u${String(++n).padStart(2, "0")}.jpg`;
-    await sharp(buf).resize(480).jpeg({ quality: 72 }).toFile(file);
-    out.push({ id, author: j.user?.name ?? author, file, raw: raw.split("?")[0], fullW: j.width, fullH: j.height, desc: j.alt_description, location: j.location?.title ?? null });
-  } catch (e) { out.push({ id, author, error: String(e) }); }
+const found = [];
+for (const [q, pick] of [["used car lot", (ii) => ii.width >= 5000 && ii.height >= 2500], ["car showroom interior cars", (ii) => ii.width >= 5000], ["Qatar Motor Show", (ii) => ii.width >= 2300 && ii.width <= 2500], ["Dubai International Motor Show", (ii) => ii.width >= 2300 && ii.width <= 2500], ["car exhibition hall cars", (ii) => true]]) {
+  const r = await api({ action: "query", generator: "search", gsrsearch: `${q} filetype:bitmap`, gsrnamespace: "6", gsrlimit: "40", prop: "imageinfo", iiprop: "url|size|extmetadata", iiurlwidth: "1400" });
+  for (const p of Object.values(r.query?.pages ?? {})) {
+    const ii = p.imageinfo?.[0]; if (!ii) continue;
+    const lic = ii.extmetadata?.LicenseShortName?.value ?? "";
+    if (!/^(CC0|CC BY(-SA)? \d|Public domain)/i.test(lic) || ii.width / ii.height < 1.3 || !pick(ii)) continue;
+    if (found.some((f) => f.title === p.title)) continue;
+    found.push({ q, title: p.title, w: ii.width, h: ii.height, lic, author: (ii.extmetadata?.Artist?.value ?? "").replace(/<[^>]+>/g, "").trim().slice(0, 80), thumb: ii.thumburl, page: ii.descriptionurl, desc: (ii.extmetadata?.ImageDescription?.value ?? "").replace(/<[^>]+>/g, "").slice(0, 140) });
+  }
 }
-writeFileSync("qa/hero/unsplash.json", JSON.stringify(out, null, 1));
-console.log(JSON.stringify(out.map((o) => `${o.file ?? "ERR"} ${o.id} ${o.fullW}x${o.fullH} ${o.location ?? ""} ${o.error ?? ""}`)));
+let n = 0;
+for (const c of found.slice(0, 24)) {
+  try { const buf = Buffer.from(await (await fetch(c.thumb, { headers: { "User-Agent": UA } })).arrayBuffer()); c.file = `qa/hero/c${String(++n).padStart(2, "0")}.jpg`; await sharp(buf).resize(1000).jpeg({ quality: 78 }).toFile(c.file); } catch (e) { c.error = String(e); }
+  await new Promise((r) => setTimeout(r, 200));
+}
+writeFileSync("qa/hero/c.json", JSON.stringify(found.filter((c) => c.file), null, 1));
+console.log(found.filter((c) => c.file).map((c) => `${c.file} ${c.w}x${c.h} ${c.lic} | ${c.title}`).join("\n"));
