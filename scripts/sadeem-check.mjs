@@ -278,11 +278,28 @@ const CONVERSATIONS = [
       { say: "المستعملة بيها ضربة لو صبغ؟", expect: [damageAnswer] },
     ],
   },
+  // 15 Nov: showroom policies come from the showroom_info table (knowledge
+  // base). Sadeem quotes them exactly and never computes a monthly payment.
   {
     name: "التقسيط",
     turns: [
-      { say: "أكو تقسيط؟ شكد الدفعة الأولى؟", expect: [hasNot(/\d+\s*%|دفعة أولى\s*\d|قسط\s*(شهري\s*)?\d/, "ألّف شروط تقسيط"), notInvented] },
+      {
+        say: "أكو تقسيط؟ شكد الدفعة الأولى؟",
+        expect: [
+          has(/30\s*%|30 بالمية/),
+          hasNot(/قسط\s*(شهري\s*)?(بـ\s*)?\d|(?<!\d)(?!30\s*%)\d+\s*%/, "ألّف رقم ما موجود بسياسات المعرض"),
+          noCards("عرض سيارات على سؤال التقسيط"),
+        ],
+      },
     ],
+  },
+  {
+    name: "سياسات: الضمان",
+    turns: [{ say: "المستعمل عليه ضمان؟", expect: [has(/3 (أشهر|شهور)|ثلاث (أشهر|شهور)/), has(/المحرك|الگير|الجير/), noCards("عرض سيارات على سؤال الضمان")] }],
+  },
+  {
+    name: "سياسات: الحجز",
+    turns: [{ say: "أگدر أحجز سيارة بعربون؟ شكد؟", expect: [has(/500 (ألف|الف)|نص مليون/), has(/3 (أيام|ايام)|ثلاث (أيام|ايام)/)] }],
   },
   {
     name: "ميزانية أقل من أرخص سيارة",
