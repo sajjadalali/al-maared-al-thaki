@@ -13,7 +13,7 @@ export function MobileContactBar({ car }: { car: Car }) {
   return (
     <div
       data-contact-bar
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white/95 pe-4 ps-[4.5rem] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white/95 pe-4 ps-20 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden"
     >
       <div className="mx-auto flex max-w-xl items-center gap-3 max-[359px]:gap-2">
         <div className="min-w-0 flex-1">

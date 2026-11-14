@@ -16,7 +16,7 @@ function assistantMessage(content: string, extras: Partial<ChatMessage> = {}): C
 /** The opening message shown when the chat is first opened. */
 export function welcomeMessage(): ChatMessage {
   return assistantMessage(
-    `هلا وغلا 👋 أني **سديم**، مساعدك الذكي ب${site.name}.\nگلّي شنو السيارة الي تدوّرها أو ميزانيتك، وأني ألگيلك أفضل خيار من سياراتنا المتوفرة.`,
+    `هلا وغلا 👋 آني **سديم**، موظف المبيعات ب${site.name}.\nگلّي شنو السيارة اللي تدوّرها أو ميزانيتك، وألگيلك أفضل خيار من سياراتنا المتوفرة.`,
     { quickReplies: DEFAULT_QUICK_REPLIES }
   );
 }

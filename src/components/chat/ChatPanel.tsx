@@ -9,7 +9,7 @@ import { TypingIndicator } from "./TypingIndicator";
 import { QuickActions } from "./QuickActions";
 import { ChatInput } from "./ChatInput";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
-import { CHAT_FRAME_CLASS, CHAT_HEADER_CLASS, chatFrameMotion } from "./chatFrame";
+import { CHAT_AVATAR_CLASS, CHAT_FRAME_CLASS, CHAT_HEADER_CLASS, chatFrameMotion } from "./chatFrame";
 import {
   MAX_CHATS,
   conversationTitle,
@@ -90,7 +90,7 @@ export default function ChatPanel({
 
   const hidden = phase === "closed";
   // Mounted while already opening (a tap before the panel had loaded): the
-  // placeholder has been rising since openedAt, so this entrance starts that
+  // placeholder has been growing since openedAt, so this entrance starts that
   // far in and the two read as one movement. Measured just before the first
   // paint, which is when this frame's animation actually starts.
   const frameRef = useRef<HTMLDivElement>(null);
@@ -223,7 +223,7 @@ export default function ChatPanel({
     >
       <div className={CHAT_HEADER_CLASS}>
         <div className="flex min-w-0 items-center gap-3">
-          <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white ring-2 ring-white/10">
+          <span data-sadeem-avatar className={cn(CHAT_AVATAR_CLASS, "ring-2 ring-white/10")}>
             <SadeemMascot className="h-9 w-9" />
             <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
           </span>
@@ -233,7 +233,7 @@ export default function ChatPanel({
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </p>
             <p className="truncate text-[12px] leading-5 text-white/70">
-              متصل الآن<span className="max-[419px]:hidden"> · مساعد المبيعات الذكي</span>
+              متصل الآن<span className="max-[359px]:hidden"> · موظف المبيعات</span>
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 // The visitor's conversations with Sadeem, kept in this browser (localStorage).
 // Each conversation's id is also its session id in the chat logs.
 import { aiService, type ChatMessage } from "@/services/ai";
+import { STORE_KEY } from "./chatKeys";
 import { TEST_SESSION_PREFIX, testMode } from "./testMode";
 
 /** How many conversations a visitor can keep; a new one needs a free slot. */
@@ -8,7 +9,6 @@ export const MAX_CHATS = 10;
 // Enough context for follow-ups without letting stored history grow forever.
 const MAX_STORED_MESSAGES = 60;
 
-const STORE_KEY = "autopro:chats";
 // Before conversations could be switched there was one, stored under these.
 const OLD_MESSAGES_KEY = "autopro:chat-messages";
 const OLD_SESSION_KEY = "autopro:chat-session";

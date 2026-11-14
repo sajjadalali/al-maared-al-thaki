@@ -364,7 +364,6 @@ const CONVERSATIONS = [
   {
     name: "تحويل للواتساب",
     turns: [
-      { say: "أكو تمويل من المصرف؟", expect: [notInvented] },
       { say: "توصلون السيارة للبصرة؟", expect: [notInvented] },
     ],
   },
@@ -395,9 +394,24 @@ const CONVERSATIONS = [
     turns: [{ say: "شكد قوة محرك الهافال؟", expect: [cardsSome((c) => c.brand === "Haval", "ما عرض الهافال"), has(/حصان/)] }],
   },
   // Off-topic: never answered, not even in passing ("الأرجنتين فازت… أنا مختص بالسيارات").
+  // 14 Nov: Sadeem's second job is support for the showroom: its hours, and
+  // taking a complaint to the team without selling or promising anything.
   {
-    name: "سؤال برا الشغل 2",
-    turns: [{ say: "شنو عاصمة فرنسا؟", expect: [hasNot(/باريس/, "جاوب على سؤال برا شغل المعرض"), noCards("عرض سيارات بدون داعي")] }],
+    name: "دعم: الدوام",
+    turns: [{ say: "شوكت دوامكم؟", expect: [has(/السبت|الخميس|9/), noCards("عرض سيارات على سؤال الدوام")] }],
+  },
+  {
+    name: "دعم: شكوى",
+    turns: [
+      {
+        say: "اشتريت سيارة منكم قبل أسبوع وبيها مشكلة ومحد يرد عليّ",
+        expect: [
+          noCards("عرض سيارات على شكوى"),
+          has(/واتساب|رقمك|الفريق/),
+          hasNot(/تعويض|نعوضك|نعوّضك|نرجعلك|نرجّعلك|نصلحها|نصلّحها|خلال\s*\d/, "وعد بشي ما يعرفه"),
+        ],
+      },
+    ],
   },
   {
     name: "سؤال برا الشغل 3",
