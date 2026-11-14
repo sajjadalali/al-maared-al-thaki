@@ -107,7 +107,7 @@ export async function Hero() {
 
         <Link
           href="/credits"
-          className="absolute end-4 top-[408px] z-10 text-[11px] text-white/45 transition hover:text-white/80 sm:end-6 sm:top-[488px] lg:bottom-20 lg:end-8 lg:top-auto"
+          className="absolute end-4 top-[384px] z-10 text-[11px] text-white/45 transition hover:text-white/80 sm:end-6 sm:top-[464px] lg:bottom-20 lg:end-8 lg:top-auto"
         >
           الصورة: <bdi>{PHOTO.author}</bdi>، <bdi>{PHOTO.license}</bdi>
         </Link>

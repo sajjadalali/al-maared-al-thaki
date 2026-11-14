@@ -55,7 +55,7 @@ export async function SadeemPhone() {
   return (
     <div className="relative mx-auto w-full max-w-[360px]">
       <div className="rounded-[48px] bg-[#05080f] p-[10px] shadow-[0_60px_120px_-40px_rgba(0,0,0,0.75)] ring-1 ring-white/15">
-        <div className="relative flex h-[760px] flex-col overflow-hidden rounded-[38px] bg-surface">
+        <div className="relative flex min-h-[700px] flex-col overflow-hidden rounded-[38px] bg-surface">
           {/* status bar and the island */}
           <div dir="ltr" className="flex h-11 shrink-0 items-center justify-between bg-brand-950 px-7 pt-1 text-white">
             <span className="text-[13px] font-semibold">10:24</span>
@@ -79,7 +79,7 @@ export async function SadeemPhone() {
             </span>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col justify-end gap-3 overflow-hidden px-3 pb-3 pt-4">
+          <div className="flex flex-1 flex-col justify-end gap-3 px-3 pb-3 pt-4">
             {messages ? (
               messages.map((message) => <ChatMessageBubble key={message.id} message={message} />)
             ) : (
