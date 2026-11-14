@@ -1,16 +1,22 @@
 name: Live check (temporary)
-# Live check of PR #82. This branch is deleted afterwards.
+# Hero photo search on Wikimedia Commons. This branch is deleted afterwards.
 on:
   push:
     branches:
       - claude/lead-check-tmp
+permissions:
+  contents: write
 jobs:
   live:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: npm i --no-save sharp@0.34
       - run: node qa/live4.mjs
+      - run: |
+          git config user.name "Claude"; git config user.email "noreply@anthropic.com"
+          git add qa/hero && git commit -q -m "Temporary: hero photo candidates" && git push -q origin HEAD:claude/lead-check-tmp-out -f
