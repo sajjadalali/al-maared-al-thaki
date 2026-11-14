@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 22
       - run: npm i --no-save playwright@1 && npx playwright install --with-deps chromium
-      - run: node qa/live5.mjs
+      - run: node qa/live7.mjs
       - run: |
           git config user.name "Claude"; git config user.email "noreply@anthropic.com"
           git add -f qa/out && git commit -q -m "Temporary: live home check" && git push -q origin HEAD:claude/lead-check-tmp-out -f
