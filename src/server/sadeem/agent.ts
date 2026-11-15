@@ -278,6 +278,8 @@ const IRAQI_WORDS = (
     ["إياه|اياه", "ياه"], ["إياها|اياها", "ياها"], ["إياهم|اياهم", "ياهم"],
     ["شاشتان", "شاشتين"], ["سيارتان", "سيارتين"], ["كاميرتان", "كاميرتين"], ["فتحتان", "فتحتين"], ["مرتان", "مرتين"],
     ["مقعدان", "مقعدين"], ["بابان", "بابين"], ["لونان", "لونين"],
+    // From the check of 15 Nov: «وكلاهما مستعملة»، «الرسالة تُكتب تلقائياً».
+    ["كلاهما|كليهما", "الثنين"], ["تُكتب", "تنكتب"], ["يُكتب", "ينكتب"], ["تُرسل", "تنرسل"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^${AR_LETTER}])([وف]?)(?:${words})(?![${AR_LETTER}])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -344,6 +346,10 @@ const cleanReply = (text: string) =>
     .replace(/(?<=[\u0621-\u064A])ـ+(?=[\u0621-\u064A])/g, "")
     // «تحب أعرف تفاصيل…» says "would you like me to know": the model means «أگلك».
     .replace(/(تحب|تريد|تحبون|تريدون)\s+أعرف(?=\s+(?:تفاصيل|شي|أكثر|اكثر|عن|مواصفات|تجهيزات))/g, "$1 أگلك")
+    // «تحب أعرفك على تفاصيل…» (15 Nov) means the same: «تحب أگلك تفاصيل…».
+    .replace(/(تحب|تريد|تحبون|تريدون)\s+أعرفك\s+(?:على|عن)\s+/g, "$1 أگلك ")
+    // A reply that opens with «و» («وعندنا 19 SUV»، 15 Nov) reads cut off.
+    .replace(/^و(?=(?:عندنا|عدنا|أكو|هذني|هاي)(?![\u0621-\u064A]))/, "")
     // A tag word left alone before the closing question («اقتصادية.. تحب أگلك…»).
     .replace(/(^|\n)[ \t]*(?:اقتصادية|فاخرة|فخمة)[ \t]*(?:\.{2,}|…)[ \t]*/g, "$1")
     .replace(/هلا وغلاي/g, "هلا وغلا")
@@ -792,6 +798,38 @@ function strayModelProblems(reply: string, allNames: Map<string, ArabicName>, fo
 const ABOUT_SHOWN =
   /(?:^|\s)(?:ال)?(?:اولى|اول وحده|اول وحدة|ثانيه|ثانية|ثالثه|ثالثة|اخيره|اخيرة|هاي|هذي|هاذي|هاذ|هذا|هيه|هيا|بيها|منهن|منهم)(?=\s|[؟?،.!]|$)|ماشي|ممشى|ممشاه|كيلو|عداد|لونها|لونه|صبغ|ضرب|حادث|محرك|ماطور|سلندر|استهلاك|سعرها|سعره|ضمان|كمرك|تجربه|تجربة|مواصفات/;
 
+// «أكو 7 سيارات ضمن ميزانيتك» while some of those 7 cost more than the budget
+// (15 Nov: «بحدود 30 مليون» counts up to 31.5, the Tucson at 31): R8 says
+// «بحدود ميزانيتك» then, and the server makes it so.
+function budgetCount(reply: string, state: TurnState): string {
+  if (!state.overBudget.length) return reply;
+  return reply.replace(/((?:أكو|عدنا|عندنا)\s+\d+[^\n.،؟]{0,30}?)ضمن\s+(?=ميزانيت)/g, "$1بحدود ");
+}
+
+/** A reply with only database facts, for when the model's still has a wrong one. */
+function safeReply(state: TurnState): string {
+  const ids = state.shownIds.filter((id) => state.found.has(id));
+  if (!ids.length) {
+    const whatsapp = site.whatsapp.replace(/^964(\d{3})(\d{3})(\d{4})$/, "0$1 $2 $3");
+    return `خليني أتأكد من هالمعلومة ويا الفريق، تگدر تحچي وياهم على الواتساب:\n\n📱 ${whatsapp}\n${site.hours}\n\nاضغط واتساب أو اتصال تحت.`;
+  }
+  const over = new Map(state.overBudget.map((c) => [c.id, c.overBy]));
+  const allOver = ids.every((id) => over.has(id));
+  const blocks = ids.map((id) => {
+    const car = state.found.get(id)!;
+    const name = `**${car.name?.full ?? car.model} ${car.year}**`;
+    const by = over.get(id);
+    return by ? `${name}\nأغلى من ميزانيتك بـ ${by.toLocaleString("en-US")} دينار` : name;
+  });
+  const opening = allOver
+    ? "ماكو سيارة ضمن ميزانيتك هسه، وهذني أقرب اللي عدنا:"
+    : over.size
+      ? "هذني أقرب السيارات لطلبك:"
+      : "هذني السيارات اللي تناسب طلبك:";
+  const closing = ids.length > 1 ? "تحب أگلك تفاصيل وحدة منهم؟" : "تحب أگلك تفاصيلها؟";
+  return [opening, ...blocks, closing].join("\n\n");
+}
+
 function replyProblems(
   reply: string,
   allowed: AllowedFigures,
@@ -800,26 +838,8 @@ function replyProblems(
   buyerTexts: string[],
   allNames: Map<string, ArabicName>,
   previousIds: string[] = []
-): string[] {
+): { all: string[]; facts: string[] } {
   const problems = unsupportedFigures(reply, allowed).map((f) => `"${f}" is not a price from the tools`);
-  // The same cars as the previous reply: the buyer has them already (13 Nov:
-  // «بمليار»، «بمليار دولار»، «2 مليار دولار» and then «جوابك غبي» got the same three).
-  const named = mentionedCars(reply, state.found);
-  // Details or a comparison of those same cars is fine; anything else (a new
-  // search, an insult answered with the list again) is not.
-  if (
-    state.request?.intent !== "details" &&
-    state.request?.intent !== "compare" &&
-    !ABOUT_SHOWN.test(fold(buyerTexts[0] ?? "")) &&
-    named.length &&
-    previousIds.length === named.length &&
-    named.every((id) => previousIds.includes(id))
-  ) {
-    problems.push(
-      `it lists the same cars the buyer just saw: don't list them again. Say in one line that it's the same cars as above (نفس السيارات اللي فوگ) and ask the one thing that narrows it (use, seats, type). ` +
-        `Never say there are no others («ماكو غيرهم»): the showroom has ${overviewAvailable()} cars`
-    );
-  }
   problems.push(...specProblems(reply, state, cars, buyerTexts));
   if (state.overBudget.length && !mentionsOverBudget(reply)) {
     problems.push(
@@ -853,10 +873,31 @@ function replyProblems(
       problems.push(`it gives two counts (${shownCount} and ${total}): the search found ${total}; say «أكو ${total}» once and show the best ${shownCount} without another count`);
     }
   }
-  problems.push(...dialectProblems(reply));
   problems.push(...comparisonProblems(reply, cars, state.found));
   problems.push(...cityProblems(reply, cars.filter((c) => state.shownIds.includes(c.id)), buyerTexts));
   problems.push(...strayModelProblems(reply, allNames, state.found, buyerTexts));
+  // Everything above is a wrong fact (a price, a spec, a count, a city, a car
+  // or a hidden over-budget). What follows is how it is said.
+  const facts = [...problems];
+  // The same cars as the previous reply: the buyer has them already (13 Nov:
+  // «بمليار»، «بمليار دولار»، «2 مليار دولار» and then «جوابك غبي» got the same three).
+  const named = mentionedCars(reply, state.found);
+  // Details or a comparison of those same cars is fine; anything else (a new
+  // search, an insult answered with the list again) is not.
+  if (
+    state.request?.intent !== "details" &&
+    state.request?.intent !== "compare" &&
+    !ABOUT_SHOWN.test(fold(buyerTexts[0] ?? "")) &&
+    named.length &&
+    previousIds.length === named.length &&
+    named.every((id) => previousIds.includes(id))
+  ) {
+    problems.push(
+      `it lists the same cars the buyer just saw: don't list them again. Say in one line that it's the same cars as above (نفس السيارات اللي فوگ) and ask the one thing that narrows it (use, seats, type). ` +
+        `Never say there are no others («ماكو غيرهم»): the showroom has ${overviewAvailable()} cars`
+    );
+  }
+  problems.push(...dialectProblems(reply));
   // Its own workings («ما وصلتني كلها»، «قاعدة البيانات») are not for the buyer.
   // Asked about whoever built Sadeem, it gave the showroom's number (13 Nov,
   // twice): the team sells cars, they don't answer for the assistant.
@@ -877,7 +918,7 @@ function replyProblems(
   ]);
   const latin = [...new Set(reply.match(/[A-Za-z]{2,}/g) ?? [])].filter((w) => !latinOk.has(w.toLowerCase()));
   if (latin.length) problems.push(`it has English words (${latin.join(", ")}): write them in Iraqi Arabic`);
-  return problems;
+  return { all: problems, facts };
 }
 
 export async function runSadeem(
@@ -1044,7 +1085,9 @@ export async function runSadeem(
     // insult in between, and «2 مليار دولار» got the «بمليار» cars again).
     const previous = history.filter((m) => m.role === "assistant").slice(-3).reverse().find((m) => m.cars?.length);
     const previousIds = (previous?.cars ?? []).map((c) => c.id);
-    const problems = replyProblems(content, allowed, state, rows, buyerTexts, arabic, previousIds);
+    const checked = replyProblems(content, allowed, state, rows, buyerTexts, arabic, previousIds);
+    const problems = checked.all;
+    let wrongFacts = checked.facts;
     if (problems.length) {
       state.searches.push({ verify: problems });
       messages.push({ role: "assistant", content });
@@ -1061,7 +1104,8 @@ export async function runSadeem(
       const fixed = cleanReply(rewrite);
       if (fixed) {
         const rewritten = splitSuggestions(fixed);
-        const left = replyProblems(rewritten.text, allowed, state, rows, buyerTexts, arabic, previousIds);
+        const after = replyProblems(rewritten.text, allowed, state, rows, buyerTexts, arabic, previousIds);
+        const left = after.all;
         if (left.length) state.searches.push({ verify_after_rewrite: left });
         // A rewrite that fixed nothing, or added a problem, is no better than the
         // reply it replaces and has drifted from it (13 Nov: a correct «ما اخترت
@@ -1071,6 +1115,7 @@ export async function runSadeem(
         const added = left.some((p) => !problems.includes(p));
         if (!added && left.length < problems.length) {
           content = rewritten.text;
+          wrongFacts = after.facts;
           if (rewritten.suggestions.length) suggestions = rewritten.suggestions;
           // The cards follow the rewritten text: a car it no longer names loses its card.
           state.shownIds.length = 0;
@@ -1078,6 +1123,16 @@ export async function runSadeem(
         } else {
           state.searches.push({ rewrite_dropped: true });
         }
+      }
+      // Last guard (15 Nov): a wrong fact never reaches the buyer. If the
+      // rewrite left one (a spec, a price, a hidden over-budget), the reply is
+      // built from the database instead: the cars' names, how much each is over
+      // the budget, and their cards, which come from the database too.
+      if (wrongFacts.length) {
+        state.searches.push({ safe_reply: wrongFacts });
+        content = safeReply(state);
+        state.shownIds.length = 0;
+        showNamed(content);
       }
     }
   }
@@ -1089,7 +1144,7 @@ export async function runSadeem(
 
   if (modelTexts.length) state.searches.push({ model_text: modelTexts });
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
-  if (content) content = spellDrivetrain(dropRepeatedCount(dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found)));
+  if (content) content = budgetCount(spellDrivetrain(dropRepeatedCount(dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found))), state);
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {
