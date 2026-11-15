@@ -18,7 +18,7 @@ import { DEFAULT_QUICK_REPLIES } from "@/services/ai/welcome";
 const GREETING_WORDS = ["مرحبا", "هلا", "السلام عليكم", "سلام", "صباح الخير", "مساء الخير", "هلو"];
 const THANKS_WORDS = ["شكرا", "تسلم", "مشكور", "يعطيك العافيه", "ممنون"];
 const AGENT_WORDS = ["مندوب", "مبيعات", "اتصال", "اتصل", "رقم الهاتف", "رقمكم", "واتساب", "موظف"];
-const TEST_DRIVE_WORDS = ["تجربه قياده", "اجربها", "اجرب السياره", "اختبار قياده"];
+const TEST_DRIVE_WORDS = ["تجربه قياده", "اجربها", "اجرب السياره", "اختبار قياده", "معاينه", "اعاين", "افحصها"];
 const MORE_WORDS = ["المزيد", "غيرها", "اكو غير", "خيارات ثانيه", "بعد خيارات", "غير هذني"];
 const SIMILAR_WORDS = ["مشابهه", "مشابه", "شبيهه", "مثلها"];
 const AMONG_WORDS = ["بينهم", "منهم", "بيناتهم"];
@@ -284,7 +284,7 @@ function contactActions(message: string): ChatAction[] {
   ];
 }
 
-const SINGLE_CAR_QUICK_REPLIES = ["أريد حجز تجربة قيادة", "سيارات مشابهة", "تواصل مع مندوب المبيعات"];
+const SINGLE_CAR_QUICK_REPLIES = ["أريد أعاينها", "سيارات مشابهة", "تواصل مع مندوب المبيعات"];
 
 function listQuickReplies(hasMore: boolean) {
   return [
@@ -372,13 +372,13 @@ export function rulesReply(catalog: Catalog, message: string, history: RulesHist
 
   if (includesAny(text, TEST_DRIVE_WORDS)) {
     if (!picked) {
-      return reply("أكيد! بس گلّي أي سيارة تريد تجربها حتى أرتبلك الموضوع.", {
+      return reply("أكيد! بس گلّي أي سيارة تريد تعاينها حتى أرتبلك الموضوع.", {
         quickReplies: DEFAULT_QUICK_REPLIES,
       });
     }
     return reply(
-      `حلو اختيارك! تجربة قيادة **${carLabel(picked)}** نرتبها ويه فريق المبيعات ب${picked.city}.\nدز رسالة على واتساب وحدد الوقت الي يناسبك، وهمه يأكدولك الموعد.`,
-      { actions: contactActions(contactMessage(carLabel(picked), "test_drive")) }
+      `حلو اختيارك! تگدر تعاين **${carLabel(picked)}** وتفحصها بالمعرض ب${picked.city}.\nدز رسالة على واتساب وحدد الوقت اللي يناسبك، والفريق يأكدلك الموعد.`,
+      { actions: contactActions(contactMessage(carLabel(picked), "viewing")) }
     );
   }
 

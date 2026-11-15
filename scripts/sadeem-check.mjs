@@ -398,14 +398,25 @@ const CONVERSATIONS = [
   {
     name: "تحويل للواتساب",
     turns: [
-      // 15 Nov: delivery is a showroom policy now (showroom_info): Sadeem answers it and gives the contact.
-      { say: "توصلون السيارة للبصرة؟", expect: [has(/نوصل|التوصيل/), has(/📱|واتساب|تواصل|اتصل/), noCards("عرض سيارات على سؤال التوصيل")] },
+      // 15 Nov (evening): delivery is no showroom policy any more (the free delivery line went): Sadeem
+      // doesn't promise one, and sends the buyer to the team.
+      { say: "توصلون السيارة للبصرة؟", expect: [hasNot(/مجاني|نوصل لكل/, "وعد بتوصيل ما موجود بسياسات المعرض"), has(/📱|واتساب|تواصل|اتصل|الفريق/), noCards("عرض سيارات على سؤال التوصيل")] },
     ],
   },
-  // 12 Nov: «التوسان متوفرة بالنجف، تگدر تجي تجربها ببغداد».
+  // 15 Nov: one showroom, every car in Baghdad, and what it offers before buying is a
+  // viewing (see, inspect, check the specs), not a test drive.
   {
-    name: "تجربة قيادة بمدينة ثانية",
-    turns: [{ say: "أريد أحجز تجربة قيادة للتوسان", expect: [cardsSome((c) => c.model === "Tucson", "ما عرض التوسان"), hasNot(/(?:تجرب|تشوف|تجربة|زيارة|تجي)[^.\n]{0,40}(?:ببغداد|في بغداد)/, "گال التجربة ببغداد والتوسان بالنجف")] }],
+    name: "معاينة بالمعرض",
+    turns: [
+      {
+        say: "أريد أحجز تجربة قيادة للتوسان",
+        expect: [
+          cardsSome((c) => c.model === "Tucson", "ما عرض التوسان"),
+          has(/تعاين|معاين|تفحص|فحص/),
+          hasNot(/النجف|كربلاء|أربيل|اربيل|البصرة|الموصل|السليمانية/, "ذكر مدينة غير بغداد"),
+        ],
+      },
+    ],
   },
   // 12 Nov: «أريد SUV» counted 14 and left out the big cars filed as «دفع رباعي» (19 with them).
   {

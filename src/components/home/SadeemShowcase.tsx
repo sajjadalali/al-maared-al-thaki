@@ -114,7 +114,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
             <div className="min-w-0">
               <p className="text-[14.5px] font-bold leading-6 text-brand-950">وصل طلبك لفريق المبيعات</p>
               <p className="text-[12.5px] leading-5 text-neutral-500">
-                {scene.purpose === "buy" ? "شراء" : "تجربة قيادة"} {scene.car}، ب{scene.city}
+                {scene.purpose === "buy" ? "شراء" : "معاينة"} {scene.car}، ب{scene.city}
               </p>
             </div>
           </Piece>
