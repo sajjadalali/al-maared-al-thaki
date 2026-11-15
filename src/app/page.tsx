@@ -9,11 +9,13 @@ import { VisitCta } from "@/components/home/VisitCta";
 export default function Home() {
   return (
     <>
+      {/* Browsing (types, makes, cars), then Sadeem who helps choose, then what
+          the showroom does once a car is chosen, then the visit. */}
       <Hero />
       <BodyTypes />
+      <Brands />
       <FeaturedCars />
       <SadeemSection />
-      <Brands />
       <Features />
       <VisitCta />
     </>
