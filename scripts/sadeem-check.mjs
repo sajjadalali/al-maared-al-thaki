@@ -35,14 +35,31 @@ const dataLatin = (ids) =>
 
 const sessionId = () => `5ade7e57-${randomUUID().slice(9)}`;
 
+// The site allows 30 messages per visitor every 10 minutes, and the check
+// sends more (15 Nov: the last two got HTTP 429). On 429 it waits for the
+// window to free up and sends again; the wait doesn't count in the reply time.
+const RATE_WAIT_MS = 60_000;
+const RATE_TRIES = 11;
+
 async function ask(message, history, session) {
-  const started = Date.now();
-  const res = await fetch(`${SITE}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "User-Agent": "sadeem-check" },
-    body: JSON.stringify({ message, history, sessionId: session }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
+  for (let attempt = 1; ; attempt++) {
+    const started = Date.now();
+    const res = await fetch(`${SITE}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "User-Agent": "sadeem-check" },
+      body: JSON.stringify({ message, history, sessionId: session }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (res.status === 429 && attempt < RATE_TRIES) {
+      console.log(`  … حد الرسائل (429)، أنتظر دقيقة (${attempt}/${RATE_TRIES - 1})`);
+      await new Promise((r) => setTimeout(r, RATE_WAIT_MS));
+      continue;
+    }
+    return reply(res, started);
+  }
+}
+
+async function reply(res, started) {
   const ms = Date.now() - started;
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
