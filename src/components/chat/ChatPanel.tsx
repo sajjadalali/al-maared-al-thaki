@@ -104,6 +104,59 @@ export default function ChatPanel({
     // Any later entrance or exit starts from its beginning.
     if (phase !== "open" && frameRef.current) frameRef.current.style.animationDelay = "";
   }, [phase]);
+  // Phones: the chat fills what the screen shows, keyboard or not. On iPhone
+  // the keyboard covers the page instead of shrinking it, so a full-height
+  // frame lost its top or its bottom behind it, and the home-indicator space
+  // stayed under the input above the keyboard. The visual viewport is the
+  // part still visible; the frame follows it, and data-keyboard drops that space.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const frame = frameRef.current;
+    if (!viewport || !frame || hidden) return;
+    const fit = () => {
+      if (window.innerWidth >= 640) {
+        frame.style.height = "";
+        frame.style.top = "";
+        frame.removeAttribute("data-keyboard");
+        return;
+      }
+      frame.style.height = `${Math.round(viewport.height)}px`;
+      frame.style.top = `${Math.round(viewport.offsetTop)}px`;
+      frame.toggleAttribute("data-keyboard", window.innerHeight - viewport.height > 120);
+    };
+    fit();
+    viewport.addEventListener("resize", fit);
+    viewport.addEventListener("scroll", fit);
+    return () => {
+      viewport.removeEventListener("resize", fit);
+      viewport.removeEventListener("scroll", fit);
+      frame.style.height = "";
+      frame.style.top = "";
+      frame.removeAttribute("data-keyboard");
+    };
+  }, [hidden]);
+
+  // The messages stay at the latest one when their space shrinks (the keyboard
+  // opens), unless the buyer had scrolled up to read.
+  const atBottom = useRef(true);
+  useEffect(() => {
+    const box = scrollRef.current;
+    if (!box) return;
+    const onScroll = () => {
+      atBottom.current = box.scrollHeight - box.scrollTop - box.clientHeight < 48;
+    };
+    const resized = new ResizeObserver(() => {
+      if (atBottom.current) box.scrollTop = box.scrollHeight;
+    });
+    box.addEventListener("scroll", onScroll, { passive: true });
+    resized.observe(box);
+    return () => {
+      box.removeEventListener("scroll", onScroll);
+      resized.disconnect();
+    };
+  }, [view]);
+
+  const [typingOwn, setTypingOwn] = useState(false);
   const active = store.chats.find((c) => c.id === store.activeId) ?? store.chats[0];
   const messages = active.messages;
   const typing = pending?.chatId === active.id;
@@ -232,7 +285,7 @@ export default function ChatPanel({
               سديم
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </p>
-            <p className="truncate text-[12px] leading-5 text-white/70">
+            <p className="truncate text-[12px] leading-5 text-white/70 group-data-[keyboard]/frame:hidden">
               متصل الآن<span className="max-[359px]:hidden"> · مساعدك الشخصي</span>
             </p>
           </div>
@@ -341,12 +394,12 @@ export default function ChatPanel({
               ))}
           </div>
 
-          {!typing && lastAssistantMessage?.quickReplies && (
+          {!typing && !typingOwn && lastAssistantMessage?.quickReplies && (
             <QuickActions options={lastAssistantMessage.quickReplies} onSelect={(value) => void handleSend(value)} />
           )}
 
           {/* One reply at a time, whichever conversation it is for. */}
-          <ChatInput onSend={(text) => void handleSend(text)} disabled={pending !== null} />
+          <ChatInput onSend={(text) => void handleSend(text)} disabled={pending !== null} onTyping={setTypingOwn} />
         </>
       )}
     </div>
