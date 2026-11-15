@@ -30,8 +30,9 @@ export const TOOL_DEFINITIONS = [
         properties: {
           intent: {
             type: "string",
-            enum: ["search", "details", "compare", "contact", "other"],
-            description: "search = find cars; details/compare = about cars already shown; contact = visit, test drive, call.",
+            enum: ["search", "details", "compare", "buy", "contact", "other"],
+            description:
+              "search = find cars; details/compare = about cars already shown; buy = wants to buy one car already shown or named («أريدها»، «أريد أشتري الكامري»، «آخذها»); contact = visit, test drive, call.",
           },
           budget_max_iqd: {
             type: "integer",

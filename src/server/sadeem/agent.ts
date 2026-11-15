@@ -5,7 +5,7 @@ import { phoneHref, site, whatsappHref } from "@/config/site";
 import type { SupabaseEnv } from "@/server/supabase";
 import { carMarker, stripCarMarkers } from "@/services/ai/carMarkers";
 import { carNameAr } from "@/lib/format";
-import { contactMessage } from "./contact";
+import { contactMessage, type ContactPurpose } from "./contact";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
 import { overviewAvailable, overviewPrices, systemPrompt } from "./prompt";
@@ -553,6 +553,16 @@ export function contactCar(cars: Car[], history: HistoryMessage[], arabic: Map<s
   return only ? noteName(only.id, only.name, arabic).split(" – ")[0] : undefined;
 }
 
+// What the WhatsApp message says the buyer wants (15 Nov: «أريد الكامري» got a
+// test-drive message): buying first, then a test drive, else a question.
+const BUY_WORDS = /اريدها|اريده|ابيها|اشتري|اشتريها|اشتريه|اخذها|اخذه|شراء/;
+const TEST_DRIVE_WORDS = /تجربه|تجربة|اجرب|اجربها|اجربه/;
+function contactPurpose(state: TurnState, message: string): ContactPurpose {
+  const text = fold(message);
+  if (state.request?.intent === "buy" || BUY_WORDS.test(text)) return "buy";
+  return TEST_DRIVE_WORDS.test(text) ? "test_drive" : "question";
+}
+
 // A reply that hands the buyer to the team gets WhatsApp and call buttons under it.
 function contactActions(
   reply: string,
@@ -563,11 +573,11 @@ function contactActions(
   message: string
 ): ChatAction[] | undefined {
   // A question about who built Sadeem is not a contact request, even when the model files it as one.
-  const askedTeam = state.request?.intent === "contact" && !CREATOR_QUESTION.test(message);
+  const askedTeam = (state.request?.intent === "contact" || state.request?.intent === "buy") && !CREATOR_QUESTION.test(message);
   const givesContact = reply.replace(/\D/g, "").includes(SHOWROOM_DIGITS) || askedTeam;
   if (!givesContact) return undefined;
   return [
-    { kind: "whatsapp", label: "راسلنا واتساب", href: whatsappHref(contactMessage(contactCar(cars, history, arabic))) },
+    { kind: "whatsapp", label: "راسلنا واتساب", href: whatsappHref(contactMessage(contactCar(cars, history, arabic), contactPurpose(state, message))) },
     { kind: "phone", label: "اتصل بنا", href: phoneHref },
   ];
 }
@@ -796,7 +806,7 @@ function strayModelProblems(reply: string, allNames: Map<string, ArabicName>, fo
 // A question about the cars just shown («الأولى شكد ماشية؟»، «هاي بيها صبغ؟»):
 // the answer names the same cars, and that is the point, not a repeat.
 const ABOUT_SHOWN =
-  /(?:^|\s)(?:ال)?(?:اولى|اول وحده|اول وحدة|ثانيه|ثانية|ثالثه|ثالثة|اخيره|اخيرة|هاي|هذي|هاذي|هاذ|هذا|هيه|هيا|بيها|منهن|منهم)(?=\s|[؟?،.!]|$)|ماشي|ممشى|ممشاه|كيلو|عداد|لونها|لونه|صبغ|ضرب|حادث|محرك|ماطور|سلندر|استهلاك|سعرها|سعره|ضمان|كمرك|تجربه|تجربة|مواصفات/;
+  /(?:^|\s)(?:ال)?(?:اولى|اول وحده|اول وحدة|ثانيه|ثانية|ثالثه|ثالثة|اخيره|اخيرة|هاي|هذي|هاذي|هاذ|هذا|هيه|هيا|بيها|منهن|منهم)(?=\s|[؟?،.!]|$)|ماشي|ممشى|ممشاه|كيلو|عداد|لونها|لونه|صبغ|ضرب|حادث|محرك|ماطور|سلندر|استهلاك|سعرها|سعره|ضمان|كمرك|تجربه|تجربة|مواصفات|اريدها|اريده|ابيها|اشتريها|اشتريه|اشتري|اخذها|اخذه|شراء/;
 
 // «أكو 7 سيارات ضمن ميزانيتك» while some of those 7 cost more than the budget
 // (15 Nov: «بحدود 30 مليون» counts up to 31.5, the Tucson at 31): R8 says
@@ -896,6 +906,7 @@ function replyProblems(
   if (
     state.request?.intent !== "details" &&
     state.request?.intent !== "compare" &&
+    state.request?.intent !== "buy" &&
     !ABOUT_SHOWN.test(fold(buyerTexts[0] ?? "")) &&
     named.length &&
     previousIds.length === named.length &&
@@ -935,7 +946,8 @@ export async function runSadeem(
   db: SupabaseEnv,
   history: HistoryMessage[],
   message: string,
-  onEvent?: (event: SadeemEvent) => void
+  onEvent?: (event: SadeemEvent) => void,
+  options: { pageCarId?: string } = {}
 ): Promise<AgentReply> {
   const started = Date.now();
   // One key for every visitor: the instructions are the same for all of them,
@@ -966,6 +978,22 @@ export async function runSadeem(
     }
   }
 
+  // The car whose page the buyer is on (15 Nov: «اريدها» on a car's page, and
+  // Sadeem didn't know which car). Looked up before the model runs and given
+  // with the buyer's message as a database note (R7), so its facts can be
+  // quoted; its card only comes when the reply names it.
+  let pageNote = "";
+  if (options.pageCarId) {
+    const result = await runTool(db, "get_car_details", { ids: [options.pageCarId] }, state).catch(() => null);
+    state.detailIds.length = 0;
+    const car = state.found.get(options.pageCarId);
+    if (Array.isArray(result) && result.length && car) {
+      pageNote = `\n\n[The buyer wrote this on the page of ${car.name?.full ?? car.model} ${car.year} (${options.pageCarId}). Its details from the database: ${JSON.stringify(result[0])}]`;
+      collectDataLatin(result, "", state.dataLatin);
+      state.searches.push({ page_car: options.pageCarId });
+    }
+  }
+
   const messages: LlmMessage[] = [
     // The tools and these instructions are the same for every call: providers
     // that cache (Anthropic and Gemini on this marker, OpenAI, DeepSeek and
@@ -976,7 +1004,7 @@ export async function runSadeem(
       content: [{ type: "text", text: await systemPrompt(db), cache_control: { type: "ephemeral", ttl: "1h" } }],
     },
     ...historyToMessages(history, arabic),
-    { role: "user", content: message },
+    { role: "user", content: message + pageNote },
   ];
 
   const buyerGavePhone = /(?:\+?964|0)\s?7\d{2}[\s-]?\d{3}[\s-]?\d{4}/.test(message.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))));

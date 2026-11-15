@@ -41,13 +41,13 @@ const sessionId = () => `5ade7e57-${randomUUID().slice(9)}`;
 const RATE_WAIT_MS = 60_000;
 const RATE_TRIES = 11;
 
-async function ask(message, history, session) {
+async function ask(message, history, session, pageCarId) {
   for (let attempt = 1; ; attempt++) {
     const started = Date.now();
     const res = await fetch(`${SITE}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "User-Agent": "sadeem-check" },
-      body: JSON.stringify({ message, history, sessionId: session }),
+      body: JSON.stringify({ message, history, sessionId: session, pageCarId }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (res.status === 429 && attempt < RATE_TRIES) {
@@ -456,6 +456,36 @@ const CONVERSATIONS = [
       },
     ],
   },
+  // 15 Nov: buying comes first. «اريدها» on a car's page is that car (the site
+  // sends the page's car as pageCarId), and «اريدها» after a reply is a
+  // purchase, not a new search: no «نفس السيارات», no deposit, no test drive first.
+  {
+    name: "شراء من صفحة السيارة",
+    turns: [
+      {
+        say: "اريدها",
+        page: "car-026",
+        expect: [
+          cardsSome((c) => c.id === "car-026", "ما عرض سيارة الصفحة (كامري 2026)"),
+          cardsAll((c) => c.id === "car-026", "عرض سيارة غير سيارة الصفحة"),
+          has(/الشراء|تشتري|يكمل/),
+          hasNot(/نفس السيارات|عربون|شكد مقعد|الاستخدام|أي سيارة|اي سيارة|شنو السيارة/, "ما تعامل وياها كشراء"),
+          waMessage((t) => t.includes("أشتري"), "رسالة الواتساب مو للشراء"),
+        ],
+      },
+    ],
+  },
+  {
+    name: "سعر سيارة الصفحة",
+    turns: [{ say: "شكد سعرها؟", page: "car-022", expect: [has(/37,000,000|37 مليون/), cardsAll((c) => c.id === "car-022", "عرض سيارة غير سيارة الصفحة")] }],
+  },
+  {
+    name: "شراء بعد الرد",
+    turns: [
+      { say: "عندكم سيارات هايبرد؟", expect: [cardsSome(() => true, "ما عرض ولا سيارة")] },
+      { say: "اريدها", expect: [hasNot(/نفس السيارات|عربون|شكد مقعد|الاستخدام/, "ما تعامل وياها كشراء"), has(/الشراء|تشتري|يكمل|أي وحدة|اي وحدة|يا وحدة/)] },
+    ],
+  },
   // The two cases from 3 Nov. Neither may save a lead: the showroom's own
   // number is refused, and a message without a number has nothing to save.
   {
@@ -486,7 +516,7 @@ for (const convo of CONVERSATIONS) {
     let reply;
     let problems;
     try {
-      reply = await ask(turn.say, history, session);
+      reply = await ask(turn.say, history, session, turn.page);
       problems = [...generalChecks(reply, turn.say), ...turn.expect.map((check) => check(reply)).filter(Boolean)];
     } catch (err) {
       reply = { text: "", cars: [], ms: 0 };

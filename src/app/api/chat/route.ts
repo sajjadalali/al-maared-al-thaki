@@ -72,12 +72,13 @@ async function rulesFallback(message: string, history: HistoryMessage[]): Promis
 async function answer(
   message: string,
   history: HistoryMessage[],
-  onEvent?: (event: SadeemEvent) => void
+  onEvent?: (event: SadeemEvent) => void,
+  pageCarId?: string
 ): Promise<Reply> {
   const llm = openRouterEnv();
   const db = supabaseEnv();
   try {
-    return llm && db ? await runSadeem(llm, db, history, message, onEvent) : await rulesFallback(message, history);
+    return llm && db ? await runSadeem(llm, db, history, message, onEvent, { pageCarId }) : await rulesFallback(message, history);
   } catch (err) {
     console.error("[sadeem] LLM failed, answering with the rules:", err);
     const reply = await rulesFallback(message, history);
@@ -142,10 +143,12 @@ export async function POST(request: Request) {
   if (!message) return Response.json({ error: "empty_message" }, { status: 400 });
   const history = parseHistory(body?.history);
   const sessionId = typeof body?.sessionId === "string" && UUID.test(body.sessionId) ? body.sessionId : null;
+  // The car whose page the buyer is on («/cars/car-026»), so «أريدها» means that car.
+  const pageCarId = typeof body?.pageCarId === "string" && /^car-\d{3}$/.test(body.pageCarId) ? body.pageCarId : undefined;
   const keepLog = sessionId && db?.writeKey ? (reply: Reply) => logChat(db, sessionId, message, reply) : null;
 
   if (body?.stream !== true) {
-    const reply = await answer(message, history);
+    const reply = await answer(message, history, undefined, pageCarId);
     if (keepLog) after(() => keepLog(reply));
     return Response.json(publicReply(reply));
   }
@@ -160,7 +163,7 @@ export async function POST(request: Request) {
           // the visitor closed the chat or the page: finish the reply for the log anyway
         }
       };
-      const reply = await answer(message, history, send);
+      const reply = await answer(message, history, send, pageCarId);
       send({ type: "done", ...publicReply(reply) });
       // The buyer already has the reply; the log is written before the stream closes.
       await keepLog?.(reply);
