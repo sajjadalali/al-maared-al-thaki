@@ -9,10 +9,12 @@ import { site } from "@/config/site";
 
 const plex = IBM_Plex_Sans_Arabic({
   variable: "--font-plex",
-  subsets: ["arabic", "latin"],
-  // Only the weights the UI uses (font-normal, font-semibold, font-bold). Each
-  // weight is two preloaded files (Arabic + Latin), so every extra one slows the
-  // first paint; prefer these three over adding another.
+  // `subsets` is what gets preloaded: the Arabic files only (15 Nov). The Latin
+  // ones (digits, «SUV», model names) are still in the CSS and load when a
+  // page uses them, without competing with the first paint.
+  subsets: ["arabic"],
+  // Only the weights the UI uses (font-normal, font-semibold, font-bold); every
+  // extra one is another preloaded file. Prefer these three over adding another.
   weight: ["400", "600", "700"],
   display: "swap",
 });
