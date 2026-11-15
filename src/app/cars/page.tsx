@@ -10,8 +10,8 @@ import { ActiveFilters } from "@/components/cars/ActiveFilters";
 import type { CarCondition, CarOrigin, FuelType, Transmission } from "@/types/car";
 
 export const metadata: Metadata = {
-  title: "تصفح السيارات",
-  description: "تصفح السيارات الجديدة والمستعملة المتوفرة في العراق مع الأسعار والمواصفات.",
+  title: "تصفّح السيارات",
+  description: "السيارات الجديدة والمستعملة المتوفرة ببغداد، ويا أسعارها ومواصفاتها.",
 };
 
 interface CarsPageProps {
@@ -95,8 +95,8 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         <div className="mx-auto max-w-7xl px-4 pb-6 pt-8 sm:px-6 lg:px-8 lg:pt-10">
           <h1 className="text-3xl font-bold text-brand-950 sm:text-[36px]">{heading}</h1>
           <p className="mt-2 text-[15px] text-neutral-500">
-            جديدة ومستعملة، وكالة ووارد، بأسعار معلنة بالدينار العراقي. لم تجد ما تبحث عنه؟ اسأل سديم
-            وسيبحث لك.
+            جديدة ومستعملة، وكالة ووارد، بأسعار معلنة بالدينار العراقي. ما لگيت اللي تدوّره؟ اسأل سديم
+            ويدوّرلك.
           </p>
           <div className="mt-6">
             <CategoryPills

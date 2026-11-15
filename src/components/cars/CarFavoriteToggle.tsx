@@ -13,7 +13,7 @@ export function CarFavoriteIcon({ id }: { id: string }) {
     <button
       type="button"
       onClick={() => toggleFavorite(id)}
-      aria-label={favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+      aria-label={favorite ? "شيلها من المفضلة" : "ضيفها للمفضلة"}
       aria-pressed={favorite}
       className="tap-target absolute end-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-sm ring-1 ring-black/5 transition hover:scale-105"
     >
@@ -40,7 +40,7 @@ export function CarFavoriteToggle({ id, compact }: { id: string; compact?: boole
       )}
     >
       <Heart className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4", favorite && "fill-danger")} />
-      {favorite ? "في المفضلة" : compact ? "حفظ" : "إضافة إلى المفضلة"}
+      {favorite ? "بالمفضلة" : compact ? "حفظ" : "ضيفها للمفضلة"}
     </button>
   );
 }

@@ -18,8 +18,8 @@ interface CarImageProps {
   /** Small "illustration" note on the drawing, for large views. */
   showNote?: boolean;
   /**
-   * "contain" (default) shows the whole car over a blurred copy of the photo, so
-   * wide shots never lose their bumpers; "cover" fills small thumbnails.
+   * "contain" (default) shows the whole car on a soft studio backdrop, so wide
+   * shots never lose their bumpers; "cover" fills small thumbnails.
    */
   fit?: "contain" | "cover";
 }
@@ -72,10 +72,12 @@ export function CarImage({
   );
   if (fit === "cover") return photo;
 
+  // A plain backdrop behind the letterboxed photo (15 Nov). It was a blurred
+  // copy of the photo, which the browser counted as the page's largest image
+  // (LCP) and painted late, as it loaded lazily: about 2.5–3 s on phones.
   return (
     <>
-      {/* Same URL as the photo, so the browser downloads it once. */}
-      <Image src={src} alt="" aria-hidden fill sizes={sizes} className="scale-110 object-cover opacity-60 blur-2xl" />
+      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_10%,#ffffff_0%,#eef0f3_55%,#e2e5ea_100%)]" />
       {photo}
     </>
   );

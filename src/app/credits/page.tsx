@@ -5,7 +5,7 @@ import { getImageCredit } from "@/data/imageCredits";
 
 export const metadata: Metadata = {
   title: "حقوق الصور",
-  description: "مصادر صور السيارات المعروضة في الموقع وأسماء المصوّرين ورخص الاستخدام.",
+  description: "مصادر صور السيارات بالموقع، وأسماء المصوّرين ورخص الاستخدام.",
 };
 
 export default async function CreditsPage() {
@@ -20,15 +20,15 @@ export default async function CreditsPage() {
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <h1 className="text-3xl font-bold text-brand-950">حقوق الصور</h1>
       <p className="mt-4 max-w-2xl text-[15px] leading-8 text-neutral-600">
-        بعض صور السيارات في الموقع من ويكيميديا كومنز، منشورة برخص المشاع
-        الإبداعي التي تسمح باستخدامها مع ذكر المصوّر والرخصة. اللون والتجهيزات في الصورة قد تختلف عن
-        السيارة المعروضة في المعرض.
+        قسم من صور السيارات بالموقع من ويكيميديا كومنز، منشورة برخص المشاع الإبداعي اللي تسمح
+        باستخدامها بشرط نذكر المصوّر والرخصة. لون السيارة وتجهيزاتها بالصورة ممكن يختلفون عن السيارة
+        اللي بالمعرض.
       </p>
 
       <h2 className="mt-10 text-lg font-bold text-brand-950">صور السيارات</h2>
       {rows.length === 0 ? (
         <p className="mt-3 rounded-2xl bg-surface p-6 text-sm text-neutral-500">
-          لا توجد حالياً صور تحتاج إلى إسناد.
+          ماكو هسه صور تحتاج نذكر مصدرها.
         </p>
       ) : (
         <ul className="mt-3 divide-y divide-black/[0.06] rounded-2xl ring-1 ring-black/[0.07]">

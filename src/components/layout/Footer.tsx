@@ -57,8 +57,8 @@ export function Footer() {
         <div>
           <Logo tone="light" />
           <p className="mt-5 max-w-xs text-sm leading-7 text-white/55">
-            معرض سيارات جديدة ومستعملة في العراق، بأسعار معلنة وفحص قبل البيع، ومساعد ذكي اسمه سديم
-            يساعدك على اختيار السيارة الأنسب.
+            معرض سيارات جديدة ومستعملة ب{site.city}، أسعارها معلنة وكل سيارة مفحوصة قبل البيع. وبيه
+            سديم، مساعدك الشخصي لشراء سيارتك.
           </p>
           <div className="mt-5 flex items-center gap-2.5">
             {SOCIAL.map(({ href, label, Icon }) => (
@@ -115,7 +115,7 @@ export function Footer() {
           <p>
             © {new Date().getFullYear()} {site.name} — جميع الحقوق محفوظة
           </p>
-          <p>الأسعار بالدينار العراقي وقد تتغير حسب السوق.</p>
+          <p>الأسعار بالدينار العراقي، وممكن تتغير حسب السوق.</p>
         </div>
       </div>
     </footer>

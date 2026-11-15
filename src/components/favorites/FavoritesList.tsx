@@ -29,16 +29,16 @@ export function FavoritesList({ cars }: { cars: CarSummary[] }) {
       {saved.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-black/10 bg-white py-20 text-center">
           <Heart className="h-10 w-10 text-neutral-300" />
-          <p className="text-base font-bold text-brand-950">لا توجد سيارات في المفضلة بعد</p>
+          <p className="text-base font-bold text-brand-950">ماكو سيارات بالمفضلة بعد</p>
           <p className="max-w-sm text-sm text-neutral-500">
-            اضغط على أيقونة القلب في أي سيارة تعجبك لتضيفها هنا وترجع لها بسهولة لاحقاً.
+            اضغط على القلب بأي سيارة تعجبك حتى تنحفظ هنا وترجعلها بسهولة.
           </p>
           <Link
             href="/cars"
             className="mt-2 flex min-h-11 items-center gap-1.5 rounded-xl bg-brand-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-800"
           >
             <ArrowLeft className="h-4 w-4" />
-            تصفح السيارات
+            تصفّح السيارات
           </Link>
         </div>
       ) : (

@@ -41,7 +41,7 @@ export function VisitCta() {
 
             <div className="mt-8 flex flex-col gap-2.5 sm:flex-row">
               <a
-                href={whatsappHref(showroom ? "مرحباً، أريد حجز موعد لزيارة المعرض" : "مرحباً، أريد حجز موعد لمعاينة سيارة")}
+                href={whatsappHref(showroom ? "هلا، أريد أحجز موعد أزور المعرض" : "هلا، أريد أحجز موعد أعاين سيارة")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-full bg-[#1fa855] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1a9149]"
@@ -57,7 +57,7 @@ export function VisitCta() {
                   className="flex items-center justify-center gap-2 rounded-full bg-white/10 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/20 transition hover:bg-white/15"
                 >
                   <Navigation className="h-4 w-4" />
-                  الاتجاهات على الخريطة
+                  افتح الموقع بالخريطة
                 </a>
               )}
               <a

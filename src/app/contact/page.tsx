@@ -6,15 +6,15 @@ import { site, phoneHref, whatsappHref } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "تواصل معنا",
-  description: `تواصل مع فريق ${site.name} عبر الهاتف أو واتساب أو البريد الإلكتروني.`,
+  description: `تواصل ويا فريق ${site.name} بالهاتف أو الواتساب أو الإيميل.`,
 };
 
 const INFO = [
   { icon: Phone, label: "الهاتف", value: site.phone, href: phoneHref, dir: "ltr" as const },
   { icon: WhatsappIcon, label: "واتساب", value: `+${site.whatsapp.replace(/^964(\d{3})(\d{3})(\d{4})$/, "964 $1 $2 $3")}`, href: whatsappHref(), dir: "ltr" as const },
-  { icon: Mail, label: "البريد الإلكتروني", value: site.email, href: `mailto:${site.email}`, dir: "ltr" as const },
+  { icon: Mail, label: "الإيميل", value: site.email, href: `mailto:${site.email}`, dir: "ltr" as const },
   { icon: MapPin, label: "العنوان", value: site.address },
-  { icon: Clock, label: "أوقات العمل", value: `${site.hours}، ${site.support}` },
+  { icon: Clock, label: "الدوام", value: `${site.hours}، ${site.support}` },
 ];
 
 export default function ContactPage() {
@@ -23,8 +23,8 @@ export default function ContactPage() {
       <div className="mb-10 text-center">
         <h1 className="text-3xl font-bold text-brand-950 sm:text-4xl">تواصل معنا</h1>
         <p className="mx-auto mt-3 max-w-xl text-sm text-neutral-600 sm:text-base">
-          لديك استفسار أو تحتاج مساعدة في اختيار سيارتك؟ فريقنا جاهز لخدمتك، ويمكنك أيضاً التحدث
-          مع سديم مساعدنا الذكي في أي وقت.
+          عندك سؤال أو تحتاج مساعدة تختار سيارتك؟ فريقنا حاضر، وتگدر هم تحچي ويا سديم، مساعدك
+          الشخصي لشراء سيارتك، بأي وقت.
         </p>
       </div>
 

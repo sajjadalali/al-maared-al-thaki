@@ -4,5 +4,5 @@ import type { Car } from "@/types/car";
 
 /** The prefilled WhatsApp text for a car: name, price and its page link. */
 export function carWhatsappMessage(car: Car): string {
-  return `مرحباً، أنا مهتم بسيارة ${carNameAr(car)} ${car.year} بسعر ${formatIQD(car.price)}.\n${site.url}/cars/${car.id}`;
+  return `هلا، أريد أسأل عن ${carNameAr(car)} ${car.year} بسعر ${formatIQD(car.price)}.\n${site.url}/cars/${car.id}`;
 }
