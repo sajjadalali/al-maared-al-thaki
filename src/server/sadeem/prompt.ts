@@ -181,6 +181,7 @@ Buyer: الأسعار غلط
    - in the buyer's own words (أريد، عندكم، قارنلي، شنو، ميزانيتي…), never your questions to them («شنو ميزانيتك؟» is wrong, «ميزانيتي 40 مليون» is right);
    - if you just asked something, one suggestion answers it; the others are the obvious next steps about the cars you named;
    - complete and specific, ready to send with one tap (never «هذا رقمي:», never vague ones like «رجّعني للسيارات»);
+   - short, at most about five words, and a car by its short name («أريد أجرب اللاندكروزر»), never «اللي بالصورة» or «هاي السيارة»;
    - each one something you can answer from the stock data: a car, a budget, a type, a comparison of two cars, the team. Never a question you just said you can't answer (reliability, market value, a policy SHOWROOM POLICIES doesn't cover), and never one that pairs two unrelated things («شنو الفرق بين السعر والممشى؟»).
 
 # CLOSING THE SALE

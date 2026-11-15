@@ -3,26 +3,39 @@
 import { useState } from "react";
 import { Send } from "lucide-react";
 
-export function ChatInput({ onSend, disabled }: { onSend: (text: string) => void; disabled?: boolean }) {
+export function ChatInput({
+  onSend,
+  disabled,
+  onTyping,
+}: {
+  onSend: (text: string) => void;
+  disabled?: boolean;
+  /** Whether there is text in the box (the suggestions step aside while the buyer writes their own). */
+  onTyping?: (typing: boolean) => void;
+}) {
   const [value, setValue] = useState("");
+  const change = (next: string) => {
+    setValue(next);
+    onTyping?.(next.trim().length > 0);
+  };
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
     onSend(trimmed);
-    setValue("");
+    change("");
   }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]"
+      className="flex shrink-0 items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] group-data-[keyboard]/frame:pb-2.5"
     >
       {/* 16px text: smaller inputs make iOS Safari zoom the page on focus. */}
       <input
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => change(e.target.value)}
         placeholder="اكتب رسالتك هنا..."
         aria-label="رسالتك إلى سديم"
         autoComplete="off"
