@@ -5,11 +5,11 @@ import { ArrowUpDown } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 
 const SORT_OPTIONS = [
-  { value: "featured", label: "الأكثر تميزاً", count: -1 },
-  { value: "newest", label: "الأحدث موديلاً", count: -1 },
+  { value: "featured", label: "المميزة أول", count: -1 },
+  { value: "newest", label: "الأحدث موديل", count: -1 },
   { value: "price-asc", label: "السعر: من الأقل للأعلى", count: -1 },
   { value: "price-desc", label: "السعر: من الأعلى للأقل", count: -1 },
-  { value: "mileage-asc", label: "الأقل كيلومترات", count: -1 },
+  { value: "mileage-asc", label: "الأقل ممشى", count: -1 },
 ];
 
 export function CarSort() {
@@ -34,7 +34,7 @@ export function CarSort() {
       value={value}
       onChange={handleChange}
       options={SORT_OPTIONS}
-      placeholder="الأكثر تميزاً"
+      placeholder="المميزة أول"
     />
   );
 }

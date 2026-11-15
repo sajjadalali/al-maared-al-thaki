@@ -23,7 +23,7 @@ export async function BodyTypes() {
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-6 pt-14 sm:px-6 lg:px-8">
-      <SectionHeading eyebrow="تسوّق حسب النوع" title="اختر حسب نوع السيارة" />
+      <SectionHeading eyebrow="حسب النوع" title="شنو نوع السيارة اللي تريدها؟" />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {types.map((type) => (

@@ -167,7 +167,7 @@ export function CarFilters({
           className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-black/10 py-2.5 text-sm font-semibold text-neutral-600 transition hover:bg-surface sm:col-span-2 lg:col-span-1"
         >
           <X className="h-4 w-4" />
-          مسح كل الفلاتر
+          امسح كل الفلاتر
         </button>
       )}
     </>
@@ -234,7 +234,7 @@ export function CarFilters({
                 onClick={() => setMobileOpen(false)}
                 className="w-full rounded-2xl bg-brand-950 py-3.5 text-[15px] font-bold text-white"
               >
-                {resultCount === 0 ? "لا توجد نتائج" : `عرض ${carCount(resultCount, "after")}`}
+                {resultCount === 0 ? "ماكو نتائج" : `عرض ${carCount(resultCount, "after")}`}
               </button>
             </div>
           </div>

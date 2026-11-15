@@ -97,7 +97,7 @@ export function CarQuickSearch({ cars }: { cars: FacetCar[] }) {
         className="mt-1 flex items-center justify-center gap-2 rounded-2xl bg-brand-950 px-7 py-4 text-[15px] font-bold text-white transition hover:bg-brand-800 col-span-2 lg:col-span-1 lg:ms-2 lg:mt-0"
       >
         <Search className="h-4 w-4" />
-        ابحث الآن
+        دوّر
       </button>
     </form>
   );

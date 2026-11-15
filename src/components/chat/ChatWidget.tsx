@@ -374,7 +374,7 @@ export function ChatWidget() {
 
   const invite = useInvite(phase === "closed" && !flight && !unread && !resumeHint, /^\/cars\/.+/.test(pathname));
   const status = unread ? "سديم رد عليك" : "رجوع للمحادثة";
-  const label = unread ? "سديم رد عليك" : started ? "كمّل مع سديم" : "تحدث مع سديم";
+  const label = unread ? "سديم رد عليك" : started ? "كمّل مع سديم" : "احچي ويا سديم";
 
   return (
     <div className="group/sadeem contents" data-flight={flight ?? undefined} data-open={phase === "open" || undefined}>

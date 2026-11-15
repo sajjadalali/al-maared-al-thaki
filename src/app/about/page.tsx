@@ -6,29 +6,29 @@ import { site } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "من نحن",
-  description: `تعرف على ${site.name}، معرض سيارات جديدة ومستعملة في العراق مع مساعد مبيعات ذكي.`,
+  description: `تعرّف على ${site.name}: معرض سيارات جديدة ومستعملة ب${site.city}، وبيه سديم، مساعدك الشخصي لشراء سيارتك.`,
 };
 
 const VALUES = [
   {
     icon: ShieldCheck,
-    title: "الثقة والشفافية",
-    text: "كل سيارة تمر بفحص شامل، وكل المعلومات المعروضة واضحة وصادقة: الوارد والممشى والحالة والسعر.",
+    title: "معلومات صحيحة",
+    text: "كل سيارة نفحصها قبل البيع، وكل اللي مكتوب عنها واضح وصحيح: الوارد والممشى والحالة والسعر.",
   },
   {
     icon: Target,
     title: "أسعار معلنة",
-    text: "السعر مكتوب على كل سيارة بالدينار العراقي، ونراجع السوق باستمرار لنبقى ضمن أفضل الأسعار.",
+    text: "سعر كل سيارة مكتوب بالدينار العراقي، فما تحتاج تسأل حتى تعرف شكد.",
   },
   {
     icon: Sparkles,
-    title: "تقنية حديثة",
-    text: "مساعدنا الذكي سديم يجيبك في أي وقت ويرشّح لك من سيارات المعرض حسب ميزانيتك واحتياجك.",
+    title: "سديم وياك",
+    text: "سديم، مساعدك الشخصي لشراء سيارتك، يجاوبك بأي وقت ويجيبلك من سيارات المعرض اللي تناسب ميزانيتك وحاجتك.",
   },
   {
     icon: Users,
-    title: "خدمة حتى التسليم",
-    text: "فريقنا معك في كل خطوة، من الاختيار ومعاينة السيارة وفحصها إلى التمويل والتسجيل ونقل الملكية.",
+    title: "وياك لحد التسليم",
+    text: "فريقنا وياك بكل خطوة: من الاختيار والمعاينة والفحص، للأقساط والتسجيل ونقل الملكية.",
   },
 ];
 
@@ -37,8 +37,8 @@ export default async function AboutPage() {
   const { available, brands } = catalog.getCatalogStats();
   const fresh = catalog.getAllCars().filter((car) => car.condition === "جديدة" && car.status !== "مباعة").length;
   const stats = [
-    { value: available, label: "سيارة متوفرة الآن" },
-    { value: brands, label: "ماركة في المعرض" },
+    { value: available, label: "سيارة متوفرة هسه" },
+    { value: brands, label: "ماركة بالمعرض" },
     { value: fresh, label: "سيارة جديدة زيرو" },
   ];
 
@@ -51,9 +51,9 @@ export default async function AboutPage() {
             معرض سيارات، بطريقة أوضح
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-neutral-600 sm:text-lg sm:leading-9">
-            {site.name} معرض سيارات جديدة ومستعملة في {site.city}، يعرض كل سيارة بسعرها
-            ومواصفاتها الحقيقية، ويوظّف الذكاء الاصطناعي ليجعل رحلة البحث عن سيارتك أسرع وأسهل. نؤمن
-            أن شراء السيارة يجب أن يكون تجربة مريحة لا مرهقة.
+            {site.name} معرض سيارات جديدة ومستعملة ب{site.city}. نعرض كل سيارة بسعرها ومواصفاتها
+            الحقيقية، وبيه سديم، مساعدك الشخصي لشراء سيارتك، حتى يصير البحث عن سيارتك أسرع وأسهل.
+            شراية السيارة لازم تكون مريحة، مو متعبة.
           </p>
 
           <div className="mx-auto mt-10 grid max-w-2xl grid-cols-3 gap-3">
@@ -81,10 +81,10 @@ export default async function AboutPage() {
         </div>
 
         <div className="mt-12 flex flex-col items-center gap-5 rounded-[28px] bg-brand-950 p-8 text-center text-white sm:p-12">
-          <h2 className="text-2xl font-bold sm:text-3xl">رسالتنا</h2>
+          <h2 className="text-2xl font-bold sm:text-3xl">شنو نريد</h2>
           <p className="max-w-2xl text-[15px] leading-8 text-white/65">
-            أن نكون الوجهة الأولى لكل باحث عن سيارة في العراق، بمعرض موثوق يجمع الشفافية والتقنية
-            الحديثة وخدمة تليق بثقتكم.
+            نريد شراية السيارة تصير أسهل وأوضح: سعر معلن، معلومات صحيحة عن كل سيارة، وسديم يجاوبك
+            بأي وقت، وفريق يكمّل وياك لحد ما تستلم مفتاحك.
           </p>
           <Link
             href="/cars"

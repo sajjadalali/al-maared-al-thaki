@@ -28,7 +28,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: CarDetailsPageProps): Promise<Metadata> {
   const { id } = await params;
   const car = (await getCatalog()).getCarById(id);
-  if (!car) return { title: "السيارة غير موجودة" };
+  if (!car) return { title: "السيارة مو موجودة" };
   // What a shared link shows. openGraph replaces the layout's as a whole (metadata
   // merges shallowly), so it repeats the site name and locale; the picture comes
   // from opengraph-image.ts next to this page.
@@ -191,7 +191,7 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
       {similar.length > 0 && (
         <section className="mt-16">
           <div className="mb-5 flex items-end justify-between gap-4">
-            <h2 className="text-xl font-bold text-brand-950 sm:text-2xl">سيارات قد تعجبك أيضاً</h2>
+            <h2 className="text-xl font-bold text-brand-950 sm:text-2xl">سيارات ممكن تعجبك هم</h2>
             <Link href="/cars" className="tap-target relative text-sm font-bold text-brand-600 hover:text-brand-950">
               كل السيارات
             </Link>

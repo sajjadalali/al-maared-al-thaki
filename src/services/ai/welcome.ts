@@ -29,7 +29,7 @@ export function offlineMessage(rateLimited = false): ChatMessage {
       : "صار خلل بالاتصال وما گدرت أجاوبك هسه 🙏 جرّب مرة ثانية، أو راسلنا مباشرة 👇",
     {
       actions: [
-        { kind: "whatsapp", label: "راسلنا واتساب", href: whatsappHref("مرحباً، عندي استفسار عن سيارة") },
+        { kind: "whatsapp", label: "راسلنا واتساب", href: whatsappHref("هلا، عندي سؤال عن سيارة") },
         { kind: "phone", label: "اتصال", href: phoneHref },
       ],
     }

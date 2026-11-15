@@ -51,7 +51,7 @@ export function ActiveFilters() {
         >
           {chip.label}
           <X className="h-3.5 w-3.5 text-brand-500" />
-          <span className="sr-only">إزالة الفلتر</span>
+          <span className="sr-only">شيل الفلتر</span>
         </button>
       ))}
     </div>

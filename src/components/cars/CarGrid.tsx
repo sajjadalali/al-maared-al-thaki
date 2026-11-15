@@ -18,9 +18,9 @@ export function CarGrid({
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-black/10 bg-white py-20 text-center">
         <SearchX className="h-10 w-10 text-neutral-300" />
-        <p className="text-base font-bold text-brand-950">لا توجد سيارات مطابقة</p>
+        <p className="text-base font-bold text-brand-950">ماكو سيارات بهالمواصفات</p>
         <p className="max-w-sm text-sm text-neutral-500">
-          جرّب تعديل الفلاتر أو كلمات البحث، أو تحدث مع سديم ليبحث لك عن أفضل خيار.
+          غيّر الفلاتر أو كلمات البحث، أو احچي ويا سديم ويدوّرلك على أحسن خيار.
         </p>
       </div>
     );

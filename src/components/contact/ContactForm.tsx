@@ -13,7 +13,7 @@ type State =
   // Could not be stored or sent: the message goes to WhatsApp, so nothing is lost.
   | { kind: "whatsapp"; link: string; why: string };
 
-const PHONE_ERROR = "اكتب رقم موبايل عراقي كامل: 11 رقماً يبدأ بـ 07";
+const PHONE_ERROR = "اكتب رقم موبايل عراقي كامل: 11 رقم يبدي بـ 07";
 
 // The request is saved (leads, source "form") and the sales team gets it on
 // Telegram, like the numbers Sadeem takes; WhatsApp is the fallback.
@@ -45,14 +45,14 @@ export function ContactForm() {
       }
       const { error } = await res.json().catch(() => ({ error: "" }));
       if (error === "bad_phone") return setState({ kind: "form", phoneError: PHONE_ERROR });
-      if (error === "showroom_phone") return setState({ kind: "form", phoneError: "هذا رقم المعرض، اكتب رقمك أنت" });
+      if (error === "showroom_phone") return setState({ kind: "form", phoneError: "هذا رقم المعرض، اكتب رقمك إنت" });
       setState({
         kind: "whatsapp",
         link,
-        why: res.status === 429 ? "أرسلت عدة طلبات خلال وقت قصير." : "تعذّر إرسال طلبك من هنا الآن.",
+        why: res.status === 429 ? "دزيت طلبات هواية بوقت قصير." : "ما گدرنا ندز طلبك من هنا هسه.",
       });
     } catch {
-      setState({ kind: "whatsapp", link, why: "تعذّر إرسال طلبك من هنا الآن." });
+      setState({ kind: "whatsapp", link, why: "ما گدرنا ندز طلبك من هنا هسه." });
     }
   }
 
@@ -62,7 +62,7 @@ export function ContactForm() {
         <CheckCircle2 className="h-10 w-10 text-success" />
         <p className="text-base font-bold text-brand-950">وصل طلبك</p>
         <p className="max-w-sm text-sm leading-7 text-neutral-500">
-          سيتصل بك فريق المبيعات على <bdi dir="ltr">{state.phone}</bdi> خلال أوقات الدوام ({site.hours}).
+          فريق المبيعات يتصل بيك على <bdi dir="ltr">{state.phone}</bdi> بأوقات الدوام ({site.hours}).
         </p>
         <a
           href={state.link}
@@ -71,7 +71,7 @@ export function ContactForm() {
           className="mt-2 flex items-center gap-2 rounded-xl border border-black/10 px-5 py-2.5 text-sm font-bold text-brand-900 hover:bg-surface"
         >
           <WhatsappIcon className="h-4 w-4 text-[#1fa855]" />
-          أو راسلنا على واتساب الآن
+          أو راسلنا على الواتساب هسه
         </a>
       </div>
     );
@@ -82,7 +82,7 @@ export function ContactForm() {
       <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-black/5 bg-white p-10 text-center shadow-sm">
         <p className="text-base font-bold text-brand-950">{state.why}</p>
         <p className="max-w-sm text-sm leading-7 text-neutral-500">
-          رسالتك جاهزة في واتساب: اضغط الزر ثم «إرسال» لتصل إلى فريق المبيعات.
+          رسالتك جاهزة بالواتساب: اضغط الزر وبعدين «إرسال» حتى توصل لفريق المبيعات.
         </p>
         <a
           href={state.link}
@@ -91,7 +91,7 @@ export function ContactForm() {
           className="mt-2 flex items-center gap-2 rounded-xl bg-[#1fa855] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#1a9149]"
         >
           <WhatsappIcon className="h-4 w-4" />
-          إرسال عبر واتساب
+          دزها على الواتساب
         </a>
       </div>
     );
@@ -123,7 +123,7 @@ export function ContactForm() {
           required
           rows={5}
           maxLength={1000}
-          placeholder="اكتب استفسارك هنا..."
+          placeholder="اكتب سؤالك هنا..."
           className="w-full resize-none rounded-xl border border-black/10 px-3.5 py-2.5 text-sm outline-none focus:border-brand-400"
         />
       </div>
@@ -133,7 +133,7 @@ export function ContactForm() {
         className="flex items-center justify-center gap-2 rounded-xl bg-brand-900 py-3 text-sm font-bold text-white transition hover:bg-brand-800 disabled:cursor-wait disabled:opacity-70"
       >
         {state.sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 -scale-x-100" />}
-        {state.sending ? "جارٍ الإرسال…" : "إرسال الطلب"}
+        {state.sending ? "دا ينرسل…" : "دز الطلب"}
       </button>
     </form>
   );

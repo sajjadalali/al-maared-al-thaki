@@ -11,8 +11,8 @@ export async function FeaturedCars() {
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <SectionHeading
         eyebrow="مختارات المعرض"
-        title="سيارات ننصح بها هذا الأسبوع"
-        description="سيارات مفحوصة وجاهزة للتسليم، من الوكالة والوارد، بأسعار معلنة بالدينار العراقي."
+        title="سيارات ننصحك بيها"
+        description="سيارات مفحوصة وجاهزة للتسليم، من الوكالة والوارد، وأسعارها معلنة بالدينار العراقي."
         link={{ href: "/cars", label: "كل السيارات" }}
       />
 

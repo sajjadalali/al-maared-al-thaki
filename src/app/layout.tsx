@@ -21,12 +21,12 @@ const plex = IBM_Plex_Sans_Arabic({
 // same as CATALOG_REVALIDATE in src/server/catalog.ts).
 export const revalidate = 60;
 
-const description = `${site.name} — تصفح السيارات الجديدة والمستعملة في العراق، قارن الأسعار، واحصل على مساعدة فورية من سديم، مساعد المبيعات الذكي.`;
+const description = `${site.name}: سيارات جديدة ومستعملة ب${site.city} بأسعار معلنة بالدينار. ويانا سديم، مساعدك الشخصي لشراء سيارتك: تحچي وياه بكلامك، يجيبلك اللي يناسبك ويقارنلك بيناتهن.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `${site.name} | بيع وشراء السيارات في العراق`,
+    default: `${site.name} | سيارات جديدة ومستعملة ببغداد`,
     template: `%s | ${site.name}`,
   },
   description,
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "ar_IQ",
     siteName: site.name,
-    title: `${site.name} | بيع وشراء السيارات في العراق`,
+    title: `${site.name} | سيارات جديدة ومستعملة ببغداد`,
     description,
   },
 };
