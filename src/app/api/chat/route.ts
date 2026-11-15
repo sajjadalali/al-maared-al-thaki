@@ -1,3 +1,4 @@
+import type { ChatInterest } from "@/lib/interest";
 import { after } from "next/server";
 import { insert, supabaseEnv, type SupabaseEnv } from "@/server/supabase";
 import { getCatalog } from "@/server/catalog";
@@ -52,6 +53,7 @@ interface Reply {
   matchCount?: number;
   criteria?: string[];
   actions?: ChatAction[];
+  interest?: ChatInterest;
   searches: Record<string, unknown>[];
 }
 
@@ -123,6 +125,7 @@ const publicReply = (reply: Reply) => ({
   matchCount: reply.matchCount,
   criteria: reply.criteria,
   actions: reply.actions,
+  interest: reply.interest,
 });
 
 /**

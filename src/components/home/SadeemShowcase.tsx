@@ -7,7 +7,8 @@ import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { askSadeem } from "@/lib/chatBus";
 import { cn } from "@/lib/cn";
-import type { Scene, SceneCar } from "./sadeemScenes";
+import { readInterest } from "@/lib/interest";
+import { sadeemScenes, type Scene, type SceneCar, type SceneSource } from "./sadeemScenes";
 
 // One scene: the question lands, Sadeem writes, the answer builds, it rests,
 // then it gives way to the next one.
@@ -113,7 +114,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
             <div className="min-w-0">
               <p className="text-[14.5px] font-bold leading-6 text-brand-950">وصل طلبك لفريق المبيعات</p>
               <p className="text-[12.5px] leading-5 text-neutral-500">
-                تجربة قيادة {scene.car}، ب{scene.city}
+                {scene.purpose === "buy" ? "شراء" : "تجربة قيادة"} {scene.car}، ب{scene.city}
               </p>
             </div>
           </Piece>
@@ -218,8 +219,26 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
  * Sadeem at work, as a moving picture, beside the questions it plays. Each
  * question is a button: it asks the real Sadeem that question.
  */
-export function SadeemShowcase({ scenes, intro, outro }: { scenes: Scene[]; intro: ReactNode; outro: ReactNode }) {
+export function SadeemShowcase({
+  scenes: firstScenes,
+  cars,
+  intro,
+  outro,
+}: {
+  scenes: Scene[];
+  cars: SceneSource[];
+  intro: ReactNode;
+  outro: ReactNode;
+}) {
+  // The server's fixed scenes first, then this visitor's: about what they told
+  // Sadeem or the cars they opened, or a random set when nothing is known.
+  const [scenes, setScenes] = useState(firstScenes);
   const [active, setActive] = useState(0);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the visitor's scenes come from this browser's storage, after hydration
+    setScenes(sadeemScenes(cars, { interest: readInterest(), random: Math.random }));
+    setActive(0);
+  }, [cars]);
   // Replays the scene's entrance (a new key) whenever a scene starts.
   const [run, setRun] = useState(0);
   const [mode, setMode] = useState<Mode>("static");

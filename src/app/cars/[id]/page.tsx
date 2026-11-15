@@ -13,6 +13,7 @@ import { CarContactActions } from "@/components/cars/CarContactActions";
 import { CarFavoriteToggle } from "@/components/cars/CarFavoriteToggle";
 import { CarGrid } from "@/components/cars/CarGrid";
 import { MobileContactBar } from "@/components/cars/MobileContactBar";
+import { RecordView } from "@/components/cars/RecordView";
 
 interface CarDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -78,6 +79,7 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-16">
+      <RecordView id={car.id} />
       <nav className="mb-5 flex items-center gap-1.5 text-[13px] text-neutral-500">
         <Link href="/" className="tap-target relative hover:text-brand-950">الرئيسية</Link>
         <ChevronLeft className="h-3.5 w-3.5" />

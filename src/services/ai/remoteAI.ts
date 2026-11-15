@@ -1,3 +1,4 @@
+import { recordChat, type ChatInterest } from "@/lib/interest";
 import { phoneHref, whatsappHref } from "@/config/site";
 import { carWhatsappMessage } from "@/lib/carMessages";
 import { formatIQD } from "@/lib/format";
@@ -27,6 +28,8 @@ interface ReplyData {
   matchCount?: number;
   criteria?: string[];
   actions?: ChatAction[];
+  /** What Sadeem understood the buyer wants (lib/interest). */
+  interest?: ChatInterest;
 }
 
 // The route answers in server-sent events ("data: {…}"): {type:"status"} and
@@ -84,6 +87,7 @@ export const remoteAIService: AIService = {
       if (res.status === 429) return offlineMessage(true);
       if (!res.ok) throw new Error(String(res.status));
       const data = await readReply(res, onProgress);
+      recordChat(data.interest);
       const cars = (data.cars ?? []).slice(0, MAX_CHAT_CARS);
       return {
         id: `msg-${Date.now()}`,
