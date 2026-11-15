@@ -1,17 +1,21 @@
 import { OpenChatButton } from "@/components/chat/OpenChatButton";
 import { SadeemShowcase } from "@/components/home/SadeemShowcase";
-import { sadeemScenes } from "@/components/home/sadeemScenes";
+import { sadeemScenes, toSceneSource } from "@/components/home/sadeemScenes";
 import { getCatalog } from "@/server/catalog";
 
 /** Who Sadeem is and what he does, shown rather than listed. */
 export async function SadeemSection() {
-  const scenes = sadeemScenes(await getCatalog());
+  // The stock the scenes are made from: the server renders a fixed set, and the
+  // browser remakes them for this visitor (random, or about what they want).
+  const cars = (await getCatalog()).getAllCars().filter((car) => car.status === "متوفرة").map(toSceneSource);
+  const scenes = sadeemScenes(cars);
 
   return (
     <section className="bg-brand-950 text-white">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <SadeemShowcase
           scenes={scenes}
+          cars={cars}
           intro={
             <>
               <h2 className="text-3xl font-bold leading-tight sm:text-[40px] sm:leading-[1.2]">سديم، مساعدك الشخصي لشراء سيارتك</h2>

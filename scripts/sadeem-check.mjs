@@ -501,7 +501,16 @@ const CONVERSATIONS = [
   // number is refused, and a message without a number has nothing to save.
   {
     name: "طلب بدون رقم",
-    turns: [{ say: "أريد SUV عائلية", expect: [cardsSome(() => true, "ما عرض ولا سيارة")] }],
+    turns: [
+      {
+        say: "أريد SUV عائلية",
+        expect: [
+          cardsSome(() => true, "ما عرض ولا سيارة"),
+          // 15 Nov: what Sadeem understood comes back with the reply, for the home page's scenes (lib/interest).
+          (r) => (r.interest?.bodyTypes?.includes("SUV") ? null : `ما رجع اهتمام الزبون (interest): ${JSON.stringify(r.interest ?? null)}`),
+        ],
+      },
+    ],
   },
   {
     name: "رقم المعرض كرقم الزبون",

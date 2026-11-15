@@ -6,6 +6,7 @@ import type { SupabaseEnv } from "@/server/supabase";
 import { carMarker, stripCarMarkers } from "@/services/ai/carMarkers";
 import { carNameAr } from "@/lib/format";
 import { contactMessage, type ContactPurpose } from "./contact";
+import type { ChatInterest } from "@/lib/interest";
 import type { ChatAction } from "@/services/ai/types";
 import type { Car } from "@/types/car";
 import { overviewAvailable, overviewPrices, systemPrompt } from "./prompt";
@@ -21,6 +22,7 @@ import {
   usdOf,
   type ArabicName,
   type TurnState,
+  buyerBudget,
 } from "./tools";
 import { mentionsOverBudget, moneyFigures, unsupportedFigures, type AllowedFigures } from "./verify";
 
@@ -51,6 +53,8 @@ export interface AgentReply {
   matchCount?: number;
   /** WhatsApp and call buttons, when the reply gives the contact details. */
   actions?: ChatAction[];
+  /** What Sadeem understood the buyer wants, kept in their browser for the home page (lib/interest). */
+  interest?: ChatInterest;
   searches: Record<string, unknown>[];
 }
 
@@ -1192,6 +1196,33 @@ export async function runSadeem(
     leadSaved: state.leadSaved,
     matchCount: cars.length ? state.matchCount : undefined,
     actions: contactActions(finalContent, state, cars, history, arabic, message),
+    interest: interestOf(state, cars),
     searches: state.searches,
   };
+}
+
+const SEARCH_KEYS = ["max_price", "body_types", "brands", "models", "min_seats", "fuels", "condition"];
+const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0) : undefined);
+
+// What this turn says about the buyer: the budget they gave, the last search's
+// filters, and the one car they want when they asked to buy or be contacted
+// about it. Only what the turn holds; the browser keeps the rest.
+function interestOf(state: TurnState, cars: Car[]): ChatInterest | undefined {
+  const search = [...state.searches].reverse().find((s) => SEARCH_KEYS.some((k) => k in s));
+  const interest: ChatInterest = {};
+  const budget = buyerBudget(state.request) ?? (typeof search?.max_price === "number" ? search.max_price : undefined);
+  if (budget && budget > 0) interest.budget = budget;
+  const bodyTypes = strings(search?.body_types);
+  if (bodyTypes?.length) interest.bodyTypes = bodyTypes;
+  const brands = strings(search?.brands);
+  if (brands?.length) interest.brands = brands;
+  const models = strings(search?.models);
+  if (models?.length) interest.models = models;
+  if (typeof search?.min_seats === "number" && search.min_seats > 0) interest.seats = search.min_seats;
+  const fuels = strings(search?.fuels);
+  if (fuels?.length) interest.fuels = fuels;
+  if (search?.condition === "جديدة" || search?.condition === "مستعملة") interest.condition = search.condition;
+  const intent = state.request?.intent;
+  if ((intent === "buy" || intent === "contact") && cars.length === 1) interest.wanted = cars[0].id;
+  return Object.keys(interest).length ? interest : undefined;
 }
