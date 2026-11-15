@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { Check, Clock, SendHorizontal } from "lucide-react";
+import { Check, CheckCheck, Clock, Send, SendHorizontal, Sparkles } from "lucide-react";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { askSadeem } from "@/lib/chatBus";
@@ -45,9 +45,10 @@ function Thumb({ car, className }: { car: SceneCar; className?: string }) {
 /** What the buyer wrote. */
 function Ask({ children }: { children: ReactNode }) {
   return (
-    <p className="w-fit max-w-[88%] rounded-[22px] rounded-br-md bg-white px-4 py-2.5 text-[15px] font-semibold leading-7 text-brand-950 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]">
-      {children}
-    </p>
+    <div className="w-fit max-w-[86%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 pb-1.5 pt-2.5 text-white shadow-sm">
+      <p className="text-[15px] leading-7">{children}</p>
+      <CheckCheck className="ms-auto mt-0.5 h-3.5 w-3.5 text-sky-300" />
+    </div>
   );
 }
 
@@ -57,7 +58,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       return (
         <div className="space-y-2">
           {scene.cars.map((car, i) => (
-            <Piece key={car.id} at={SHOW_AT + i * STEP} mode={mode} className="flex items-center gap-3 rounded-2xl bg-white p-2 pe-4">
+            <Piece key={car.id} at={SHOW_AT + i * STEP} mode={mode} className="flex items-center gap-3 rounded-2xl border border-black/[0.04] bg-white p-2 pe-4 shadow-sm">
               <Thumb car={car} className="h-[58px] w-[78px] sm:h-[64px] sm:w-[88px]" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[14.5px] font-bold leading-6 text-brand-950">{car.name}</p>
@@ -70,7 +71,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       );
     case "compare":
       return (
-        <Piece at={SHOW_AT} mode={mode} className="overflow-hidden rounded-2xl bg-white">
+        <Piece at={SHOW_AT} mode={mode} className="overflow-hidden rounded-2xl border border-black/[0.04] bg-white shadow-sm">
           <div className="grid grid-cols-[4.25rem_1fr_1fr] items-end gap-x-3 px-4 pb-3 pt-4">
             <span />
             {scene.cars.map((car) => (
@@ -107,7 +108,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
               <bdi dir="ltr">{scene.phone}</bdi>
             </Ask>
           </Piece>
-          <Piece at={SHOW_AT + 1.3} mode={mode} className="flex items-center gap-3.5 rounded-2xl bg-white p-4">
+          <Piece at={SHOW_AT + 1.3} mode={mode} className="flex items-center gap-3.5 rounded-2xl border border-black/[0.04] bg-white p-4 shadow-sm">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success text-white">
               <Check className="h-5 w-5" strokeWidth={3} />
             </span>
@@ -122,7 +123,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       );
     case "hours":
       return (
-        <Piece at={SHOW_AT} mode={mode} className="divide-y divide-brand-100 rounded-2xl bg-white px-4">
+        <Piece at={SHOW_AT} mode={mode} className="divide-y divide-brand-100 rounded-2xl border border-black/[0.04] bg-white px-4 shadow-sm">
           <div className="flex items-center gap-3.5 py-3.5">
             <Clock className="h-5 w-5 shrink-0 text-brand-500" />
             <div>
@@ -141,20 +142,22 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
   }
 }
 
-/** The picture: one scene at a time, on a dark stage. Decorative; the questions beside it are the controls. */
+/**
+ * The picture: one scene at a time, inside the chat as the buyer really sees it
+ * (16 Nov): Sadeem's header, the light conversation, the same bubbles and the
+ * message box. It was a dark navy stage that looked like no chat. Decorative;
+ * the questions beside it are the controls.
+ */
 function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active: number; mode: Mode; run: number; resting: boolean }) {
   const scene = scenes[active];
   return (
-    <div
-      aria-hidden
-      className="relative flex h-[520px] flex-col overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#18273f_0%,#101b2e_100%)] px-5 pb-6 pt-5 ring-1 ring-white/10 sm:h-[540px] sm:px-8 sm:pt-6"
-    >
+    <div aria-hidden>
       {/* The picture's chapters: what Sadeem does in each scene, and how far the current one is. */}
-      <div className="flex gap-2">
+      <div className="mb-4 flex gap-2 px-1">
         {scenes.map((chapter, i) => (
           <div key={chapter.ask} className="min-w-0 flex-1">
-            <span className="block h-[3px] overflow-hidden rounded-full bg-white/15">
-              {i < active && <span className="block h-full bg-white/70" />}
+            <span className="block h-[3px] overflow-hidden rounded-full bg-brand-950/10">
+              {i < active && <span className="block h-full bg-brand-950/45" />}
               {i === active && (
                 <span
                   key={run}
@@ -163,52 +166,81 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
                 />
               )}
             </span>
-            <span className={cn("mt-2 block text-[13px] font-semibold leading-5 transition-colors duration-300", i === active ? "text-white" : "text-white/35")}>
+            <span className={cn("mt-2 block text-[13px] font-semibold leading-5 transition-colors duration-300", i === active ? "text-brand-950" : "text-neutral-400")}>
               {chapter.verb}
             </span>
           </div>
         ))}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col justify-center">
-        <div
-          key={run}
-          className={cn("space-y-4", mode === "waiting" && "opacity-0", mode === "playing" && !resting && "animate-scene-out")}
-          style={mode === "playing" && !resting ? { animationDelay: `${SCENE_MS - 380}ms` } : undefined}
-        >
-          <Piece at={ASK_AT} mine mode={mode}>
-            <Ask>{scene.ask}</Ask>
-          </Piece>
+      <div className="flex h-[624px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_70px_-28px_rgba(11,19,34,0.45)] ring-1 ring-brand-950/[0.07]">
+        {/* The chat's header, as in the real one. */}
+        <div className="flex shrink-0 items-center gap-3 bg-brand-950 px-4 py-3.5 text-white">
+          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-white/10">
+            <SadeemMascot className="h-9 w-9" />
+            <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
+          </span>
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-base font-bold leading-6">
+              سديم
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+            </p>
+            <p className="truncate text-[12px] leading-5 text-white/70">متصل هسه، مساعدك الشخصي</p>
+          </div>
+        </div>
 
-          {/* Sadeem's side: his head at the far edge, his words and what he shows beside it. */}
-          <div className="flex flex-row-reverse items-start gap-3 sm:gap-4">
-            <Piece at={TYPING_AT - 0.2} mode={mode} className="relative mt-0.5 shrink-0">
-              {mode === "playing" && (
-                <span className="absolute inset-0 rounded-full border-2 border-accent-400 animate-scene-ring" style={{ animationDelay: `${TYPING_AT}s` }} />
-              )}
-              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white">
-                <SadeemMascot className="h-8 w-8" />
-              </span>
+        {/* The conversation: the latest at the bottom, as a chat fills. */}
+        <div className="flex min-h-0 flex-1 flex-col justify-end bg-[#f2f5f9] px-3.5 py-4 sm:px-5">
+          <div
+            key={run}
+            className={cn("space-y-3.5", mode === "waiting" && "opacity-0", mode === "playing" && !resting && "animate-scene-out")}
+            style={mode === "playing" && !resting ? { animationDelay: `${SCENE_MS - 380}ms` } : undefined}
+          >
+            <Piece at={ASK_AT} mine mode={mode}>
+              <Ask>{scene.ask}</Ask>
             </Piece>
-            <div className="min-w-0 flex-1">
-              <div className="grid min-h-10 items-center [&>*]:col-start-1 [&>*]:row-start-1">
+
+            {/* Sadeem's side: his head at the far edge, his words and what he shows beside it. */}
+            <div className="flex flex-row-reverse items-start gap-2">
+              <Piece at={TYPING_AT - 0.2} mode={mode} className="relative mt-0.5 shrink-0">
                 {mode === "playing" && (
-                  <span className="flex w-fit items-center gap-1.5 justify-self-end animate-scene-typing" style={{ animationDelay: `${TYPING_AT}s` }}>
-                    {[0, 1, 2].map((i) => (
-                      <span key={i} className="h-2 w-2 animate-bounce-dot rounded-full bg-white/70" style={{ animationDelay: `${i * 0.15}s` }} />
-                    ))}
-                  </span>
+                  <span className="absolute inset-0 rounded-full border-2 border-accent-400 animate-scene-ring" style={{ animationDelay: `${TYPING_AT}s` }} />
                 )}
-                <Piece at={REPLY_AT} mode={mode}>
-                  <p className="text-[15px] leading-7 text-white/90">{scene.reply}</p>
-                </Piece>
+                <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
+                  <SadeemMascot className="h-6 w-6" />
+                </span>
+              </Piece>
+              <div className="min-w-0 flex-1">
+                <div className="grid min-h-11 items-start [&>*]:col-start-1 [&>*]:row-start-1">
+                  {mode === "playing" && (
+                    <span
+                      className="flex w-fit items-center gap-1 justify-self-end rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-4 py-3.5 shadow-sm animate-scene-typing"
+                      style={{ animationDelay: `${TYPING_AT}s` }}
+                    >
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} className="h-1.5 w-1.5 animate-bounce-dot rounded-full bg-brand-400" style={{ animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </span>
+                  )}
+                  <Piece at={REPLY_AT} mode={mode} className="rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 py-2 shadow-sm">
+                    <p className="text-[15px] leading-7 text-neutral-800">{scene.reply}</p>
+                  </Piece>
+                </div>
               </div>
             </div>
+            {/* What he shows: the full width on phones, under his words on wider screens. */}
+            <div className="sm:pe-9">
+              <SceneBody scene={scene} mode={mode} />
+            </div>
           </div>
-          {/* What he shows: the full width on phones, under his words on wider screens. */}
-          <div className="sm:pe-14">
-            <SceneBody scene={scene} mode={mode} />
-          </div>
+        </div>
+
+        {/* The message box, as in the real chat (a picture here: the questions beside it do the asking). */}
+        <div className="flex shrink-0 items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5">
+          <span className="min-w-0 flex-1 truncate rounded-full bg-surface px-4 py-2.5 text-[15px] text-neutral-400">اكتب رسالتك هنا...</span>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
+            <Send className="h-[18px] w-[18px] -scale-x-100" />
+          </span>
         </div>
       </div>
     </div>
@@ -295,12 +327,12 @@ export function SadeemShowcase({
       </div>
 
       <div className="lg:self-start">
-        <p className="text-sm font-semibold text-white/55">اضغط على سؤال، وسديم يجاوبك عليه هسه:</p>
-        <ul className="mt-3 border-t border-white/10">
+        <p className="text-sm font-semibold text-neutral-500">اضغط على سؤال، وسديم يجاوبك عليه هسه:</p>
+        <ul className="mt-3 border-t border-brand-950/10">
           {scenes.map((scene, i) => {
             const on = i === active;
             return (
-              <li key={scene.ask} className="relative border-b border-white/10">
+              <li key={scene.ask} className="relative border-b border-brand-950/10">
                 <button
                   type="button"
                   onClick={() => askSadeem(scene.ask)}
@@ -312,15 +344,15 @@ export function SadeemShowcase({
                   className="group flex w-full items-center gap-4 py-4 text-start outline-none"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className={cn("block text-[16px] font-bold leading-7 transition-colors duration-300 sm:text-[17px]", on ? "text-white" : "text-white/55 group-hover:text-white")}>
+                    <span className={cn("block text-[16px] font-bold leading-7 transition-colors duration-300 sm:text-[17px]", on ? "text-brand-950" : "text-neutral-500 group-hover:text-brand-950")}>
                       {scene.ask}
                     </span>
-                    <span className={cn("block text-[13px] leading-6 transition-colors duration-300", on ? "text-white/60" : "text-white/35")}>{scene.does}</span>
+                    <span className={cn("block text-[13px] leading-6 transition-colors duration-300", on ? "text-neutral-600" : "text-neutral-400")}>{scene.does}</span>
                   </span>
                   <span
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition duration-300 group-focus-visible:ring-2 group-focus-visible:ring-accent-300 group-active:scale-90",
-                      on ? "bg-white text-brand-950" : "text-white/60 ring-1 ring-white/20 group-hover:bg-white group-hover:text-brand-950"
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition duration-300 group-focus-visible:ring-2 group-focus-visible:ring-brand-600 group-focus-visible:ring-offset-2 group-active:scale-90",
+                      on ? "bg-brand-950 text-white" : "bg-white text-brand-800 ring-1 ring-brand-950/10 group-hover:bg-brand-950 group-hover:text-white"
                     )}
                   >
                     <SendHorizontal className="h-[18px] w-[18px] -scale-x-100" />
