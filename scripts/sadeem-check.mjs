@@ -398,7 +398,8 @@ const CONVERSATIONS = [
   {
     name: "تحويل للواتساب",
     turns: [
-      { say: "توصلون السيارة للبصرة؟", expect: [notInvented] },
+      // 15 Nov: delivery is a showroom policy now (showroom_info): Sadeem answers it and gives the contact.
+      { say: "توصلون السيارة للبصرة؟", expect: [has(/نوصل|التوصيل/), has(/📱|واتساب|تواصل|اتصل/), noCards("عرض سيارات على سؤال التوصيل")] },
     ],
   },
   // 12 Nov: «التوسان متوفرة بالنجف، تگدر تجي تجربها ببغداد».
@@ -509,7 +510,13 @@ const CONVERSATIONS = [
 const results = [];
 let failed = 0;
 
-for (const convo of CONVERSATIONS) {
+// ONLY=«شراء|الصفحة» runs just the conversations whose name has one of those, and
+// REPEAT=3 runs each of them that many times (to see a change hold up).
+const only = process.env.ONLY?.trim();
+const repeat = Math.max(1, Number(process.env.REPEAT) || 1);
+const chosen = (only ? CONVERSATIONS.filter((c) => only.split("|").some((o) => c.name.includes(o.trim()))) : CONVERSATIONS).flatMap((c) => Array(repeat).fill(c));
+
+for (const convo of chosen) {
   const session = sessionId();
   const history = [];
   for (const turn of convo.turns) {
