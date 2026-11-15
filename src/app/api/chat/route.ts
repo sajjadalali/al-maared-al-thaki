@@ -17,10 +17,13 @@ const hits = new Map<string, number[]>();
 function rateLimited(ip: string): boolean {
   const now = Date.now();
   const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
+  // A refused message doesn't count: only answered ones cost anything (15 Nov:
+  // the check's retries kept the window full for 9 minutes).
+  const limited = recent.length >= MAX_PER_WINDOW;
+  if (!limited) recent.push(now);
   hits.set(ip, recent);
   if (hits.size > 5000) hits.clear();
-  return recent.length > MAX_PER_WINDOW;
+  return limited;
 }
 
 function parseHistory(value: unknown): HistoryMessage[] {
