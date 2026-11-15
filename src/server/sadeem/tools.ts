@@ -113,7 +113,7 @@ export const TOOL_DEFINITIONS = [
           phone: { type: "string" },
           name: { type: "string" },
           car_id: { type: "string" },
-          note: { type: "string", description: "What they want, in Arabic (e.g. تجربة قيادة يوم السبت)." },
+          note: { type: "string", description: "What they want, in Arabic (e.g. معاينة يوم السبت)." },
         },
         required: ["phone"],
       },

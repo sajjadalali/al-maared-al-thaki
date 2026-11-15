@@ -73,7 +73,7 @@ export function CarFilters({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="ماركة، موديل، مدينة..."
+            placeholder="ماركة، موديل..."
             className="min-h-11 w-full rounded-xl border border-black/10 bg-white py-2.5 pe-3.5 ps-9 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
           />
         </div>
@@ -133,14 +133,16 @@ export function CarFilters({
         placeholder="الكل"
         placeholderCount={options.totals.origin}
       />
-      <Dropdown
-        label="المحافظة"
-        value={param("city")}
-        onChange={(v) => setParams({ city: v || null })}
-        options={options.cities}
-        placeholder="جميع المحافظات"
-        placeholderCount={options.totals.city}
-      />
+      {options.cities.length > 1 && (
+        <Dropdown
+          label="المحافظة"
+          value={param("city")}
+          onChange={(v) => setParams({ city: v || null })}
+          options={options.cities}
+          placeholder="جميع المحافظات"
+          placeholderCount={options.totals.city}
+        />
+      )}
       <Dropdown
         label="نوع الوقود"
         value={param("fuel")}

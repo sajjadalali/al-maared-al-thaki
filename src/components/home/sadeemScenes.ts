@@ -64,7 +64,7 @@ export type Scene = SceneBase &
   (
     | { kind: "cars"; cars: SceneCar[] }
     | { kind: "compare"; cars: [SceneCar, SceneCar]; rows: { label: string; values: [string, string]; better?: 0 | 1 }[] }
-    | { kind: "booking"; purpose: "test_drive" | "buy"; phone: string; car: string; city: string }
+    | { kind: "booking"; purpose: "viewing" | "buy"; phone: string; car: string; city: string }
     | { kind: "hours"; hours: string; support: string; whatsapp: string }
   );
 
@@ -268,7 +268,7 @@ export function sadeemScenes(cars: SceneSource[], { interest, random }: Options 
     });
   }
 
-  // 3. Closing: buying the car they want, else a test drive of the car they looked at or were shown.
+  // 3. Closing: buying the car they want, else a viewing of the car they looked at or were shown.
   const drive = wanted ?? focus ?? shown[0] ?? pick(available.filter((c) => c.featured)) ?? available[0];
   if (drive) {
     scenes.push(
@@ -286,11 +286,11 @@ export function sadeemScenes(cars: SceneSource[], { interest, random }: Options 
           }
         : {
             kind: "booking",
-            purpose: "test_drive",
+            purpose: "viewing",
             verb: "يحجزلك",
-            ask: `أريد أحجز تجربة قيادة ${forModel(drive)}`,
-            does: "يسجّل طلب تجربة القيادة ويوصله للفريق",
-            reply: "دزلي رقمك، والفريق يتصل بيك ويتفق وياك على الوقت.",
+            ask: `أريد أحجز موعد معاينة ${forModel(drive)}`,
+            does: "يسجّل طلب المعاينة ويوصله للفريق",
+            reply: "تعاينها وتفحصها بالمعرض. دزلي رقمك، والفريق يتصل بيك ويتفق وياك على الموعد.",
             phone: "07•• ••• ••••",
             car: `${carNameAr(drive)} ${drive.year}`,
             city: drive.city,

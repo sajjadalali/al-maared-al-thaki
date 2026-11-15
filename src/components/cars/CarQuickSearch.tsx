@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, MapPin, Coins, Calendar, Car as CarIcon } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { cn } from "@/lib/cn";
 import { PRICE_BANDS, getFilterOptions, type FacetCar } from "@/lib/filterOptions";
 
 // Counts update as the visitor picks, so the options are built here from the
@@ -38,22 +39,28 @@ export function CarQuickSearch({ cars }: { cars: FacetCar[] }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-2 gap-1 rounded-3xl bg-white p-2.5 shadow-[0_18px_40px_-28px_rgba(11,19,34,0.22)] ring-1 ring-black/[0.04] sm:grid-cols-2 sm:gap-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-center lg:gap-0"
+      className={cn(
+        "grid grid-cols-2 gap-1 rounded-3xl bg-white p-2.5 shadow-[0_18px_40px_-28px_rgba(11,19,34,0.22)] ring-1 ring-black/[0.04] sm:grid-cols-2 sm:gap-2  lg:items-center lg:gap-0",
+        options.cities.length > 1 ? "lg:grid-cols-[1fr_1fr_1fr_1fr_auto]" : "lg:grid-cols-[1fr_1fr_1fr_auto]"
+      )}
     >
+      {/* One showroom, one city: the place filter only shows when the stock is in more than one. */}
+      {options.cities.length > 1 && (
+        <Dropdown
+          variant="hero"
+          className={cell}
+          icon={<MapPin className="h-3.5 w-3.5" />}
+          label="الموقع"
+          value={city}
+          onChange={setCity}
+          placeholder="جميع المحافظات"
+          placeholderCount={options.totals.city}
+          options={options.cities}
+        />
+      )}
       <Dropdown
         variant="hero"
-        className={cell}
-        icon={<MapPin className="h-3.5 w-3.5" />}
-        label="الموقع"
-        value={city}
-        onChange={setCity}
-        placeholder="جميع المحافظات"
-        placeholderCount={options.totals.city}
-        options={options.cities}
-      />
-      <Dropdown
-        variant="hero"
-        className={cell}
+        className={cn(cell, options.cities.length <= 1 && "col-span-2 lg:col-span-1")}
         icon={<CarIcon className="h-3.5 w-3.5" />}
         label="الماركة"
         value={brand}

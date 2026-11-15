@@ -560,11 +560,11 @@ export function contactCar(cars: Car[], history: HistoryMessage[], arabic: Map<s
 // What the WhatsApp message says the buyer wants (15 Nov: «أريد الكامري» got a
 // test-drive message): buying first, then a test drive, else a question.
 const BUY_WORDS = /اريدها|اريده|ابيها|اشتري|اشتريها|اشتريه|اخذها|اخذه|شراء/;
-const TEST_DRIVE_WORDS = /تجربه|تجربة|اجرب|اجربها|اجربه/;
+const VIEWING_WORDS = /معاينه|معاينة|اعاين|اشوفها|اشوفه|افحص|تجربه|تجربة|اجرب/;
 function contactPurpose(state: TurnState, message: string): ContactPurpose {
   const text = fold(message);
   if (state.request?.intent === "buy" || BUY_WORDS.test(text)) return "buy";
-  return TEST_DRIVE_WORDS.test(text) ? "test_drive" : "question";
+  return VIEWING_WORDS.test(text) ? "viewing" : "question";
 }
 
 // A reply that hands the buyer to the team gets WhatsApp and call buttons under it.
