@@ -278,6 +278,8 @@ const IRAQI_WORDS = (
     ["إياه|اياه", "ياه"], ["إياها|اياها", "ياها"], ["إياهم|اياهم", "ياهم"],
     ["شاشتان", "شاشتين"], ["سيارتان", "سيارتين"], ["كاميرتان", "كاميرتين"], ["فتحتان", "فتحتين"], ["مرتان", "مرتين"],
     ["مقعدان", "مقعدين"], ["بابان", "بابين"], ["لونان", "لونين"],
+    // From the check of 15 Nov: «وكلاهما مستعملة»، «الرسالة تُكتب تلقائياً».
+    ["كلاهما|كليهما", "الثنين"], ["تُكتب", "تنكتب"], ["يُكتب", "ينكتب"], ["تُرسل", "تنرسل"],
   ] as const
 ).map(([words, iraqi]) => [new RegExp(`(^|[^${AR_LETTER}])([وف]?)(?:${words})(?![${AR_LETTER}])`, "g"), `$1$2${iraqi}`] as const);
 
@@ -344,6 +346,10 @@ const cleanReply = (text: string) =>
     .replace(/(?<=[\u0621-\u064A])ـ+(?=[\u0621-\u064A])/g, "")
     // «تحب أعرف تفاصيل…» says "would you like me to know": the model means «أگلك».
     .replace(/(تحب|تريد|تحبون|تريدون)\s+أعرف(?=\s+(?:تفاصيل|شي|أكثر|اكثر|عن|مواصفات|تجهيزات))/g, "$1 أگلك")
+    // «تحب أعرفك على تفاصيل…» (15 Nov) means the same: «تحب أگلك تفاصيل…».
+    .replace(/(تحب|تريد|تحبون|تريدون)\s+أعرفك\s+(?:على|عن)\s+/g, "$1 أگلك ")
+    // A reply that opens with «و» («وعندنا 19 SUV»، 15 Nov) reads cut off.
+    .replace(/^و(?=(?:عندنا|عدنا|أكو|هذني|هاي)(?![\u0621-\u064A]))/, "")
     // A tag word left alone before the closing question («اقتصادية.. تحب أگلك…»).
     .replace(/(^|\n)[ \t]*(?:اقتصادية|فاخرة|فخمة)[ \t]*(?:\.{2,}|…)[ \t]*/g, "$1")
     .replace(/هلا وغلاي/g, "هلا وغلا")
@@ -792,6 +798,14 @@ function strayModelProblems(reply: string, allNames: Map<string, ArabicName>, fo
 const ABOUT_SHOWN =
   /(?:^|\s)(?:ال)?(?:اولى|اول وحده|اول وحدة|ثانيه|ثانية|ثالثه|ثالثة|اخيره|اخيرة|هاي|هذي|هاذي|هاذ|هذا|هيه|هيا|بيها|منهن|منهم)(?=\s|[؟?،.!]|$)|ماشي|ممشى|ممشاه|كيلو|عداد|لونها|لونه|صبغ|ضرب|حادث|محرك|ماطور|سلندر|استهلاك|سعرها|سعره|ضمان|كمرك|تجربه|تجربة|مواصفات/;
 
+// «أكو 7 سيارات ضمن ميزانيتك» while some of those 7 cost more than the budget
+// (15 Nov: «بحدود 30 مليون» counts up to 31.5, the Tucson at 31): R8 says
+// «بحدود ميزانيتك» then, and the server makes it so.
+function budgetCount(reply: string, state: TurnState): string {
+  if (!state.overBudget.length) return reply;
+  return reply.replace(/((?:أكو|عدنا|عندنا)\s+\d+[^\n.،؟]{0,30}?)ضمن\s+(?=ميزانيت)/g, "$1بحدود ");
+}
+
 /** A reply with only database facts, for when the model's still has a wrong one. */
 function safeReply(state: TurnState): string {
   const ids = state.shownIds.filter((id) => state.found.has(id));
@@ -1130,7 +1144,7 @@ export async function runSadeem(
 
   if (modelTexts.length) state.searches.push({ model_text: modelTexts });
   state.searches.push({ timing: { total_ms: Date.now() - started, calls: turn.calls } });
-  if (content) content = spellDrivetrain(dropRepeatedCount(dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found)));
+  if (content) content = budgetCount(spellDrivetrain(dropRepeatedCount(dropRepeatedBlocks(dropNameBeforeBold(content, state.found), state.found))), state);
   const finalContent = content || (cars.length ? "هاي أقرب السيارات لطلبك 👇" : "ما فهمت طلبك زين، تگدر توضحلي أكثر؟");
 
   return {
