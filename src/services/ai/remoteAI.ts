@@ -58,6 +58,13 @@ function contactActions(car: Car): ChatMessage["actions"] {
   ];
 }
 
+// The car whose page the buyer is on when they send («/cars/car-026»), so
+// Sadeem takes «أريدها» or «شكد سعرها» as that car.
+function pageCarId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return window.location.pathname.match(/^\/cars\/(car-\d{3})\/?$/)?.[1];
+}
+
 /**
  * Sadeem through /api/chat, which answers with the LLM (OpenRouter +
  * Supabase) or, when that isn't available, with the rule-based Sadeem. If the
@@ -71,7 +78,7 @@ export const remoteAIService: AIService = {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history: toHistory(history), sessionId: conversationId, stream: true }),
+        body: JSON.stringify({ message, history: toHistory(history), sessionId: conversationId, stream: true, pageCarId: pageCarId() }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (res.status === 429) return offlineMessage(true);
