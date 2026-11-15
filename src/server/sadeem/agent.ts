@@ -808,7 +808,13 @@ function budgetCount(reply: string, state: TurnState): string {
 
 /** A reply with only database facts, for when the model's still has a wrong one. */
 function safeReply(state: TurnState): string {
-  const ids = state.shownIds.filter((id) => state.found.has(id));
+  // At most MAX_SHOWN_CARS, the ones within the budget first (15 Nov: four cards,
+  // the fourth one named in passing and over the budget).
+  const over0 = new Set(state.overBudget.map((c) => c.id));
+  const ids = state.shownIds
+    .filter((id) => state.found.has(id))
+    .sort((a, b) => Number(over0.has(a)) - Number(over0.has(b)))
+    .slice(0, MAX_SHOWN_CARS);
   if (!ids.length) {
     const whatsapp = site.whatsapp.replace(/^964(\d{3})(\d{3})(\d{4})$/, "0$1 $2 $3");
     return `خليني أتأكد من هالمعلومة ويا الفريق، تگدر تحچي وياهم على الواتساب:\n\n📱 ${whatsapp}\n${site.hours}\n\nاضغط واتساب أو اتصال تحت.`;
@@ -847,6 +853,15 @@ function replyProblems(
         `(by ${state.overBudget.map((c) => `${c.overBy.toLocaleString("en-US")} د.ع`).join(", ")})`
     );
   }
+  problems.push(...comparisonProblems(reply, cars, state.found));
+  problems.push(...cityProblems(reply, cars.filter((c) => state.shownIds.includes(c.id)), buyerTexts));
+  problems.push(...strayModelProblems(reply, allNames, state.found, buyerTexts));
+  // Everything above is a wrong fact (a price, a spec, a city, a car or a
+  // hidden over-budget). What follows is how it is said, and the counts: a
+  // count the check calls wrong can be a right one it reads differently (15 Nov:
+  // «عدنا 3 ضمن 30 مليون» was true, and the safe reply took its place), so a
+  // count is rewritten but never replaces the reply.
+  const facts = [...problems];
   // Counts of cars ("أكو 4 سيارات ثانية") must be what the search found, what
   // the reply shows, or the difference: the model gets the subtraction wrong.
   if (state.counts.length) {
@@ -873,12 +888,6 @@ function replyProblems(
       problems.push(`it gives two counts (${shownCount} and ${total}): the search found ${total}; say «أكو ${total}» once and show the best ${shownCount} without another count`);
     }
   }
-  problems.push(...comparisonProblems(reply, cars, state.found));
-  problems.push(...cityProblems(reply, cars.filter((c) => state.shownIds.includes(c.id)), buyerTexts));
-  problems.push(...strayModelProblems(reply, allNames, state.found, buyerTexts));
-  // Everything above is a wrong fact (a price, a spec, a count, a city, a car
-  // or a hidden over-budget). What follows is how it is said.
-  const facts = [...problems];
   // The same cars as the previous reply: the buyer has them already (13 Nov:
   // «بمليار»، «بمليار دولار»، «2 مليار دولار» and then «جوابك غبي» got the same three).
   const named = mentionedCars(reply, state.found);
