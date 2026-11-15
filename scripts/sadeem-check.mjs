@@ -345,9 +345,10 @@ const CONVERSATIONS = [
     turns: [{ say: "قارنلي بين السبورتاج والتوسان", expect: [hasNot(/هدوء|هادئ|هادية|مريح|راحة|موثوق|اعتمادي|متين|ما تعطل|عطلات/, "رأي مو موجود بالبيانات"), cardsSome((c) => c.model === "Sportage", "ما عرض السبورتاج"), cardsSome((c) => c.model === "Tucson", "ما عرض التوسان")] }],
   },
   // 12 Nov: «الباجيرو أرخص» when it costs 38 million and the Explorer 37.
+  // («الاكسبلورر أرخص من الباجيرو» is right, and passes: 15 Nov.)
   {
     name: "مقارنة بالسعر",
-    turns: [{ say: "قارنلي بين الاكسبلورر والباجيرو", expect: [hasNot(/(?:ال)?باجيرو[^،.\n]{0,15}(?:أرخص|أقل سعر|سعرها أقل)|أرخص[^،.\n]{0,10}(?:ال)?باجيرو/, "گال الباجيرو أرخص وهي أغلى"), cardsSome((c) => c.model === "Explorer", "ما عرض الاكسبلورر"), cardsSome((c) => c.model === "Pajero", "ما عرض الباجيرو")] }],
+    turns: [{ say: "قارنلي بين الاكسبلورر والباجيرو", expect: [hasNot(/(?:ال)?باجيرو[^،.\n]{0,15}(?:أرخص|أقل سعر|سعرها أقل)|أرخص(?!\s+من\s)[^،.\n]{0,10}(?:ال)?باجيرو/, "گال الباجيرو أرخص وهي أغلى"), cardsSome((c) => c.model === "Explorer", "ما عرض الاكسبلورر"), cardsSome((c) => c.model === "Pajero", "ما عرض الباجيرو")] }],
   },
   // 13 Nov: the WhatsApp button's message named the first car of an older list
   // («مرحباً، أستفسر عن سيارة Nissan Patrol 2026») for a buyer who never picked
