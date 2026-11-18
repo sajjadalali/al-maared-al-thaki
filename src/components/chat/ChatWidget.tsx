@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { onSadeemOpen, onSadeemPrompt } from "@/lib/chatBus";
+import { onSadeemOpen, onSadeemPrompt, warmSadeem } from "@/lib/chatBus";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { cn } from "@/lib/cn";
 import { CHAT_AVATAR_CLASS, CHAT_FRAME_CLASS, CHAT_HEADER_CLASS, chatFrameMotion } from "./chatFrame";
@@ -212,6 +212,7 @@ export function ChatWidget() {
   // a history entry (Next.js keeps its own state in it), closing removes it.
   const openChat = useCallback((fromHistory = false) => {
     if (phaseRef.current === "open") return;
+    warmSadeem();
     launcherBox.current = headRef.current?.getBoundingClientRect() ?? null;
     setFlight("open");
     setPhase("open");

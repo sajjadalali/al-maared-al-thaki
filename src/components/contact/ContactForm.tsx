@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
@@ -135,6 +136,12 @@ export function ContactForm() {
         {state.sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 -scale-x-100" />}
         {state.sending ? "دا ينرسل…" : "دز الطلب"}
       </button>
+      <p className="text-center text-[12.5px] leading-6 text-neutral-500">
+        رقمك يوصل لفريق المبيعات بس.{" "}
+        <Link href="/privacy" className="underline underline-offset-4 hover:text-brand-800">
+          شلون نتعامل ويا بياناتك
+        </Link>
+      </p>
     </form>
   );
 }

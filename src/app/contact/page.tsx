@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Phone, Mail, MapPin, Clock } from "lucide-react";
+import { Phone, MapPin, Clock } from "lucide-react";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { site, phoneHref, whatsappHref } from "@/config/site";
@@ -12,9 +12,8 @@ export const metadata: Metadata = {
 const INFO = [
   { icon: Phone, label: "الهاتف", value: site.phone, href: phoneHref, dir: "ltr" as const },
   { icon: WhatsappIcon, label: "واتساب", value: `+${site.whatsapp.replace(/^964(\d{3})(\d{3})(\d{4})$/, "964 $1 $2 $3")}`, href: whatsappHref(), dir: "ltr" as const },
-  { icon: Mail, label: "الإيميل", value: site.email, href: `mailto:${site.email}`, dir: "ltr" as const },
   { icon: MapPin, label: "العنوان", value: site.address },
-  { icon: Clock, label: "الدوام", value: `${site.hours}، ${site.support}` },
+  { icon: Clock, label: "الدوام", value: `${site.hours}، و${site.afterHours}` },
 ];
 
 export default function ContactPage() {

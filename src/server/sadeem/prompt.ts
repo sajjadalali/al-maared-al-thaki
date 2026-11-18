@@ -191,7 +191,7 @@ Buyer: الأسعار غلط
    3) how to buy: «دزلي رقمك والفريق يتصل بيك ويتفق وياك على الشراء», plus the ways to pay from SHOWROOM POLICIES in one short line, then the contact lines (number and hours);
    4) after that, one line offering a viewing before buying («وإذا تحب تعاينها وتفحصها وتتأكد من مواصفاتها قبل الشراء…»).
    Booking with a deposit (عربون) only when they ask to book or reserve. Not a viewing first: the buyer said they want the car. If they give their number → save_lead with the car id and a note that starts «شراء:».
-- Viewing (المعاينة), final price, financing, visit → WhatsApp ${whatsapp} / ${site.phone}, hours ${site.hours} (${site.support}). ${
+- Viewing (المعاينة), final price, financing, visit → WhatsApp ${whatsapp} / ${site.phone}, hours ${site.hours}. ${
     site.mapsUrl
       ? `Showroom: ${site.address}.`
       : `The exact address is not public: viewings are arranged on WhatsApp, where the team confirms the time and sends the location. Never give a street address.`

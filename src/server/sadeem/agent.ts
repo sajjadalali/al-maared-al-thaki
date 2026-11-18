@@ -945,6 +945,57 @@ function replyProblems(
   return { all: problems, facts };
 }
 
+// Opening the chat fills the model's cache before the first message (18 Nov:
+// a first message that found it cold waited p50 6.8 s and p90 12 s, against
+// 4.2 s and 7.7 s warm). One minimal call with the same model, instructions,
+// tools and routing key as runSadeem: the cache holds the instructions and the
+// tools, and changing the thinking settings doesn't drop that part. At most
+// once every WARM_EVERY_MS per server, however many visitors open the chat.
+const WARM_EVERY_MS = 5 * 60_000;
+let lastWarm = 0;
+
+export async function warmSadeem(
+  llm: OpenRouterEnv,
+  db: SupabaseEnv
+): Promise<{ warmed: boolean; ms?: number; prompt?: number; cached?: number }> {
+  if (Date.now() - lastWarm < WARM_EVERY_MS) return { warmed: false };
+  lastWarm = Date.now();
+  const started = Date.now();
+  const res = await fetch(`${llm.baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${llm.apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": site.url,
+      "X-Title": "Al Maared Al Thaki",
+    },
+    body: JSON.stringify({
+      ...(llm.fallbackModel ? { models: [llm.model, llm.fallbackModel] } : { model: llm.model }),
+      messages: [
+        {
+          role: "system",
+          content: [{ type: "text", text: await systemPrompt(db), cache_control: { type: "ephemeral", ttl: "1h" } }],
+        },
+        { role: "user", content: "مرحبا" },
+      ],
+      tools: TOOL_DEFINITIONS,
+      tool_choice: "none",
+      max_tokens: 1,
+      session_id: "sadeem",
+      ...(llm.providerSort ? { provider: { sort: llm.providerSort } } : {}),
+    }),
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const data = await res.json();
+  return {
+    warmed: true,
+    ms: Date.now() - started,
+    prompt: data.usage?.prompt_tokens,
+    cached: data.usage?.prompt_tokens_details?.cached_tokens,
+  };
+}
+
 export async function runSadeem(
   llm: OpenRouterEnv,
   db: SupabaseEnv,
