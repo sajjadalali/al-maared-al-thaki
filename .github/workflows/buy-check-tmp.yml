@@ -19,7 +19,7 @@ jobs:
           const b = await chromium.launch();
           const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
           for (const car of ["car-002", "car-023", "car-029"]) {
-            await p.goto(`${S}/cars/${car}?test`, { waitUntil: "networkidle" });
+            await p.goto(`${S}/cars/${car}`, { waitUntil: "networkidle" }); await p.waitForTimeout(4000); await p.goto(`${S}/cars/${car}`, { waitUntil: "networkidle" });
             const thumbs = await p.$$eval("img", (els) => els.filter((i) => /car-0(02|23|29)-\d/.test(decodeURIComponent(i.src))).map((i) => `${decodeURIComponent(i.src).match(/car-0\d\d-\d/)[0]}:${i.naturalWidth > 0 ? "ok" : "BROKEN"}`));
             const credit = await p.locator("text=صورة توضيحية للموديل").first().innerText().catch(() => "no credit");
             console.log("CAR", car, [...new Set(thumbs)].join(" "), "|", credit.replace(/\s+/g, " ").slice(0, 90));
