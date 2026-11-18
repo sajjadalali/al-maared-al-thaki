@@ -43,13 +43,13 @@ function Thumb({ car, className }: { car: SceneCar; className?: string }) {
 }
 
 // The chapters above the window (18 Nov): one bright colour and icon per thing
-// Sadeem does, so the four read apart at a glance. Full class names, so
-// Tailwind keeps them.
+// Sadeem does, so the four read apart at a glance. Flat fills, no glows or
+// outlines. Full class names, so Tailwind keeps them.
 const CHAPTER: Record<Scene["kind"], { icon: LucideIcon; solid: string; soft: string }> = {
-  cars: { icon: Search, solid: "bg-[#2563eb] text-white shadow-[0_6px_16px_-6px_#2563eb]", soft: "bg-[#2563eb]/10 text-[#1d4ed8]" },
-  compare: { icon: Scale, solid: "bg-[#7c3aed] text-white shadow-[0_6px_16px_-6px_#7c3aed]", soft: "bg-[#7c3aed]/10 text-[#6d28d9]" },
-  booking: { icon: CalendarCheck, solid: "bg-[#059669] text-white shadow-[0_6px_16px_-6px_#059669]", soft: "bg-[#059669]/10 text-[#047857]" },
-  hours: { icon: MessageCircle, solid: "bg-[#ea580c] text-white shadow-[0_6px_16px_-6px_#ea580c]", soft: "bg-[#ea580c]/10 text-[#c2410c]" },
+  cars: { icon: Search, solid: "bg-[#2563eb] text-white", soft: "text-[#1d4ed8]" },
+  compare: { icon: Scale, solid: "bg-[#7c3aed] text-white", soft: "text-[#6d28d9]" },
+  booking: { icon: CalendarCheck, solid: "bg-[#059669] text-white", soft: "text-[#047857]" },
+  hours: { icon: MessageCircle, solid: "bg-[#ea580c] text-white", soft: "text-[#c2410c]" },
 };
 
 /** What the buyer wrote. */
@@ -165,7 +165,7 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
     <div className="mx-auto w-full max-w-[400px]">
       {/* The picture's chapters: what Sadeem does in each scene. The current one is
           filled with its colour, and a lighter sweep across it shows how far it is. */}
-      <div aria-hidden className="mb-3.5 grid grid-cols-4 gap-1.5">
+      <div aria-hidden className="mb-3.5 grid grid-cols-4 gap-1 rounded-full bg-brand-950/[0.06] p-1">
         {scenes.map((chapter, i) => {
           const look = CHAPTER[chapter.kind];
           const Icon = look.icon;
@@ -174,8 +174,8 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
             <span
               key={chapter.ask}
               className={cn(
-                "relative flex h-9 min-w-0 items-center justify-center gap-1.5 overflow-hidden rounded-full px-2 text-[12.5px] font-bold transition-[background-color,color,box-shadow] duration-300",
-                on ? look.solid : i < active ? look.soft : "bg-white text-neutral-400 ring-1 ring-brand-950/[0.07]"
+                "relative flex h-8 min-w-0 items-center justify-center gap-1.5 overflow-hidden rounded-full px-2 text-[12.5px] font-bold transition-colors duration-300",
+                on ? look.solid : i < active ? look.soft : "text-neutral-500"
               )}
             >
               {on && (
@@ -356,11 +356,11 @@ export function SadeemShowcase({
 
       <div className="lg:self-start">
         <p className="text-sm font-semibold text-neutral-500">اضغط على سؤال، وسديم يجاوبك عليه هسه:</p>
-        <ul className="mt-3 border-t border-brand-950/10">
+        <ul className="-mx-3 mt-3 space-y-1">
           {scenes.map((scene, i) => {
             const on = i === active;
             return (
-              <li key={scene.ask} className="relative border-b border-brand-950/10">
+              <li key={scene.ask}>
                 <button
                   type="button"
                   onClick={() => askSadeem(scene.ask)}
@@ -369,7 +369,7 @@ export function SadeemShowcase({
                   onFocus={() => show(i)}
                   onBlur={release}
                   aria-label={`اسأل سديم: ${scene.ask}`}
-                  className="group flex w-full items-center gap-4 py-4 text-start outline-none"
+                  className={cn("group flex w-full items-center gap-4 rounded-2xl px-3 py-3.5 text-start outline-none transition-colors duration-300", on ? "bg-white/75" : "hover:bg-white/40")}
                 >
                   <span className="min-w-0 flex-1">
                     <span className={cn("block text-[16px] font-bold leading-7 transition-colors duration-300 sm:text-[17px]", on ? "text-brand-950" : "text-neutral-500 group-hover:text-brand-950")}>
@@ -379,8 +379,8 @@ export function SadeemShowcase({
                   </span>
                   <span
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition duration-300 group-focus-visible:ring-2 group-focus-visible:ring-brand-600 group-focus-visible:ring-offset-2 group-active:scale-90",
-                      on ? CHAPTER[scene.kind].solid : "bg-white text-brand-800 ring-1 ring-brand-950/10 group-hover:bg-brand-950 group-hover:text-white"
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition duration-300 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-brand-600 group-active:scale-90",
+                      on ? CHAPTER[scene.kind].solid : "bg-brand-950/[0.06] text-brand-800 group-hover:bg-brand-950 group-hover:text-white"
                     )}
                   >
                     <SendHorizontal className="h-[18px] w-[18px] -scale-x-100" />
