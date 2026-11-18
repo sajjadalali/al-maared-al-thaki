@@ -1,0 +1,29 @@
+name: Live wallpaper check (temporary)
+on:
+  push:
+    branches:
+      - claude/buy-check-tmp
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          S=https://maared-al-thaki.duckdns.org
+          npm i playwright@1 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
+          cat > s.mjs <<'JS'
+          import { chromium } from "playwright";
+          const b = await chromium.launch();
+          const ctx = await b.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true });
+          const p = await ctx.newPage();
+          await p.goto("https://maared-al-thaki.duckdns.org/", { waitUntil: "networkidle" });
+          await p.getByRole("button", { name: /سديم/ }).first().click();
+          await p.waitForTimeout(2500);
+          const r = await p.evaluate(() => { const c = document.querySelector("[data-sadeem-chat]"); const m = c && [...c.querySelectorAll("div")].find((d) => d.className.includes("overflow-y-auto")); if (!m) return "no chat"; const cs = getComputedStyle(m); return { cls: m.className.includes("chat-wallpaper"), bgImg: cs.backgroundImage.slice(0, 60), bgColor: cs.backgroundColor }; });
+          console.log("REAL CHAT", JSON.stringify(r));
+          await b.close();
+          JS
+          node s.mjs
