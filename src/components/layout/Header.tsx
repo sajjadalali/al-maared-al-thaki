@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, Heart, Menu, Phone, Sparkles, X } from "lucide-react";
+import { ChevronDown, Clock, Heart, Menu, Phone, Sparkles, X } from "lucide-react";
 import { useFavorites } from "@/context/FavoritesContext";
 import { openSadeemChat } from "@/lib/chatBus";
 import { cn } from "@/lib/cn";
@@ -11,11 +11,17 @@ import { site, phoneHref, whatsappHref } from "@/config/site";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/layout/Logo";
 
-const NAV_LINKS = [
+// «السيارات» opens a list of its own (19 Nov: new and used were two more
+// links in the bar, next to it).
+const CAR_LINKS = [
+  { href: "/cars", label: "كل السيارات" },
+  { href: "/cars?condition=جديدة", label: "السيارات الجديدة" },
+  { href: "/cars?condition=مستعملة", label: "السيارات المستعملة" },
+];
+
+const NAV_LINKS: { href: string; label: string; children?: typeof CAR_LINKS }[] = [
   { href: "/", label: "الرئيسية" },
-  { href: "/cars", label: "السيارات" },
-  { href: "/cars?condition=جديدة", label: "الجديدة" },
-  { href: "/cars?condition=مستعملة", label: "المستعملة" },
+  { href: "/cars", label: "السيارات", children: CAR_LINKS },
   { href: "/about", label: "من نحن" },
   { href: "/contact", label: "تواصل معنا" },
 ];
@@ -29,6 +35,103 @@ function useIsActive() {
     if (href.includes("?")) return false;
     return path === "/" ? pathname === "/" : pathname.startsWith(path);
   };
+}
+
+/**
+ * A bar link with a list under it: opens on hover, and on its arrow for touch
+ * and the keyboard. The link itself still goes to its page.
+ */
+function NavMenu({
+  link,
+  active,
+  linkClass,
+}: {
+  link: { href: string; label: string; children: typeof CAR_LINKS };
+  active: boolean;
+  linkClass: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open]);
+
+  const show = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  // A short delay, so moving the mouse down to the list doesn't close it.
+  const hide = () => {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 140);
+  };
+
+  return (
+    <div
+      ref={box}
+      className="relative"
+      onPointerEnter={(e) => e.pointerType === "mouse" && show()}
+      onPointerLeave={(e) => e.pointerType === "mouse" && hide()}
+      onBlur={(e) => {
+        if (!box.current?.contains(e.relatedTarget as Node)) setOpen(false);
+      }}
+    >
+      <div className="flex items-center">
+        <Link
+          href={link.href}
+          onClick={() => setOpen(false)}
+          aria-current={active ? "page" : undefined}
+          className={cn(linkClass, "pe-1")}
+        >
+          {link.label}
+          {active && <span className="absolute inset-x-3 bottom-1 h-[2px] rounded-full bg-accent-400" />}
+        </Link>
+        <button
+          type="button"
+          onClick={() => (open ? setOpen(false) : show())}
+          aria-expanded={open}
+          aria-label={`قائمة ${link.label}`}
+          className="-ms-1 flex h-11 w-7 items-center justify-center rounded-lg opacity-70 transition hover:opacity-100"
+        >
+          <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", open && "rotate-180")} />
+        </button>
+      </div>
+
+      <div
+        className={cn(
+          "absolute start-0 top-full z-50 w-60 pt-1.5 transition duration-150",
+          open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-1 opacity-0"
+        )}
+      >
+        <ul className="rounded-2xl bg-white p-1.5 text-brand-950 shadow-[0_12px_32px_-8px_rgba(11,19,34,0.22)] ring-1 ring-brand-950/[0.07]">
+          {link.children.map((child) => (
+            <li key={child.href}>
+              <Link
+                href={child.href}
+                onClick={() => setOpen(false)}
+                className="flex min-h-11 items-center rounded-xl px-3.5 text-[15px] font-semibold text-neutral-700 transition hover:bg-surface hover:text-brand-950 focus-visible:bg-surface"
+              >
+                {child.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
 }
 
 /** Past the first few pixels of the page. */
@@ -47,6 +150,7 @@ export function Header() {
   const isActive = useIsActive();
   const { favorites } = useFavorites();
   const [open, setOpen] = useState(false);
+  const [carsOpen, setCarsOpen] = useState(false);
   const scrolled = useScrolled();
   // On the homepage the header lies on the showroom photo until the page moves
   // (the hero slides under it); everywhere else, and once open, it is solid.
@@ -65,21 +169,35 @@ export function Header() {
         <nav className="hidden items-center gap-1 lg:flex">
           {NAV_LINKS.map((link) => {
             const active = isActive(link.href);
+            const linkClass = cn(
+              "relative flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-[15px] font-semibold transition",
+              overlay
+                ? active
+                  ? "text-white"
+                  : "text-white/75 hover:text-white"
+                : active
+                  ? "text-brand-950"
+                  : "text-neutral-500 hover:text-brand-950"
+            );
+            if (link.children) {
+              return (
+                <div
+                  key={link.href}
+                  className={cn(
+                    "rounded-lg",
+                    overlay ? (active ? "text-white" : "text-white/75") : active ? "text-brand-950" : "text-neutral-500"
+                  )}
+                >
+                  <NavMenu link={{ ...link, children: link.children }} active={active} linkClass={linkClass} />
+                </div>
+              );
+            }
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "relative flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-[15px] font-semibold transition",
-                  overlay
-                    ? active
-                      ? "text-white"
-                      : "text-white/75 hover:text-white"
-                    : active
-                      ? "text-brand-950"
-                      : "text-neutral-500 hover:text-brand-950"
-                )}
+                className={linkClass}
               >
                 {link.label}
                 {active && <span className="absolute inset-x-3 bottom-1 h-[2px] rounded-full bg-accent-400" />}
@@ -150,19 +268,50 @@ export function Header() {
       {open && (
         <div className="border-t border-black/5 bg-white px-4 pb-4 pt-2 lg:hidden">
           <nav className="flex flex-col">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "rounded-xl px-3 py-3 text-[15px] font-semibold",
-                  isActive(link.href) ? "bg-surface text-brand-950" : "text-neutral-600 hover:bg-surface"
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) =>
+              link.children ? (
+                <div key={link.href}>
+                  <button
+                    type="button"
+                    onClick={() => setCarsOpen((v) => !v)}
+                    aria-expanded={carsOpen}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-xl px-3 py-3 text-start text-[15px] font-semibold",
+                      isActive(link.href) ? "bg-surface text-brand-950" : "text-neutral-600 hover:bg-surface"
+                    )}
+                  >
+                    {link.label}
+                    <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", carsOpen && "rotate-180")} />
+                  </button>
+                  {carsOpen && (
+                    <div className="mb-1 ms-3 flex flex-col border-s-2 border-brand-950/[0.07] ps-2">
+                      {link.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setOpen(false)}
+                          className="rounded-xl px-3 py-2.5 text-[15px] font-semibold text-neutral-600 hover:bg-surface"
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "rounded-xl px-3 py-3 text-[15px] font-semibold",
+                    isActive(link.href) ? "bg-surface text-brand-950" : "text-neutral-600 hover:bg-surface"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
           </nav>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <a
