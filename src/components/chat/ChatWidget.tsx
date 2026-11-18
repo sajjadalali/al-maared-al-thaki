@@ -40,7 +40,7 @@ function PanelLoading() {
         </div>
         <X className="h-5 w-5 text-white/40" />
       </div>
-      <div className="flex-1 bg-[#f2f5f9] px-3.5 py-4">
+      <div className="chat-wallpaper flex-1 px-3.5 py-4">
         <div className="ms-9 h-[92px] max-w-[80%] animate-pulse rounded-2xl rounded-tl-md bg-white" />
       </div>
     </div>

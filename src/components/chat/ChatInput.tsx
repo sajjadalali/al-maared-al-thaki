@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
+import { onSadeemWrite, takeWriteRequest } from "@/lib/chatBus";
 
 export function ChatInput({
   onSend,
@@ -14,6 +15,17 @@ export function ChatInput({
   onTyping?: (typing: boolean) => void;
 }) {
   const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Opened to write in (the demo's message box): the box takes the focus, after
+  // the chat's opening animation so the page doesn't jump.
+  useEffect(() => {
+    const focusSoon = () => {
+      if (!takeWriteRequest()) return;
+      window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 320);
+    };
+    focusSoon();
+    return onSadeemWrite(focusSoon);
+  }, []);
   const change = (next: string) => {
     setValue(next);
     onTyping?.(next.trim().length > 0);
@@ -34,6 +46,7 @@ export function ChatInput({
     >
       {/* 16px text: smaller inputs make iOS Safari zoom the page on focus. */}
       <input
+        ref={inputRef}
         value={value}
         onChange={(e) => change(e.target.value)}
         placeholder="اكتب رسالتك هنا..."
