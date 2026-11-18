@@ -41,7 +41,7 @@ function LinkColumn({ title, links }: { title: string; links: { href: string; la
       <ul className="mt-4 space-y-2.5 pointer-coarse:mt-2 pointer-coarse:space-y-0">
         {links.map((link) => (
           <li key={link.href}>
-            <Link href={link.href} className="inline-flex items-center text-sm text-white/55 transition hover:text-white pointer-coarse:min-h-11 pointer-coarse:min-w-11">
+            <Link href={link.href} className="inline-flex items-center text-sm text-white/70 transition hover:text-white pointer-coarse:min-h-11 pointer-coarse:min-w-11">
               {link.label}
             </Link>
           </li>
@@ -53,11 +53,13 @@ function LinkColumn({ title, links }: { title: string; links: { href: string; la
 
 export function Footer() {
   return (
+    // Text at white/70 (9.4:1 on brand-950) and the small print at white/55
+    // (6.2:1); they were /55 and /40 (3.8:1, under the 4.5 small text needs). 19 Nov.
     <footer className="bg-brand-950 text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.5fr_1fr_1fr_1.3fr] lg:px-8">
         <div>
           <Logo tone="light" />
-          <p className="mt-5 max-w-xs text-sm leading-7 text-white/55">
+          <p className="mt-5 max-w-xs text-sm leading-7 text-white/70">
             معرض سيارات جديدة ومستعملة ب{site.city}، أسعارها معلنة وكل سيارة مفحوصة قبل البيع. وبيه
             سديم، مساعدك الشخصي لشراء سيارتك.
           </p>
@@ -82,7 +84,7 @@ export function Footer() {
 
         <div>
           <h3 className="text-sm font-bold text-white">تواصل معنا</h3>
-          <ul className="mt-4 space-y-3 text-sm text-white/55 pointer-coarse:mt-2 pointer-coarse:space-y-0">
+          <ul className="mt-4 space-y-3 text-sm text-white/70 pointer-coarse:mt-2 pointer-coarse:space-y-0">
             <li>
               <a href={phoneHref} className="flex items-center gap-2.5 transition hover:text-white pointer-coarse:min-h-11">
                 <Phone className="h-4 w-4 shrink-0 text-accent-300" />
@@ -106,7 +108,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-white/40 sm:flex-row sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-white/55 sm:flex-row sm:px-6 lg:px-8">
           <p>
             © {new Date().getFullYear()} {site.name} — جميع الحقوق محفوظة
           </p>
