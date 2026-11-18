@@ -1,0 +1,8 @@
+{
+ "car-002": {"search": ["Toyota Corolla 2023 sedan", "Toyota Corolla LE 2024", "Toyota Corolla SE 2024 sedan", "white Toyota Corolla E210 sedan", "Toyota Corolla 2025 sedan"],
+             "categories": ["Category:Toyota Corolla (E210, North America)", "Category:Toyota Corolla (E210, North America) sedan", "Category:Toyota Corolla Hybrid (E210, North America) sedan"]},
+ "car-023": {"search": ["Land Rover Defender 110 green", "Land Rover Defender 110 2024", "Land Rover Defender L663 green", "Defender 110 X-Dynamic"],
+             "categories": ["Category:Land Rover Defender (L663)", "Category:Land Rover Defender 110 (L663)"]},
+ "car-029": {"search": ["Toyota Hilux 2024 white double cab", "Toyota Hilux Revo 2024", "Toyota Hilux 2023 double cab white", "Toyota Hilux facelift 2021 white"],
+             "categories": ["Category:Toyota Hilux (AN120)", "Category:Toyota Hilux (eighth generation)"]}
+}

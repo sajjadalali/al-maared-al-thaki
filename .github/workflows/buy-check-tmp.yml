@@ -1,46 +1,19 @@
-name: Live three fixes check (temporary)
+name: Photo scout (temporary)
 on:
   push:
     branches:
       - claude/buy-check-tmp
+permissions:
+  contents: write
 jobs:
   c:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - uses: actions/checkout@v4
+      - run: pip install pillow >/dev/null
+      - run: python3 photo-scout/scout.py
       - run: |
-          npm i playwright@1 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
-          cat > s.mjs <<'JS'
-          import { chromium } from "playwright";
-          const S = "https://maared-al-thaki.duckdns.org";
-          const b = await chromium.launch();
-          for (const [name, vp] of [["phone", { width: 390, height: 844 }], ["computer", { width: 1366, height: 800 }]]) {
-            const p = await b.newPage({ viewport: vp });
-            await p.goto(S + "/?test", { waitUntil: "networkidle" });
-            const r = await p.evaluate(() => ({
-              scrollW: document.documentElement.scrollWidth,
-              sections: [...document.querySelectorAll("section")].filter((s) => !s.parentElement.closest("section")).map((s) => ({ h: (s.querySelector("h1,h2")?.textContent ?? "").slice(0, 18), top: Math.round(s.getBoundingClientRect().top + scrollY), w: Math.round(s.getBoundingClientRect().width) })).sort((a, b) => a.top - b.top),
-            }));
-            console.log(name, "scrollWidth", r.scrollW, JSON.stringify(r.sections));
-          }
-          const p = await b.newPage({ viewport: { width: 390, height: 844 } });
-          for (const url of ["/cars", "/cars?sort=price-asc", "/cars?condition=جديدة"]) {
-            await p.goto(S + encodeURI(url), { waitUntil: "networkidle" });
-            const t = await p.locator("p", { has: p.locator("span.text-base") }).first().innerText();
-            const hrefs = await p.$$eval("main a[href^='/cars/car-']", (els) => [...new Set(els.map((e) => e.getAttribute("href")))]);
-            console.log("COUNT", url, "|", t, "| altima at", hrefs.indexOf("/cars/car-011") + 1, "of", hrefs.length);
-          }
-          await p.goto(S + "/cars/car-001", { waitUntil: "networkidle" });
-          const html = await p.content();
-          console.log("CAR-001 old claim:", html.includes("بدون صبغ"), "| new text:", html.includes("محركها 2.5 لتر بقوة 203 حصان"));
-          await b.close();
-          JS
-          node s.mjs
-          # Ask Sadeem twice, as a test visitor, about the used Camry's condition
-          for i in 1 2; do
-            sid=5ade7e57-$(printf '%04d' $i)-4000-8000-$(date +%s%N | tail -c 13)
-            curl -s -X POST https://maared-al-thaki.duckdns.org/api/chat -H 'Content-Type: application/json' -d "{\"message\":\"الكامري المستعملة 2024 بيها صبغ لو حوادث؟\",\"sessionId\":\"$sid\",\"history\":[]}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s);console.log("SADEEM", JSON.stringify(r.content ?? r.reply ?? r).slice(0,600))})'
-          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add photo-scout/out && git commit -qm "Photo scout results" && git push
