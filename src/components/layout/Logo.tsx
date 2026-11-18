@@ -46,7 +46,7 @@ export function Logo({
           <span
             className={cn(
               "mt-1 max-w-[14rem] text-[11px] font-normal leading-[1.4] sm:max-w-none sm:text-[11.5px] sm:leading-none",
-              tone === "dark" ? "text-neutral-500" : "text-white/50"
+              tone === "dark" ? "text-neutral-500" : "text-white/65"
             )}
           >
             {site.tagline}
