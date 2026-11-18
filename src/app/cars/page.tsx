@@ -86,6 +86,15 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
     query
   );
 
+  // «33 متوفرة و1 محجوزة» when the list holds cars that can't be bought.
+  function unavailableNote(list: typeof cars): string | null {
+    const reserved = list.filter((car) => car.status === "محجوزة").length;
+    const sold = list.filter((car) => car.status === "مباعة").length;
+    if (!reserved && !sold) return null;
+    const available = list.length - reserved - sold;
+    return [`${available} متوفرة`, reserved && `${reserved} محجوزة`, sold && `${sold} مباعة`].filter(Boolean).join(" و");
+  }
+
   const heading =
     condition === "جديدة" ? "السيارات الجديدة" : condition === "مستعملة" ? "السيارات المستعملة" : "كل السيارات";
 
@@ -119,6 +128,9 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
               </div>
               <p className="text-sm font-semibold text-neutral-500">
                 <span className="text-base font-bold text-brand-950">{cars.length}</span> سيارة
+                {/* The home page counts the available cars only, so the reserved
+                    and sold ones shown here are counted apart (19 Nov). */}
+                {unavailableNote(cars) && <span className="font-normal">: {unavailableNote(cars)}</span>}
               </p>
             </div>
             <CarSort />
