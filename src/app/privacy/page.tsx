@@ -10,14 +10,14 @@ export const metadata: Metadata = {
 
 // What the site really does with data (18 Nov), checked against the code:
 // chat logs and leads in Supabase (eu-west-3, Paris), messages to the model
-// through OpenRouter, leads to the team on Telegram, the per-visitor rate
+// through OpenRouter, leads and the weekly backup to the team on Telegram, the per-visitor rate
 // limit in server memory only, and the rest in the browser (lib/interest,
 // chatStore, favourites). Change this page when any of that changes.
 const SECTIONS: { title: string; body: ReactNode[] }[] = [
   {
     title: "محادثتك ويا سديم",
     body: [
-      "رسايلك وردود سديم والسيارات اللي عرضها تنحفظ بقاعدة بيانات الموقع، على سيرفر بفرنسا. نراجعها حتى نصلّح أغلاط سديم ونحسّن ردوده.",
+      "رسايلك وردود سديم والسيارات اللي عرضها تنحفظ بقاعدة بيانات الموقع، على سيرفر بفرنسا، ونسخة احتياطية منها كل أسبوع تروح لقناة الفريق الخاصة على تيليگرام. نراجعها حتى نصلّح أغلاط سديم ونحسّن ردوده.",
       "حتى يكتب سديم ردّه، رسالتك تنرسل لنموذج ذكاء اصطناعي (Claude من شركة Anthropic، عن طريق خدمة OpenRouter). لا تكتب بالمحادثة شي ما تريد غيرك يقراه، مثل رقم حساب أو كلمة سر.",
     ],
   },
@@ -50,7 +50,7 @@ const SECTIONS: { title: string; body: ReactNode[] }[] = [
         <bdi dir="ltr" className="whitespace-nowrap">
           {site.phone}
         </bdi>
-        ، ونمسح محادثاتك ورقمك من عدنا.
+        ، ونمسح محادثاتك ورقمك من قاعدة البيانات.
       </>,
     ],
   },
