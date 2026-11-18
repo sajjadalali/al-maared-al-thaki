@@ -44,3 +44,14 @@ export function onSadeemPrompt(handler: (message: string) => void) {
   window.addEventListener(PROMPT_EVENT, listener);
   return () => window.removeEventListener(PROMPT_EVENT, listener);
 }
+
+let warmed = false;
+/**
+ * Asks the server to get Sadeem ready (the model's cache) while the buyer
+ * reads the chat and types, once per page load (18 Nov).
+ */
+export function warmSadeem() {
+  if (warmed) return;
+  warmed = true;
+  fetch("/api/chat/warm", { method: "POST", keepalive: true }).catch(() => {});
+}

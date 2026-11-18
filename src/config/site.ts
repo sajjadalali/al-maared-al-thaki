@@ -6,14 +6,15 @@ export const site = {
   url: "https://maared-al-thaki.duckdns.org",
   phone: "+964 783 854 8091",
   whatsapp: "9647838548091",
-  email: "hi@sajjadalali.com",
   city: "بغداد",
   address: "بغداد، العراق",
   // A Google Maps link to the showroom. Empty: there is no public address, so
   // the site offers to arrange a viewing on WhatsApp instead of directions.
   mapsUrl: "",
   hours: "السبت - الخميس: 9 صباحاً - 7 مساءً",
-  support: "الدعم الفني متوفر كل يوم",
+  // Under the hours: what is there outside them (18 Nov; it said «الدعم الفني
+  // متوفر كل يوم», which a car showroom doesn't have and the hours contradict).
+  afterHours: "سديم يجاوبك بأي وقت، حتى برا الدوام",
   // Leave empty to hide the icon in the footer.
   social: {
     facebook: "",

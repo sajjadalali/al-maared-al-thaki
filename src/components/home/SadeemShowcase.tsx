@@ -138,7 +138,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
             <Clock className="h-5 w-5 shrink-0 text-brand-500" />
             <div>
               <p className="text-[13.5px] font-bold leading-5 text-brand-950">{scene.hours}</p>
-              <p className="text-[11.5px] leading-5 text-neutral-500">{scene.support}</p>
+              <p className="text-[11.5px] leading-5 text-neutral-500">{scene.afterHours}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 py-3">

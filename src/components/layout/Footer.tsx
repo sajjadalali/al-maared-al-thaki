@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, MapPin, Phone, Mail } from "lucide-react";
+import { Clock, MapPin, Phone } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -23,6 +23,7 @@ const SHOWROOM_LINKS = [
   { href: "/about", label: "من نحن" },
   { href: "/contact", label: "تواصل معنا" },
   { href: "/favorites", label: "سياراتي المفضلة" },
+  { href: "/privacy", label: "الخصوصية" },
   ...(hasImageCredits() ? [{ href: "/credits", label: "حقوق الصور" }] : []),
 ];
 
@@ -88,12 +89,6 @@ export function Footer() {
                 <span dir="ltr">{site.phone}</span>
               </a>
             </li>
-            <li>
-              <a href={`mailto:${site.email}`} className="flex items-center gap-2.5 transition hover:text-white pointer-coarse:min-h-11">
-                <Mail className="h-4 w-4 shrink-0 text-accent-300" />
-                <span dir="ltr">{site.email}</span>
-              </a>
-            </li>
             <li className="flex items-center gap-2.5 pointer-coarse:min-h-11">
               <MapPin className="h-4 w-4 shrink-0 text-accent-300" />
               {site.address}
@@ -103,7 +98,7 @@ export function Footer() {
               <span>
                 {site.hours}
                 <br />
-                {site.support}
+                {site.afterHours}
               </span>
             </li>
           </ul>

@@ -31,7 +31,7 @@ export function VisitCta() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Clock className="h-4.5 w-4.5 shrink-0 text-accent-300" />
-                {site.hours} · {site.support}
+                {site.hours}، و{site.afterHours}
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="h-4.5 w-4.5 shrink-0 text-accent-300" />

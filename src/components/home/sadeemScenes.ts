@@ -65,7 +65,7 @@ export type Scene = SceneBase &
     | { kind: "cars"; cars: SceneCar[] }
     | { kind: "compare"; cars: [SceneCar, SceneCar]; rows: { label: string; values: [string, string]; better?: 0 | 1 }[] }
     | { kind: "booking"; purpose: "viewing" | "buy"; phone: string; car: string; city: string }
-    | { kind: "hours"; hours: string; support: string; whatsapp: string }
+    | { kind: "hours"; hours: string; afterHours: string; whatsapp: string }
   );
 
 const millions = (iqd: number) => `${formatNumber(Math.round(iqd / 100_000) / 10)} مليون`;
@@ -305,7 +305,7 @@ export function sadeemScenes(cars: SceneSource[], { interest, random }: Options 
     does: "ويجاوبك عن المعرض: الدوام والتواصل",
     reply: "هذا دوامنا ورقمنا:",
     hours: site.hours,
-    support: site.support,
+    afterHours: "وآني أجاوبك بأي وقت، حتى برا الدوام",
     whatsapp: site.whatsapp.replace(/^964(\d{3})(\d{3})(\d{4})$/, "0$1 $2 $3"),
   });
 
