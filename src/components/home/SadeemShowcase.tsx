@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { Check, CheckCheck, Clock, Send, SendHorizontal, Sparkles } from "lucide-react";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
-import { askSadeem } from "@/lib/chatBus";
+import { askSadeem, openSadeemChat } from "@/lib/chatBus";
 import { cn } from "@/lib/cn";
 import { readInterest } from "@/lib/interest";
 import { sadeemScenes, type Scene, type SceneCar, type SceneSource } from "./sadeemScenes";
@@ -45,9 +45,9 @@ function Thumb({ car, className }: { car: SceneCar; className?: string }) {
 /** What the buyer wrote. */
 function Ask({ children }: { children: ReactNode }) {
   return (
-    <div className="w-fit max-w-[86%] rounded-2xl rounded-tr-md bg-brand-900 px-3.5 pb-1.5 pt-2.5 text-white shadow-sm">
-      <p className="text-[15px] leading-7">{children}</p>
-      <CheckCheck className="ms-auto mt-0.5 h-3.5 w-3.5 text-sky-300" />
+    <div className="w-fit max-w-[86%] rounded-2xl rounded-tr-md bg-brand-900 px-3 pb-1 pt-2 text-white shadow-sm">
+      <p className="text-[14px] leading-6">{children}</p>
+      <CheckCheck className="ms-auto h-3.5 w-3.5 text-sky-300" />
     </div>
   );
 }
@@ -58,13 +58,13 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       return (
         <div className="space-y-2">
           {scene.cars.map((car, i) => (
-            <Piece key={car.id} at={SHOW_AT + i * STEP} mode={mode} className="flex items-center gap-3 rounded-2xl border border-black/[0.04] bg-white p-2 pe-4 shadow-sm">
-              <Thumb car={car} className="h-[58px] w-[78px] sm:h-[64px] sm:w-[88px]" />
+            <Piece key={car.id} at={SHOW_AT + i * STEP} mode={mode} className="flex items-center gap-2.5 rounded-2xl border border-black/[0.04] bg-white p-1.5 pe-3 shadow-sm">
+              <Thumb car={car} className="h-12 w-16 rounded-[10px]" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14.5px] font-bold leading-6 text-brand-950">{car.name}</p>
-                <p className="truncate text-[12.5px] leading-5 text-neutral-500">{car.note}</p>
+                <p className="truncate text-[13.5px] font-bold leading-5 text-brand-950">{car.name}</p>
+                <p className="truncate text-[11.5px] leading-5 text-neutral-500">{car.note}</p>
               </div>
-              <p className="shrink-0 text-[14.5px] font-bold text-brand-950">{car.price}</p>
+              <p className="shrink-0 text-[13.5px] font-bold text-brand-950">{car.price}</p>
             </Piece>
           ))}
         </div>
@@ -72,12 +72,12 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
     case "compare":
       return (
         <Piece at={SHOW_AT} mode={mode} className="overflow-hidden rounded-2xl border border-black/[0.04] bg-white shadow-sm">
-          <div className="grid grid-cols-[4.25rem_1fr_1fr] items-end gap-x-3 px-4 pb-3 pt-4">
+          <div className="grid grid-cols-[3.5rem_1fr_1fr] items-end gap-x-2.5 px-3 pb-2.5 pt-3">
             <span />
             {scene.cars.map((car) => (
               <div key={car.id} className="min-w-0">
-                <Thumb car={car} className="h-[50px] w-full sm:h-[58px]" />
-                <p className="mt-2 truncate text-[13.5px] font-bold leading-5 text-brand-950">
+                <Thumb car={car} className="h-[42px] w-full rounded-[10px]" />
+                <p className="mt-1.5 truncate text-[12.5px] font-bold leading-5 text-brand-950">
                   {car.model} <span className="font-semibold text-neutral-500">{car.year}</span>
                 </p>
               </div>
@@ -88,7 +88,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
               key={row.label}
               at={SHOW_AT + 0.25 + i * STEP}
               mode={mode}
-              className="grid grid-cols-[4.25rem_1fr_1fr] items-center gap-x-3 border-t border-brand-100 px-4 py-2 text-[13.5px] leading-6"
+              className="grid grid-cols-[3.5rem_1fr_1fr] items-center gap-x-2.5 border-t border-brand-100 px-3 py-1.5 text-[12.5px] leading-5"
             >
               <span className="text-neutral-500">{row.label}</span>
               {row.values.map((value, side) => (
@@ -102,19 +102,19 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       );
     case "booking":
       return (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <Piece at={SHOW_AT + 0.5} mine mode={mode}>
             <Ask>
               <bdi dir="ltr">{scene.phone}</bdi>
             </Ask>
           </Piece>
-          <Piece at={SHOW_AT + 1.3} mode={mode} className="flex items-center gap-3.5 rounded-2xl border border-black/[0.04] bg-white p-4 shadow-sm">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success text-white">
-              <Check className="h-5 w-5" strokeWidth={3} />
+          <Piece at={SHOW_AT + 1.3} mode={mode} className="flex items-center gap-3 rounded-2xl border border-black/[0.04] bg-white p-3 shadow-sm">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-white">
+              <Check className="h-[18px] w-[18px]" strokeWidth={3} />
             </span>
             <div className="min-w-0">
-              <p className="text-[14.5px] font-bold leading-6 text-brand-950">وصل طلبك لفريق المبيعات</p>
-              <p className="text-[12.5px] leading-5 text-neutral-500">
+              <p className="text-[13.5px] font-bold leading-5 text-brand-950">وصل طلبك لفريق المبيعات</p>
+              <p className="text-[11.5px] leading-5 text-neutral-500">
                 {scene.purpose === "buy" ? "شراء" : "معاينة"} {scene.car}، ب{scene.city}
               </p>
             </div>
@@ -123,17 +123,17 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       );
     case "hours":
       return (
-        <Piece at={SHOW_AT} mode={mode} className="divide-y divide-brand-100 rounded-2xl border border-black/[0.04] bg-white px-4 shadow-sm">
-          <div className="flex items-center gap-3.5 py-3.5">
+        <Piece at={SHOW_AT} mode={mode} className="divide-y divide-brand-100 rounded-2xl border border-black/[0.04] bg-white px-3.5 shadow-sm">
+          <div className="flex items-center gap-3 py-3">
             <Clock className="h-5 w-5 shrink-0 text-brand-500" />
             <div>
-              <p className="text-[14px] font-bold leading-6 text-brand-950">{scene.hours}</p>
-              <p className="text-[12.5px] leading-5 text-neutral-500">{scene.support}</p>
+              <p className="text-[13.5px] font-bold leading-5 text-brand-950">{scene.hours}</p>
+              <p className="text-[11.5px] leading-5 text-neutral-500">{scene.support}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3.5 py-3.5">
+          <div className="flex items-center gap-3 py-3">
             <WhatsappIcon className="h-5 w-5 shrink-0 text-[#1fa855]" />
-            <p className="text-[14px] font-bold leading-6 text-brand-950">
+            <p className="text-[13.5px] font-bold leading-5 text-brand-950">
               <bdi dir="ltr">{scene.whatsapp}</bdi>
             </p>
           </div>
@@ -145,15 +145,16 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
 /**
  * The picture: one scene at a time, inside the chat as the buyer really sees it
  * (16 Nov): Sadeem's header, the light conversation, the same bubbles and the
- * message box. It was a dark navy stage that looked like no chat. Decorative;
- * the questions beside it are the controls.
+ * message box. It was a dark navy stage that looked like no chat. The
+ * conversation is decorative; the message box is a real button (18 Nov): a tap
+ * on it opens the real Sadeem to write in.
  */
 function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active: number; mode: Mode; run: number; resting: boolean }) {
   const scene = scenes[active];
   return (
-    <div aria-hidden>
+    <div className="mx-auto w-full max-w-[400px]">
       {/* The picture's chapters: what Sadeem does in each scene, and how far the current one is. */}
-      <div className="mb-4 flex gap-2 px-1">
+      <div aria-hidden className="mb-3.5 flex gap-2 px-1">
         {scenes.map((chapter, i) => (
           <div key={chapter.ask} className="min-w-0 flex-1">
             <span className="block h-[3px] overflow-hidden rounded-full bg-brand-950/10">
@@ -166,22 +167,22 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
                 />
               )}
             </span>
-            <span className={cn("mt-2 block text-[13px] font-semibold leading-5 transition-colors duration-300", i === active ? "text-brand-950" : "text-neutral-400")}>
+            <span className={cn("mt-1.5 block text-[12.5px] font-semibold leading-5 transition-colors duration-300", i === active ? "text-brand-950" : "text-neutral-400")}>
               {chapter.verb}
             </span>
           </div>
         ))}
       </div>
 
-      <div className="flex h-[624px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_70px_-28px_rgba(11,19,34,0.45)] ring-1 ring-brand-950/[0.07]">
+      <div className="flex h-[520px] flex-col overflow-hidden rounded-[26px] bg-white shadow-[0_1px_2px_rgba(11,19,34,0.06),0_24px_56px_-24px_rgba(11,19,34,0.42)] ring-1 ring-brand-950/[0.08]">
         {/* The chat's header, as in the real one. */}
-        <div className="flex shrink-0 items-center gap-3 bg-brand-950 px-4 py-3.5 text-white">
-          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-white/10">
-            <SadeemMascot className="h-9 w-9" />
+        <div aria-hidden className="flex shrink-0 items-center gap-3 bg-brand-950 px-4 py-3 text-white">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-white/10">
+            <SadeemMascot className="h-8 w-8" />
             <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
           </span>
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-base font-bold leading-6">
+            <p className="flex items-center gap-1.5 text-[15px] font-bold leading-6">
               سديم
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </p>
@@ -190,10 +191,10 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
         </div>
 
         {/* The conversation: the latest at the bottom, as a chat fills. */}
-        <div className="flex min-h-0 flex-1 flex-col justify-end bg-[#f2f5f9] px-3.5 py-4 sm:px-5">
+        <div aria-hidden className="chat-wallpaper flex min-h-0 flex-1 flex-col justify-end px-3 py-3.5 sm:px-4">
           <div
             key={run}
-            className={cn("space-y-3.5", mode === "waiting" && "opacity-0", mode === "playing" && !resting && "animate-scene-out")}
+            className={cn("space-y-3", mode === "waiting" && "opacity-0", mode === "playing" && !resting && "animate-scene-out")}
             style={mode === "playing" && !resting ? { animationDelay: `${SCENE_MS - 380}ms` } : undefined}
           >
             <Piece at={ASK_AT} mine mode={mode}>
@@ -206,15 +207,15 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
                 {mode === "playing" && (
                   <span className="absolute inset-0 rounded-full border-2 border-accent-400 animate-scene-ring" style={{ animationDelay: `${TYPING_AT}s` }} />
                 )}
-                <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
-                  <SadeemMascot className="h-6 w-6" />
+                <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
+                  <SadeemMascot className="h-5 w-5" />
                 </span>
               </Piece>
               <div className="min-w-0 flex-1">
-                <div className="grid min-h-11 items-start [&>*]:col-start-1 [&>*]:row-start-1">
+                <div className="grid min-h-10 items-start [&>*]:col-start-1 [&>*]:row-start-1">
                   {mode === "playing" && (
                     <span
-                      className="flex w-fit items-center gap-1 justify-self-end rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-4 py-3.5 shadow-sm animate-scene-typing"
+                      className="flex w-fit items-center gap-1 justify-self-end rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 py-3 shadow-sm animate-scene-typing"
                       style={{ animationDelay: `${TYPING_AT}s` }}
                     >
                       {[0, 1, 2].map((i) => (
@@ -222,26 +223,35 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
                       ))}
                     </span>
                   )}
-                  <Piece at={REPLY_AT} mode={mode} className="rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 py-2 shadow-sm">
-                    <p className="text-[15px] leading-7 text-neutral-800">{scene.reply}</p>
+                  <Piece at={REPLY_AT} mode={mode} className="rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3 py-1.5 shadow-sm">
+                    <p className="text-[14px] leading-6 text-neutral-800">{scene.reply}</p>
                   </Piece>
                 </div>
               </div>
             </div>
             {/* What he shows: the full width on phones, under his words on wider screens. */}
-            <div className="sm:pe-9">
+            <div className="pe-8">
               <SceneBody scene={scene} mode={mode} />
             </div>
           </div>
         </div>
 
-        {/* The message box, as in the real chat (a picture here: the questions beside it do the asking). */}
-        <div className="flex shrink-0 items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5">
-          <span className="min-w-0 flex-1 truncate rounded-full bg-surface px-4 py-2.5 text-[15px] text-neutral-400">اكتب رسالتك هنا...</span>
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white">
-            <Send className="h-[18px] w-[18px] -scale-x-100" />
+        {/* The message box: a real button. A tap opens Sadeem's chat to write in. */}
+        <button
+          type="button"
+          onClick={() => openSadeemChat({ write: true })}
+          aria-label="اكتب رسالتك لسديم"
+          className="group flex shrink-0 items-center gap-2 border-t border-black/5 bg-white px-2.5 py-2 text-start outline-none"
+        >
+          <span className="flex min-w-0 flex-1 items-center rounded-full bg-surface px-4 py-2.5 text-[14px] text-neutral-400 ring-1 ring-transparent transition group-hover:bg-white group-hover:ring-brand-200 group-focus-visible:bg-white group-focus-visible:ring-2 group-focus-visible:ring-brand-600">
+            {/* A caret, so the box reads as a place to write. */}
+            <span aria-hidden className="me-1.5 h-[18px] w-[1.5px] shrink-0 rounded-full bg-brand-600 animate-caret motion-reduce:animate-none" />
+            <span className="truncate">اكتب رسالتك هنا...</span>
           </span>
-        </div>
+          <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white transition group-hover:bg-brand-800 group-active:scale-90">
+            <Send className="h-[17px] w-[17px] -scale-x-100" />
+          </span>
+        </button>
       </div>
     </div>
   );
@@ -319,7 +329,7 @@ export function SadeemShowcase({
 
   return (
     // Phones: the words, the picture, then the questions. Wider: the picture beside all the words.
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
       <div className="lg:self-end">{intro}</div>
 
       <div ref={rootRef} className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">

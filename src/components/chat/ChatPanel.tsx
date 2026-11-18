@@ -316,7 +316,7 @@ export default function ChatPanel({
       </div>
 
       {view === "list" ? (
-        <div className="flex-1 overflow-y-auto overscroll-contain bg-[#f2f5f9] px-3.5 py-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain chat-wallpaper px-3.5 py-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-sm font-bold text-brand-950">
               محادثاتك <span className="font-normal text-neutral-500">({store.chats.length} من {MAX_CHATS})</span>
@@ -366,7 +366,7 @@ export default function ChatPanel({
         </div>
       ) : (
         <>
-          <div ref={scrollRef} className="flex-1 space-y-3.5 overflow-y-auto overscroll-contain bg-[#f2f5f9] px-3.5 py-4">
+          <div ref={scrollRef} className="flex-1 space-y-3.5 overflow-y-auto overscroll-contain chat-wallpaper px-3.5 py-4">
             {messages.map((message, i) => {
               const day = dayLabel(message.timestamp);
               const showDay = i === 0 || dayLabel(messages[i - 1].timestamp) !== day;
