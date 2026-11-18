@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { Check, CheckCheck, Clock, Send, SendHorizontal, Sparkles } from "lucide-react";
+import { CalendarCheck, Check, CheckCheck, Clock, MessageCircle, Scale, Search, Send, SendHorizontal, Sparkles, type LucideIcon } from "lucide-react";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { askSadeem, openSadeemChat } from "@/lib/chatBus";
@@ -41,6 +41,16 @@ function Thumb({ car, className }: { car: SceneCar; className?: string }) {
     </span>
   );
 }
+
+// The chapters above the window (18 Nov): one bright colour and icon per thing
+// Sadeem does, so the four read apart at a glance. Full class names, so
+// Tailwind keeps them.
+const CHAPTER: Record<Scene["kind"], { icon: LucideIcon; solid: string; soft: string }> = {
+  cars: { icon: Search, solid: "bg-[#2563eb] text-white shadow-[0_6px_16px_-6px_#2563eb]", soft: "bg-[#2563eb]/10 text-[#1d4ed8]" },
+  compare: { icon: Scale, solid: "bg-[#7c3aed] text-white shadow-[0_6px_16px_-6px_#7c3aed]", soft: "bg-[#7c3aed]/10 text-[#6d28d9]" },
+  booking: { icon: CalendarCheck, solid: "bg-[#059669] text-white shadow-[0_6px_16px_-6px_#059669]", soft: "bg-[#059669]/10 text-[#047857]" },
+  hours: { icon: MessageCircle, solid: "bg-[#ea580c] text-white shadow-[0_6px_16px_-6px_#ea580c]", soft: "bg-[#ea580c]/10 text-[#c2410c]" },
+};
 
 /** What the buyer wrote. */
 function Ask({ children }: { children: ReactNode }) {
@@ -153,25 +163,33 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
   const scene = scenes[active];
   return (
     <div className="mx-auto w-full max-w-[400px]">
-      {/* The picture's chapters: what Sadeem does in each scene, and how far the current one is. */}
-      <div aria-hidden className="mb-3.5 flex gap-2 px-1">
-        {scenes.map((chapter, i) => (
-          <div key={chapter.ask} className="min-w-0 flex-1">
-            <span className="block h-[3px] overflow-hidden rounded-full bg-brand-950/10">
-              {i < active && <span className="block h-full bg-brand-950/45" />}
-              {i === active && (
+      {/* The picture's chapters: what Sadeem does in each scene. The current one is
+          filled with its colour, and a lighter sweep across it shows how far it is. */}
+      <div aria-hidden className="mb-3.5 grid grid-cols-4 gap-1.5">
+        {scenes.map((chapter, i) => {
+          const look = CHAPTER[chapter.kind];
+          const Icon = look.icon;
+          const on = i === active;
+          return (
+            <span
+              key={chapter.ask}
+              className={cn(
+                "relative flex h-9 min-w-0 items-center justify-center gap-1.5 overflow-hidden rounded-full px-2 text-[12.5px] font-bold transition-[background-color,color,box-shadow] duration-300",
+                on ? look.solid : i < active ? look.soft : "bg-white text-neutral-400 ring-1 ring-brand-950/[0.07]"
+              )}
+            >
+              {on && (
                 <span
                   key={run}
-                  className={cn("block h-full origin-right bg-accent-400", mode === "playing" && !resting && "animate-scene-progress")}
+                  className={cn("absolute inset-0 origin-right bg-white/20", mode === "playing" && !resting ? "animate-scene-progress" : "scale-x-0")}
                   style={mode === "playing" && !resting ? { animationDuration: `${SCENE_MS}ms` } : undefined}
                 />
               )}
+              <Icon className="relative h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+              <span className="relative truncate">{chapter.verb}</span>
             </span>
-            <span className={cn("mt-1.5 block text-[12.5px] font-semibold leading-5 transition-colors duration-300", i === active ? "text-brand-950" : "text-neutral-400")}>
-              {chapter.verb}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="flex h-[520px] flex-col overflow-hidden rounded-[26px] bg-white shadow-[0_1px_2px_rgba(11,19,34,0.06),0_24px_56px_-24px_rgba(11,19,34,0.42)] ring-1 ring-brand-950/[0.08]">
@@ -362,7 +380,7 @@ export function SadeemShowcase({
                   <span
                     className={cn(
                       "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition duration-300 group-focus-visible:ring-2 group-focus-visible:ring-brand-600 group-focus-visible:ring-offset-2 group-active:scale-90",
-                      on ? "bg-brand-950 text-white" : "bg-white text-brand-800 ring-1 ring-brand-950/10 group-hover:bg-brand-950 group-hover:text-white"
+                      on ? CHAPTER[scene.kind].solid : "bg-white text-brand-800 ring-1 ring-brand-950/10 group-hover:bg-brand-950 group-hover:text-white"
                     )}
                   >
                     <SendHorizontal className="h-[18px] w-[18px] -scale-x-100" />
