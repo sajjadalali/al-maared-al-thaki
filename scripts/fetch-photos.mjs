@@ -124,7 +124,11 @@ async function main() {
       license: get("الرخصة"),
       siteName: get("اسم الملف بالموقع"),
     };
-    if (photo.carId && photo.file && photo.siteName) photos.push(photo);
+    // A photo looked at and turned down keeps its row, its note starting with
+    // «مستبعدة», so it is neither downloaded again nor put back on the car (19 Nov:
+    // 17 such rows would have come back with the next run).
+    const rejected = col["ملاحظة"] && get("ملاحظة").startsWith("مستبعدة");
+    if (photo.carId && photo.file && photo.siteName && !rejected) photos.push(photo);
   });
 
   mkdirSync(IMAGES_DIR, { recursive: true });
