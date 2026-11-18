@@ -8,16 +8,24 @@ import { VisitCta } from "@/components/home/VisitCta";
 
 export default function Home() {
   return (
-    <>
-      {/* Browsing (types, makes, cars), then Sadeem who helps choose, then what
-          the showroom does once a car is chosen, then the visit. */}
-      <Hero />
+    // Computers: browsing (types, makes, cars), then Sadeem who helps choose,
+    // then what the showroom does once a car is chosen, then the visit.
+    // Phones (19 Nov): Sadeem comes right after the hero. Below the cars it
+    // was almost 5 screens down, and he is what the site is about.
+    // `*:w-full`: in a flex column the sections centred with mx-auto would
+    // otherwise shrink to their content (and the car strip overflow on phones).
+    <div className="flex flex-col *:w-full">
+      <div className="order-first">
+        <Hero />
+      </div>
       <BodyTypes />
       <Brands />
       <FeaturedCars />
-      <SadeemSection />
+      <div className="-order-1 lg:order-none">
+        <SadeemSection />
+      </div>
       <Features />
       <VisitCta />
-    </>
+    </div>
   );
 }
