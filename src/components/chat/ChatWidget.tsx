@@ -70,9 +70,10 @@ const INVITE_RETRY_MS = 4000;
 const SCROLL_QUIET_MS = 1200;
 // Phones and tablets: the bubble goes away while the page scrolls.
 const HIDE_ON_SCROLL = "(max-width: 1023px)";
-// Buttons, fields and small links the bubble must not cover. A whole car card
-// is a link too, but a big one, and the bubble may sit on its corner.
-const SMALL_CONTROL_AREA = 40_000;
+// Links this small are buttons to the eye ("تصفّح السيارات"), and the bubble
+// must not cover them. Bigger ones are cards (a brand, a car type), and the
+// bubble may sit on their corner.
+const SMALL_LINK_AREA = 12_000;
 // The head's flight between the launcher and the chat header.
 const FLY_OPEN_MS = 360;
 const FLY_CLOSE_MS = 340;
@@ -104,7 +105,7 @@ function avatarBox(): Box | null {
 
 /**
  * Whether the bubble, laid out but still hidden, would sit on a button, a field
- * or a small link of the page. Hidden, it is drawn at 75% toward its
+ * or a button-sized link of the page. Hidden, it is drawn at 75% toward its
  * bottom-right corner (see HeadBubble), so its full box is worked out from that.
  */
 function coversControl(bubble: HTMLElement): boolean {
@@ -113,13 +114,17 @@ function coversControl(bubble: HTMLElement): boolean {
   const height = r.height / 0.75;
   for (const fx of [0.08, 0.36, 0.64, 0.92]) {
     for (const fy of [0.2, 0.5, 0.8]) {
-      const under = document
-        .elementsFromPoint(r.right - width + width * fx, r.bottom - height + height * fy)
-        .find((el) => !el.closest("[data-sadeem-head]"));
+      const x = r.right - width + width * fx;
+      const y = r.bottom - height + height * fy;
+      const under = document.elementsFromPoint(x, y).find((el) => !el.closest("[data-sadeem-head]"));
       const control = under?.closest("a, button, input, select, textarea, [role='button']");
       if (!control) continue;
+      if (control.tagName !== "A") return true;
+      // A car card's link is its title, stretched over the whole card by a
+      // pseudo-element: hit outside the title's own box, it is the card.
       const box = control.getBoundingClientRect();
-      if (box.width * box.height < SMALL_CONTROL_AREA) return true;
+      const onIt = x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+      if (onIt && box.width * box.height < SMALL_LINK_AREA) return true;
     }
   }
   return false;
