@@ -1,4 +1,4 @@
-name: Live photos check (temporary)
+name: Live road check (temporary)
 on:
   push:
     branches:
@@ -15,21 +15,21 @@ jobs:
           npm i playwright@1 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
           cat > s.mjs <<'JS'
           import { chromium } from "playwright";
-          const S = "https://maared-al-thaki.duckdns.org";
           const b = await chromium.launch();
-          const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
-          for (const car of ["car-002", "car-023", "car-029"]) {
-            await p.goto(`${S}/cars/${car}`, { waitUntil: "networkidle" }); await p.waitForTimeout(4000); await p.goto(`${S}/cars/${car}`, { waitUntil: "networkidle" });
-            const thumbs = await p.$$eval("img", (els) => els.filter((i) => /car-0(02|23|29)-\d/.test(decodeURIComponent(i.src))).map((i) => `${decodeURIComponent(i.src).match(/car-0\d\d-\d/)[0]}:${i.naturalWidth > 0 ? "ok" : "BROKEN"}`));
-            const credit = await p.locator("text=صورة توضيحية للموديل").first().innerText().catch(() => "no credit");
-            console.log("CAR", car, [...new Set(thumbs)].join(" "), "|", credit.replace(/\s+/g, " ").slice(0, 90));
+          const p = await b.newPage({ viewport: { width: 1366, height: 820 } });
+          const errors = []; p.on("pageerror", (e) => errors.push(String(e)));
+          await p.goto("https://maared-al-thaki.duckdns.org/?test", { waitUntil: "networkidle" });
+          const seen = new Set(); const ys = [];
+          for (let i = 0; i < 60; i++) {
+            const s = await p.evaluate(() => {
+              const g = [...document.querySelectorAll(".hero-road svg > g")].find((g) => g.querySelector('circle[r="4.5"]'));
+              return { active: [...document.querySelectorAll(".hero-road-stop")].findIndex((g) => g.hasAttribute("data-active")), y: g ? Math.round(parseFloat(g.getAttribute("transform").split(" ")[1])) : null, live: document.querySelector(".hero-road").hasAttribute("data-road-live") };
+            });
+            seen.add(s.active); ys.push(s.y); await p.waitForTimeout(250);
           }
-          await p.goto(`${S}/credits`, { waitUntil: "networkidle" });
-          const html = await p.content();
-          console.log("CREDITS", ["Damian B Oh", "Ethan Llamas", "HJUdall", "Bull-Doser"].map((a) => `${a}:${html.includes(a)}`).join(" "), "| old UK photo:", html.includes("DeFacto"));
-          const cls = await p.$eval("footer", (f) => [...new Set([...f.querySelectorAll("*")].flatMap((e) => [...e.classList]).filter((c) => /^text-white\/\d+$/.test(c)))].join(" "));
-          console.log("FOOTER", cls);
-          const r = await fetch(`${S}/cars/car-023-1.webp`); console.log("OLD FILE", r.status);
+          console.log("ROAD live stops-visited", [...seen].sort().join(","), "| light y range", Math.min(...ys), "-", Math.max(...ys));
+          await p.locator(".hero-road li").nth(1).hover(); await p.waitForTimeout(2500);
+          console.log("ROAD hover stop 2 ->", await p.evaluate(() => [...document.querySelectorAll(".hero-road-stop")].findIndex((g) => g.hasAttribute("data-active"))), "| errors", errors.length);
           await b.close();
           JS
           node s.mjs
