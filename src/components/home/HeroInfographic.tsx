@@ -22,14 +22,28 @@ const ROAD = "M66 -30C66 10 48 24 48 58S84 150 84 196S46 314 46 362S84 486 84 53
 
 // The road's motion (19 Nov). On load the road unrolls from the top and the
 // stops light up as it reaches them (CSS, .hero-road-*). Then a light drives
-// down it, stops at each stop (which glows, and its number fills), and drives
-// off the bottom to start again; the road behind it takes the stops' colours.
-// Pointing at a stop (or tapping it) sends the light there. It runs only while
-// the road is on screen, and not at all when the device asks for less motion.
+// down it on its own: it rests at each stop (which glows, and its number
+// fills), and drives off the bottom to start again; the road behind it takes
+// the stops' colours. Once the visitor scrolls, the light follows the scroll
+// instead: down as the page goes down, back up as it goes up, gliding rather
+// than jumping. Back at the top of the page, it drives on its own again.
+// Pointing at a stop, tapping it or tabbing to it picks it: the light glides
+// there, the stop's text gets a soft panel and the others step back. It runs
+// only while the road is on screen, and not at all when the device asks for
+// less motion.
 const INTRO_MS = 1500;
-const SPEED = 170; // px a second along the road
+const SPEED = 170; // px a second along the road, driving on its own
 const DWELL_MS = [2300, 2600, 2900, 3600];
 const intro = (y: number) => Math.round((INTRO_MS * (y + 30)) / 760);
+// Following the scroll or a picked stop: how quickly the light catches up (ms).
+const GLIDE_SCROLL = 140;
+const GLIDE_PICK = 220;
+// Where the light sits when following the scroll: from just under the top of
+// the road to below the last stop.
+const Y_TOP = 6;
+const Y_END = 640;
+// The line on the screen the light keeps level with (share of its height).
+const EYE_LINE = 0.6;
 
 function useRoadTrip() {
   const road = useRef<SVGPathElement>(null);
@@ -38,6 +52,8 @@ function useRoadTrip() {
   const root = useRef<HTMLDivElement>(null);
   const wanted = useRef<number | null>(null);
   const [active, setActive] = useState<number | null>(null);
+  const [picked, setPicked] = useState<number | null>(null);
+  const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     const path = road.current;
@@ -47,18 +63,23 @@ function useRoadTrip() {
     if (!path || !trail || !dot || !box) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    // The road, measured once: where each stop is along it, and for every
+    // height on it, how far along the road that is.
     const total = path.getTotalLength();
-    // Where along the road each stop is, and where the road comes on screen.
     const at = STOPS.map(() => ({ len: 0, d: Infinity }));
+    const lenAtY: number[] = [];
     let start = 0;
     for (let len = 0; len <= total; len += 1) {
       const p = path.getPointAtLength(len);
       if (!start && p.y >= 4) start = len;
+      const y = Math.round(p.y);
+      if (y >= 0 && y <= 760 && lenAtY[y] === undefined) lenAtY[y] = len;
       STOPS.forEach((stop, i) => {
         const d = Math.hypot(p.x - stop.x, p.y - stop.y);
         if (d < at[i].d) at[i] = { len, d };
       });
     }
+    for (let y = 1; y <= 760; y++) if (lenAtY[y] === undefined) lenAtY[y] = lenAtY[y - 1] ?? 0;
     const stopLen = at.map((a) => a.len);
     const trails = [...trail.querySelectorAll("path")];
 
@@ -68,19 +89,29 @@ function useRoadTrip() {
       const offset = String(1000 - (1000 * len) / total);
       for (const t of trails) t.style.strokeDashoffset = offset;
     };
+    const yOf = (len: number) => path.getPointAtLength(len).y;
     const ease = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2);
+    let shown: number | null = null;
+    const show = (index: number | null) => {
+      if (index !== shown) setActive((shown = index));
+    };
+    // The stop the light is at, if any (within a few px along the road).
+    const stopNear = (len: number) => {
+      const i = stopLen.findIndex((l) => Math.abs(l - len) < 12);
+      return i === -1 ? null : i;
+    };
 
+    // Driving on its own.
+    let mode: "auto" | "scroll" = "auto";
     let pos = start;
     let from = pos;
     let to = stopLen[0];
     let target = 0; // the stop it is driving to; STOPS.length = off the bottom
-    let standing: number | null = null; // the stop it is standing at
-    let mode: "move" | "dwell" | "reset" = "move";
+    let standing: number | null = null; // the stop it is resting at
+    let phase: "move" | "dwell" | "reset" = "move";
     let t0 = performance.now() + INTRO_MS;
     let duration = 1;
     let until = 0;
-    let raf = 0;
-    let pausedAt = 0;
 
     const go = (index: number, now: number) => {
       target = index;
@@ -88,20 +119,116 @@ function useRoadTrip() {
       to = index === STOPS.length ? total : stopLen[index];
       duration = Math.max(650, (Math.abs(to - from) / SPEED) * 1000);
       t0 = now;
-      mode = "move";
-      if (standing !== null) {
-        standing = null;
-        setActive(null);
-      }
+      phase = "move";
+      standing = null;
+      show(null);
+    };
+    const nextStopAfter = (len: number) => {
+      const i = stopLen.findIndex((l) => l > len + 12);
+      return i === -1 ? STOPS.length : i;
+    };
+    const resumeAuto = (now: number) => {
+      mode = "auto";
+      const here = stopNear(pos);
+      if (here !== null) {
+        standing = here;
+        phase = "dwell";
+        until = now + 1400;
+        show(here);
+      } else go(nextStopAfter(pos), now);
     };
 
+    // Following the scroll. s0 and s1: the scroll at which the light is at the
+    // top of the road and at its bottom, keeping level with the eye line.
+    // Where the road starts below the eye line (phones: it comes up from under
+    // the hero's text), the light simply keeps level with it. Where the page
+    // opens with the road already in view (computers), scrolling from where the
+    // light was carries it on from there, so it never jumps back.
+    let s0 = 0;
+    let s1 = 1;
+    let level = false;
+    const measure = () => {
+      const roadTop = box.getBoundingClientRect().top + window.scrollY;
+      const eye = window.innerHeight * EYE_LINE;
+      s0 = Math.max(0, roadTop + Y_TOP - eye);
+      s1 = Math.max(s0 + 200, roadTop + Y_END - eye);
+      level = s0 > 0;
+    };
+    measure();
+    // Where scrolling took over: the scroll then, and how far down the light
+    // was, so it carries on from there instead of jumping.
+    let anchorScroll = 0;
+    let anchorP = 0;
+    const scrollTarget = () => {
+      const s = window.scrollY;
+      let p: number;
+      if (level) p = Math.min(1, Math.max(0, (s - s0) / (s1 - s0)));
+      else if (s >= anchorScroll) p = anchorP + (1 - anchorP) * Math.min(1, (s - anchorScroll) / Math.max(120, s1 - anchorScroll));
+      else {
+        const low = Math.min(s0, Math.max(0, anchorScroll - 400));
+        p = anchorP * Math.max(0, (s - low) / Math.max(60, anchorScroll - low));
+      }
+      return lenAtY[Math.round(Y_TOP + p * (Y_END - Y_TOP))];
+    };
+    const takeScroll = () => {
+      if (box.dataset.roadReset !== undefined) {
+        delete box.dataset.roadReset;
+        pos = start;
+        place(pos);
+      }
+      mode = "scroll";
+      anchorScroll = window.scrollY;
+      anchorP = Math.min(1, Math.max(0, (yOf(pos) - Y_TOP) / (Y_END - Y_TOP)));
+    };
+
+    const baseline = window.scrollY;
+    let scrolledAt = 0;
+    const onScroll = () => {
+      scrolledAt = performance.now();
+      if (mode === "auto" && Math.abs(window.scrollY - baseline) > 4 && wanted.current === null) takeScroll();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", measure);
+
+    // A picked stop: the light glides to it while it is picked.
+    let following: number | null = null;
+
+    let last = performance.now();
+    let raf = 0;
     place(pos);
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
-      const want = wanted.current;
-      if (want !== null && mode !== "reset" && want !== standing && !(mode === "move" && target === want)) go(want, now);
+      const dt = Math.min(64, now - last);
+      last = now;
+      const glide = (goal: number, ms: number) => {
+        pos += (goal - pos) * (1 - Math.exp(-dt / ms));
+        if (Math.abs(goal - pos) < 0.3) pos = goal;
+        place(pos);
+        show(stopNear(pos));
+      };
 
-      if (mode === "move") {
+      const want = wanted.current;
+      if (want !== null) {
+        if (box.dataset.roadReset !== undefined) return;
+        following = want;
+        glide(stopLen[want], GLIDE_PICK);
+        return;
+      }
+      if (following !== null) {
+        // Let go of a picked stop: carry on from here.
+        following = null;
+        if (mode === "scroll") takeScroll();
+        else resumeAuto(now);
+      }
+
+      if (mode === "scroll") {
+        glide(scrollTarget(), GLIDE_SCROLL);
+        // Back at the top of the page and still for a while: drive on its own.
+        if (!level && window.scrollY <= 2 && now - scrolledAt > 2500 && yOf(pos) <= Y_TOP + 4) resumeAuto(now);
+        return;
+      }
+
+      if (phase === "move") {
         if (now < t0) return;
         const k = Math.min(1, (now - t0) / duration);
         pos = from + (to - from) * ease(k);
@@ -109,17 +236,16 @@ function useRoadTrip() {
         if (k < 1) return;
         if (target === STOPS.length) {
           // Off the bottom: fade, then start again from the top.
-          mode = "reset";
+          phase = "reset";
           box.dataset.roadReset = "";
           until = now + 600;
           return;
         }
-        mode = "dwell";
+        phase = "dwell";
         standing = target;
-        setActive(target);
+        show(target);
         until = now + DWELL_MS[target];
-      } else if (mode === "dwell") {
-        if (wanted.current === standing) until = Math.max(until, now + 700);
+      } else if (phase === "dwell") {
         if (now >= until && standing !== null) go(standing + 1, now);
       } else if (now >= until) {
         pos = start;
@@ -129,39 +255,54 @@ function useRoadTrip() {
       }
     };
 
-    // Only while the road is on screen.
-    const seen = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !raf) {
-        const gap = pausedAt ? performance.now() - pausedAt : 0;
-        t0 += gap;
-        until += gap;
-        raf = requestAnimationFrame(tick);
-      } else if (!entry.isIntersecting && raf) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-        pausedAt = performance.now();
-      }
-    });
+    // Only while a good part of the road is on screen (on a phone the page
+    // opens with just its top showing under the text: it waits for the scroll).
+    let pausedAt = 0;
+    const seen = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !raf) {
+          const gap = pausedAt ? performance.now() - pausedAt : 0;
+          t0 += gap;
+          until += gap;
+          last = performance.now();
+          measure();
+          raf = requestAnimationFrame(tick);
+        } else if (!entry.isIntersecting && raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+          pausedAt = performance.now();
+        }
+      },
+      { threshold: 0.3 }
+    );
     seen.observe(box);
     // The light and its trail appear once the road has unrolled.
-    const shown = setTimeout(() => (box.dataset.roadLive = ""), INTRO_MS - 300);
+    const appear = setTimeout(() => (box.dataset.roadLive = ""), INTRO_MS - 300);
     return () => {
-      clearTimeout(shown);
+      clearTimeout(appear);
       seen.disconnect();
       cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", measure);
     };
   }, []);
 
-  /** Send the light to a stop: while pointed at, or for a while after a tap. */
+  /**
+   * Picks a stop (or lets go, with null). A tap holds it for a few seconds;
+   * the mouse and the keyboard hold it while they are on it.
+   */
   const point = (index: number | null, holdMs?: number) => {
+    clearTimeout(holdTimer.current);
     wanted.current = index;
+    setPicked(index);
     if (index !== null && holdMs)
-      setTimeout(() => {
-        if (wanted.current === index) wanted.current = null;
+      holdTimer.current = setTimeout(() => {
+        wanted.current = null;
+        setPicked(null);
       }, holdMs);
   };
 
-  return { road, lit, light, root, active, point };
+  return { road, lit, light, root, active, picked, point };
 }
 
 function Road({
@@ -224,6 +365,8 @@ function Stop({
   title,
   text,
   active,
+  picked,
+  dimmed,
   point,
   children,
 }: {
@@ -231,7 +374,12 @@ function Stop({
   icon: typeof Scale;
   title: string;
   text: string;
+  /** The light is at this stop. */
   active: boolean;
+  /** The visitor picked this stop. */
+  picked: boolean;
+  /** The visitor picked another stop. */
+  dimmed: boolean;
   point: (index: number | null, holdMs?: number) => void;
   children?: React.ReactNode;
 }) {
@@ -246,23 +394,41 @@ function Stop({
         style={{ top: stop.y, right: 130 - stop.x, ...delay }}
       />
       <li
-        className="hero-road-in absolute left-0 -translate-y-[30px]"
+        tabIndex={0}
+        className="hero-road-in absolute left-0 isolate -translate-y-[30px] cursor-pointer outline-none"
         style={{ top: stop.y, right: 142, ...delay }}
         onPointerEnter={(e) => e.pointerType === "mouse" && point(index)}
         onPointerLeave={(e) => e.pointerType === "mouse" && point(null)}
-        onClick={() => point(index, 3500)}
+        onClick={() => point(index, 4000)}
+        onFocus={() => point(index)}
+        onBlur={() => point(null)}
       >
-        <p className="flex items-baseline gap-2 text-[20px] font-bold leading-8 text-white">
-          <span
-            className="inline-flex h-6 min-w-6 items-center justify-center self-center rounded-full text-[14px] font-bold transition-[background-color,color] duration-300"
-            style={active ? { backgroundColor: stop.color, color: "#0b1322" } : { color: stop.color }}
-          >
-            {index + 1}
-          </span>
-          {title}
-        </p>
-        <p className="text-[13.5px] leading-6 text-white/60">{text}</p>
-        {children && <div className="mt-3">{children}</div>}
+        {/* The picked stop's panel: faint glass, its colour on the road's side. */}
+        <span
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute -inset-y-2.5 -left-2 -right-3.5 -z-10 rounded-2xl ring-1 sm:-left-3.5 transition-[opacity,scale] duration-300 ease-out",
+            picked ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"
+          )}
+          style={{
+            backgroundImage: `linear-gradient(to left, ${stop.color}26, ${stop.color}0a 45%, rgb(255 255 255 / 0.03))`,
+            ["--tw-ring-color" as string]: `${stop.color}40`,
+          }}
+        />
+        {/* The other stops step back while one is picked. */}
+        <div className={cn("transition-opacity duration-300", dimmed ? "opacity-40" : "opacity-100")}>
+          <p className="flex items-baseline gap-2 text-[20px] font-bold leading-8 text-white">
+            <span
+              className="inline-flex h-6 min-w-6 items-center justify-center self-center rounded-full text-[14px] font-bold transition-[background-color,color] duration-300"
+              style={active ? { backgroundColor: stop.color, color: "#0b1322" } : { color: stop.color }}
+            >
+              {index + 1}
+            </span>
+            {title}
+          </p>
+          <p className="text-[13.5px] leading-6 text-white/60">{text}</p>
+          {children && <div className="mt-3">{children}</div>}
+        </div>
       </li>
     </>
   );
@@ -295,8 +461,14 @@ export function HeroInfographic({ available, brands }: { available: number; bran
     .filter(Boolean)
     .join(" ");
 
-  const { road, lit, light, root, active, point } = useRoadTrip();
-  const stop = (index: 0 | 1 | 2 | 3) => ({ index, active: active === index, point });
+  const { road, lit, light, root, active, picked, point } = useRoadTrip();
+  const stop = (index: 0 | 1 | 2 | 3) => ({
+    index,
+    active: active === index,
+    picked: picked === index,
+    dimmed: picked !== null && picked !== index,
+    point,
+  });
 
   return (
     <div ref={root} className="hero-road relative mx-auto h-[700px] w-full max-w-[500px]">
