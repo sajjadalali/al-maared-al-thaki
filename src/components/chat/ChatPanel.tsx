@@ -285,8 +285,11 @@ export default function ChatPanel({
               سديم
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </p>
+            {/* «مساعدك الشخصي» needs 148 px in the site's font, which the header has
+                from 390 px wide screens up (20 Nov). Below that it was cut to
+                «مساعدك الشخ…» (375 px phones), so it leaves and «متصل هسه» stays. */}
             <p className="truncate text-[12px] leading-5 text-white/70 group-data-[keyboard]/frame:hidden">
-              متصل هسه<span className="max-[359px]:hidden"> · مساعدك الشخصي</span>
+              متصل هسه<span className="max-[389px]:hidden"> · مساعدك الشخصي</span>
             </p>
           </div>
         </div>

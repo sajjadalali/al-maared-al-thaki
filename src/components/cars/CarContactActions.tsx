@@ -32,7 +32,7 @@ export function CarContactActions({ car }: { car: Car }) {
         </a>
         <button
           type="button"
-          onClick={() => askSadeem(`أريد معرفة المزيد عن ${carLabel}`)}
+          onClick={() => askSadeem(`احچيلي أكثر عن ${carLabel}`)}
           className="flex items-center justify-center gap-2 rounded-2xl border border-black/10 py-3 text-sm font-bold text-brand-950 transition hover:bg-surface"
         >
           <Sparkles className="h-4 w-4 text-accent-500" />
