@@ -55,7 +55,7 @@ const CHAPTER: Record<Scene["kind"], { icon: LucideIcon; solid: string; soft: st
 /** What the buyer wrote. */
 function Ask({ children }: { children: ReactNode }) {
   return (
-    <div className="w-fit max-w-[86%] rounded-2xl rounded-tr-md bg-brand-900 px-3 pb-1 pt-2 text-white shadow-sm">
+    <div className="w-fit max-w-[86%] rounded-2xl rounded-tr-md bg-brand-900 px-3 pb-1 pt-2 text-white shadow-bubble">
       <p className="text-[14px] leading-6">{children}</p>
       <CheckCheck className="ms-auto h-3.5 w-3.5 text-sky-300" />
     </div>
@@ -68,7 +68,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       return (
         <div className="space-y-2">
           {scene.cars.map((car, i) => (
-            <Piece key={car.id} at={SHOW_AT + i * STEP} mode={mode} className="flex items-center gap-2.5 rounded-2xl border border-black/[0.04] bg-white p-1.5 pe-3 shadow-sm">
+            <Piece key={car.id} at={SHOW_AT + i * STEP} mode={mode} className="flex items-center gap-2.5 rounded-2xl bg-white p-1.5 pe-3 shadow-bubble">
               <Thumb car={car} className="h-12 w-16 rounded-[10px]" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13.5px] font-bold leading-5 text-brand-950">{car.name}</p>
@@ -81,7 +81,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       );
     case "compare":
       return (
-        <Piece at={SHOW_AT} mode={mode} className="overflow-hidden rounded-2xl border border-black/[0.04] bg-white shadow-sm">
+        <Piece at={SHOW_AT} mode={mode} className="overflow-hidden rounded-2xl bg-white shadow-bubble">
           <div className="grid grid-cols-[3.5rem_1fr_1fr] items-end gap-x-2.5 px-3 pb-2.5 pt-3">
             <span />
             {scene.cars.map((car) => (
@@ -98,7 +98,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
               key={row.label}
               at={SHOW_AT + 0.25 + i * STEP}
               mode={mode}
-              className="grid grid-cols-[3.5rem_1fr_1fr] items-center gap-x-2.5 border-t border-brand-100 px-3 py-1.5 text-[12.5px] leading-5"
+              className="grid grid-cols-[3.5rem_1fr_1fr] items-center gap-x-2.5 border-t border-brand-950/[0.05] px-3 py-1.5 text-[12.5px] leading-5"
             >
               <span className="text-neutral-500">{row.label}</span>
               {row.values.map((value, side) => (
@@ -118,7 +118,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
               <bdi dir="ltr">{scene.phone}</bdi>
             </Ask>
           </Piece>
-          <Piece at={SHOW_AT + 1.3} mode={mode} className="flex items-center gap-3 rounded-2xl border border-black/[0.04] bg-white p-3 shadow-sm">
+          <Piece at={SHOW_AT + 1.3} mode={mode} className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-bubble">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-white">
               <Check className="h-[18px] w-[18px]" strokeWidth={3} />
             </span>
@@ -133,7 +133,7 @@ function SceneBody({ scene, mode }: { scene: Scene; mode: Mode }) {
       );
     case "hours":
       return (
-        <Piece at={SHOW_AT} mode={mode} className="divide-y divide-brand-100 rounded-2xl border border-black/[0.04] bg-white px-3.5 shadow-sm">
+        <Piece at={SHOW_AT} mode={mode} className="divide-y divide-brand-950/[0.05] rounded-2xl bg-white px-3.5 shadow-bubble">
           <div className="flex items-center gap-3 py-3">
             <Clock className="h-5 w-5 shrink-0 text-brand-500" />
             <div>
@@ -233,7 +233,7 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
                 <div className="grid min-h-10 items-start [&>*]:col-start-1 [&>*]:row-start-1">
                   {mode === "playing" && (
                     <span
-                      className="flex w-fit items-center gap-1 justify-self-end rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3.5 py-3 shadow-sm animate-scene-typing"
+                      className="flex w-fit items-center gap-1 justify-self-end rounded-2xl rounded-tl-md bg-white px-3.5 py-3 shadow-bubble animate-scene-typing"
                       style={{ animationDelay: `${TYPING_AT}s` }}
                     >
                       {[0, 1, 2].map((i) => (
@@ -241,7 +241,7 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
                       ))}
                     </span>
                   )}
-                  <Piece at={REPLY_AT} mode={mode} className="rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-3 py-1.5 shadow-sm">
+                  <Piece at={REPLY_AT} mode={mode} className="rounded-2xl rounded-tl-md bg-white px-3 py-1.5 shadow-bubble">
                     <p className="text-[14px] leading-6 text-neutral-800">{scene.reply}</p>
                   </Piece>
                 </div>

@@ -65,6 +65,9 @@
   /* Sadeem's chat. One curve for everything it does (the iOS sheet curve):
      quick to start, soft to land. Exits are shorter than entrances. */
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  /* The bubbles and cards inside Sadeem's demo window (19 Nov): a faint lift and
+     no outline; the grey edge and shadow-sm read heavy on the light wallpaper. */
+  --shadow-bubble: 0 1px 1.5px rgba(11, 19, 34, 0.05), 0 2px 8px -4px rgba(11, 19, 34, 0.06);
   --animate-chat-open: chat-open 0.36s var(--ease-sheet) both;
   --animate-chat-close: chat-close 0.24s cubic-bezier(0.4, 0, 1, 1) both;
   --animate-scene-in: scene-in 0.5s var(--ease-sheet) both;
