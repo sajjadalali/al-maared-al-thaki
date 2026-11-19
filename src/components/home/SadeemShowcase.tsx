@@ -192,7 +192,9 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
         })}
       </div>
 
-      <div className="flex h-[520px] flex-col overflow-hidden rounded-[26px] bg-white shadow-[0_1px_2px_rgba(11,19,34,0.06),0_24px_56px_-24px_rgba(11,19,34,0.42)] ring-1 ring-brand-950/[0.08]">
+      {/* A faint shadow under the window (19 Nov: the deep one under it read as a
+          heavy dark band on an iPhone). */}
+      <div className="flex h-[520px] flex-col overflow-hidden rounded-[26px] bg-white shadow-[0_1px_2px_rgba(11,19,34,0.04),0_14px_32px_-20px_rgba(11,19,34,0.16)] ring-1 ring-brand-950/[0.06]">
         {/* The chat's header, as in the real one. */}
         <div aria-hidden className="flex shrink-0 items-center gap-3 bg-brand-950 px-4 py-3 text-white">
           <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-white/10">
