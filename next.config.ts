@@ -37,6 +37,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    // The car photos are at most 1600 px wide (scripts/fetch-photos.mjs), so
+    // the default 1920/2048/3840 widths only made the same photo again, three
+    // more times per photo, for the server to make and keep (20 Nov).
+    deviceSizes: [640, 750, 828, 1080, 1200, 1600],
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
