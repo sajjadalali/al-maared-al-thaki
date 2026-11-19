@@ -2,7 +2,7 @@
 // seconds, chosen for who is looking. A new visitor is offered what Sadeem
 // sells with; someone who left a conversation unfinished is offered that
 // conversation back. Selling comes first, questions about the showroom last.
-import { INVITES_OFF_KEY, STORE_KEY, VISIT_KEY } from "./chatKeys";
+import { INVITES_OFF_KEY, INVITES_SHOWN_KEY, STORE_KEY, VISIT_KEY } from "./chatKeys";
 
 interface StoredMessage {
   role?: string;
@@ -94,5 +94,22 @@ export function turnInvitesOff() {
     window.sessionStorage.setItem(INVITES_OFF_KEY, "1");
   } catch {
     // blocked storage: they stay off for this page only
+  }
+}
+
+/** How many invitations this visit has seen, on every page together. */
+export function invitesShown(): number {
+  try {
+    return Number(window.sessionStorage.getItem(INVITES_SHOWN_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function countInviteShown() {
+  try {
+    window.sessionStorage.setItem(INVITES_SHOWN_KEY, String(invitesShown() + 1));
+  } catch {
+    // blocked storage: counted for this page only, by the launcher itself
   }
 }
