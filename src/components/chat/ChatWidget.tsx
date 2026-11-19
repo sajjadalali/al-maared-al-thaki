@@ -2,13 +2,13 @@
 
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Ref, type RefObject } from "react";
 import { X } from "lucide-react";
 import { onSadeemOpen, onSadeemPrompt, warmSadeem } from "@/lib/chatBus";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
 import { cn } from "@/lib/cn";
 import { CHAT_AVATAR_CLASS, CHAT_FRAME_CLASS, CHAT_HEADER_CLASS, chatFrameMotion } from "./chatFrame";
-import { inviteLines, invitesOff, readVisitor, turnInvitesOff } from "./invites";
+import { countInviteShown, inviteLines, invitesOff, invitesShown, readVisitor, turnInvitesOff } from "./invites";
 import { testMode } from "./testMode";
 import type { ChatPrompt } from "./ChatPanel";
 
@@ -56,11 +56,23 @@ const RESUME_HINT_MS = 6000;
 const EXIT_MS = 400;
 // A car card was tapped: wait this long at most for its page before stepping aside.
 const NAVIGATION_WAIT_MS = 3500;
-// Sadeem's invitations while the chat is closed: the first one soon after the
-// page settles, then one every ten seconds, each staying for six.
-const FIRST_INVITE_MS = 3500;
-const INVITE_EVERY_MS = 10_000;
+// Sadeem's invitations while the chat is closed (20 Nov): two in a whole visit,
+// the first soon after the page settles and the second half a minute after
+// it, each staying for six seconds. They came every ten seconds without end,
+// up 60% of the time, and on phones covered the search button.
+const MAX_INVITES = 2;
+const FIRST_INVITE_MS = 4000;
+const NEXT_INVITE_MS = 30_000;
 const INVITE_SHOWN_MS = 6000;
+// Not now (the page is scrolling, or a button is under the bubble): try again this much later.
+const INVITE_RETRY_MS = 4000;
+// The page must be still this long before a bubble comes up.
+const SCROLL_QUIET_MS = 1200;
+// Phones and tablets: the bubble goes away while the page scrolls.
+const HIDE_ON_SCROLL = "(max-width: 1023px)";
+// Buttons, fields and small links the bubble must not cover. A whole car card
+// is a link too, but a big one, and the bubble may sit on its corner.
+const SMALL_CONTROL_AREA = 40_000;
 // The head's flight between the launcher and the chat header.
 const FLY_OPEN_MS = 360;
 const FLY_CLOSE_MS = 340;
@@ -90,35 +102,84 @@ function avatarBox(): Box | null {
   return { left, top, width: avatar.offsetWidth, height: avatar.offsetHeight };
 }
 
+/**
+ * Whether the bubble, laid out but still hidden, would sit on a button, a field
+ * or a small link of the page. Hidden, it is drawn at 75% toward its
+ * bottom-right corner (see HeadBubble), so its full box is worked out from that.
+ */
+function coversControl(bubble: HTMLElement): boolean {
+  const r = bubble.getBoundingClientRect();
+  const width = r.width / 0.75;
+  const height = r.height / 0.75;
+  for (const fx of [0.08, 0.36, 0.64, 0.92]) {
+    for (const fy of [0.2, 0.5, 0.8]) {
+      const under = document
+        .elementsFromPoint(r.right - width + width * fx, r.bottom - height + height * fy)
+        .find((el) => !el.closest("[data-sadeem-head]"));
+      const control = under?.closest("a, button, input, select, textarea, [role='button']");
+      if (!control) continue;
+      const box = control.getBoundingClientRect();
+      if (box.width * box.height < SMALL_CONTROL_AREA) return true;
+    }
+  }
+  return false;
+}
+
 /** The line Sadeem's head is saying now (see invites.ts), while `active`. */
-function useInvite(active: boolean, onCarPage: boolean) {
+function useInvite(active: boolean, onCarPage: boolean, bubble: RefObject<HTMLDivElement | null>) {
   const [invite, setInvite] = useState<{ text: string; shown: boolean } | null>(null);
   const [stopped, setStopped] = useState(false);
 
   useEffect(() => {
-    if (!active || stopped || invitesOff()) return;
+    if (!active || stopped || invitesOff() || invitesShown() >= MAX_INVITES) return;
     const lines = inviteLines(readVisitor(), onCarPage);
-    let next = 0;
+    let timer = 0;
     let hide = 0;
-    let every = 0;
-    const show = () => {
-      if (document.hidden) return;
-      setInvite({ text: lines[next++ % lines.length], shown: true });
-      window.clearTimeout(hide);
-      hide = window.setTimeout(() => setInvite((v) => v && { ...v, shown: false }), INVITE_SHOWN_MS);
+    let frame = 0;
+    let scrolledAt = 0;
+
+    function later(ms: number) {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(tryShow, ms);
+    }
+    function tryShow() {
+      const count = invitesShown();
+      if (count >= MAX_INVITES) return;
+      if (document.hidden || Date.now() - scrolledAt < SCROLL_QUIET_MS) return later(INVITE_RETRY_MS);
+      const text = lines[count % lines.length];
+      // Laid out hidden with its words first, so its place can be checked.
+      setInvite({ text, shown: false });
+      frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(() => {
+          if (Date.now() - scrolledAt < SCROLL_QUIET_MS || (bubble.current && coversControl(bubble.current))) {
+            return later(INVITE_RETRY_MS);
+          }
+          countInviteShown();
+          setInvite({ text, shown: true });
+          hide = window.setTimeout(() => {
+            setInvite((v) => v && { ...v, shown: false });
+            if (count + 1 < MAX_INVITES) later(NEXT_INVITE_MS);
+          }, INVITE_SHOWN_MS);
+        });
+      });
+    }
+    const onScroll = () => {
+      scrolledAt = Date.now();
+      setInvite((v) => (v?.shown ? { ...v, shown: false } : v));
     };
-    const first = window.setTimeout(() => {
-      show();
-      every = window.setInterval(show, INVITE_EVERY_MS);
-    }, FIRST_INVITE_MS);
+
+    const hidesOnScroll = window.matchMedia(HIDE_ON_SCROLL).matches;
+    if (hidesOnScroll) window.addEventListener("scroll", onScroll, { passive: true });
+    later(invitesShown() === 0 ? FIRST_INVITE_MS : NEXT_INVITE_MS);
     return () => {
-      window.clearTimeout(first);
+      window.clearTimeout(timer);
       window.clearTimeout(hide);
-      window.clearInterval(every);
+      cancelAnimationFrame(frame);
+      if (hidesOnScroll) window.removeEventListener("scroll", onScroll);
       // The next round starts silent, not with the line that was up when this one ended.
       setInvite(null);
     };
-  }, [active, stopped, onCarPage]);
+  }, [active, stopped, onCarPage, bubble]);
 
   const stop = useCallback(() => {
     turnInvitesOff();
@@ -133,15 +194,19 @@ function HeadBubble({
   shown,
   onOpen,
   onStop,
+  boxRef,
 }: {
   text: string;
   shown: boolean;
   onOpen: () => void;
+  /** The bubble's outer box, for checking what it would cover. */
+  boxRef?: Ref<HTMLDivElement>;
   /** With this, the bubble has a ✕ that stops the invitations. */
   onStop?: () => void;
 }) {
   return (
     <div
+      ref={boxRef}
       inert={!shown}
       className={cn(
         "absolute bottom-1.5 right-full mr-3 w-max max-w-[min(17.5rem,calc(100vw-6.75rem))] origin-bottom-right transition duration-300 ease-(--ease-sheet)",
@@ -373,7 +438,8 @@ export function ChatWidget() {
   const handleNavigate = useCallback(() => setNavigating(true), []);
   const warmUp = () => void loadPanel().then(() => setMounted(true));
 
-  const invite = useInvite(phase === "closed" && !flight && !unread && !resumeHint, /^\/cars\/.+/.test(pathname));
+  const inviteBox = useRef<HTMLDivElement>(null);
+  const invite = useInvite(phase === "closed" && !flight && !unread && !resumeHint, /^\/cars\/.+/.test(pathname), inviteBox);
   const status = unread ? "سديم رد عليك" : "رجوع للمحادثة";
   const label = unread ? "سديم رد عليك" : started ? "كمّل مع سديم" : "احچي ويا سديم";
 
@@ -390,11 +456,16 @@ export function ChatWidget() {
             flight === "close" && "invisible"
           )}
         >
-          <span data-pulse aria-hidden className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-accent-400 animate-head-pulse" />
+          {/* The rings go out three times when the head appears, then stop (20 Nov). */}
           <span
             data-pulse
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-accent-400 animate-head-pulse [animation-delay:0.55s]"
+            className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-accent-400 animate-head-pulse [animation-iteration-count:3]"
+          />
+          <span
+            data-pulse
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-accent-400 animate-head-pulse [animation-delay:0.55s] [animation-iteration-count:3]"
           />
           <button
             ref={headRef}
@@ -415,7 +486,7 @@ export function ChatWidget() {
             )}
           </button>
           <HeadBubble text={status} shown={unread || resumeHint} onOpen={() => openChat()} />
-          <HeadBubble text={invite.text} shown={invite.shown} onOpen={() => openChat()} onStop={invite.stop} />
+          <HeadBubble text={invite.text} shown={invite.shown} onOpen={() => openChat()} onStop={invite.stop} boxRef={inviteBox} />
         </div>
       )}
 

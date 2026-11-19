@@ -7,3 +7,5 @@ export const STORE_KEY = "autopro:chats";
 export const VISIT_KEY = "autopro:visit";
 /** The visitor closed Sadeem's invitations for this visit (sessionStorage). */
 export const INVITES_OFF_KEY = "autopro:invites-off";
+/** How many invitations Sadeem's head has shown in this visit (sessionStorage). */
+export const INVITES_SHOWN_KEY = "autopro:invites-shown";
