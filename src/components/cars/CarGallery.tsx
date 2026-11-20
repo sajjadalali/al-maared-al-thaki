@@ -1,27 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Info, X } from "lucide-react";
 import { CarImage } from "@/components/ui/CarImage";
 import { cn } from "@/lib/cn";
 import type { ImageCredit } from "@/data/imageCredits";
 import type { Car } from "@/types/car";
 import { carNameAr } from "@/lib/format";
 
-const linkClass = "underline-offset-2 hover:text-brand-900 hover:underline";
+const linkClass = "underline underline-offset-2 hover:text-white/80";
 
 // `credits` lines up with car.images: the attribution of each licensed photo.
 export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCredit | undefined)[] }) {
   const images = car.images.length > 0 ? car.images : [undefined];
   const [active, setActive] = useState(0);
+  // The photo's credit sits behind an ⓘ on the photo (20 Nov); under it, it
+  // was two lines of small grey text on phones. /credits lists them all.
+  const [creditOpen, setCreditOpen] = useState(false);
   const alt = `${carNameAr(car)} ${car.year}`;
   const credit = credits[active];
 
+  function show(i: number) {
+    setActive(i);
+    setCreditOpen(false);
+  }
   function next() {
-    setActive((i) => (i + 1) % images.length);
+    show((active + 1) % images.length);
   }
   function prev() {
-    setActive((i) => (i - 1 + images.length) % images.length);
+    show((active - 1 + images.length) % images.length);
   }
 
   return (
@@ -61,25 +69,45 @@ export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCr
             </span>
           </>
         )}
-      </div>
 
-      {credit && (
-        <p className="mt-2 text-[11.5px] leading-5 text-neutral-500">
-          صورة توضيحية للموديل · تصوير{" "}
-          <a href={credit.source} target="_blank" rel="noopener noreferrer" className={linkClass}>
-            <bdi>{credit.author}</bdi>
-          </a>{" "}
-          ·{" "}
-          {credit.licenseUrl ? (
-            <a href={credit.licenseUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
-              <bdi>{credit.license}</bdi>
-            </a>
-          ) : (
-            <bdi>{credit.license}</bdi>
-          )}{" "}
-          · ويكيميديا كومنز
-        </p>
-      )}
+        {credit && (
+          <>
+            {creditOpen && (
+              <div
+                id="photo-credit"
+                className="absolute inset-x-3 bottom-14 rounded-2xl bg-brand-950/85 px-4 py-3 text-[13px] leading-6 text-white shadow-lg backdrop-blur"
+              >
+                صورة توضيحية للموديل · تصوير{" "}
+                <a href={credit.source} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                  <bdi>{credit.author}</bdi>
+                </a>{" "}
+                ·{" "}
+                {credit.licenseUrl ? (
+                  <a href={credit.licenseUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                    <bdi>{credit.license}</bdi>
+                  </a>
+                ) : (
+                  <bdi>{credit.license}</bdi>
+                )}{" "}
+                · ويكيميديا كومنز، معدّلة لإطار 3:2 ·{" "}
+                <Link href="/credits" className={linkClass}>
+                  كل حقوق الصور
+                </Link>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setCreditOpen((open) => !open)}
+              aria-expanded={creditOpen}
+              aria-controls="photo-credit"
+              aria-label={creditOpen ? "سد مصدر الصورة" : "مصدر الصورة"}
+              className="tap-target absolute bottom-3 start-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/60"
+            >
+              {creditOpen ? <X className="h-4 w-4" /> : <Info className="h-4 w-4" />}
+            </button>
+          </>
+        )}
+      </div>
 
       {images.length > 1 && (
         <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
@@ -87,7 +115,7 @@ export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCr
             <button
               key={i}
               type="button"
-              onClick={() => setActive(i)}
+              onClick={() => show(i)}
               className={cn(
                 "relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-surface ring-2 transition",
                 active === i ? "ring-brand-900" : "ring-transparent opacity-70 hover:opacity-100"
