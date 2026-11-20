@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { site } from "@/config/site";
+import { ERROR_REPORTER } from "@/lib/errorReporter";
 
 const plex = IBM_Plex_Sans_Arabic({
   variable: "--font-plex",
@@ -48,6 +49,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       dir="rtl"
       className={`${plex.variable} h-full antialiased`}
     >
+      <head>
+        {/* Reports load and script errors to the server (src/lib/errorReporter.ts).
+            Inline, so it runs even when the site's own JavaScript or CSS does not. */}
+        <script dangerouslySetInnerHTML={{ __html: ERROR_REPORTER }} />
+      </head>
       <body className="min-h-full flex flex-col bg-white text-[#0f172a]">
         <FavoritesProvider>
           <Header />

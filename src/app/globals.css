@@ -305,6 +305,9 @@
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
+  /* The error reporter (src/lib/errorReporter.ts) checks this to know the
+     site's styles applied; without it the page reports css-missing. */
+  --site-css: 1;
 }
 
 body {

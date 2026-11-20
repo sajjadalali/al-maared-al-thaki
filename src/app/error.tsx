@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportCaughtError } from "@/lib/errorReporter";
 import Link from "next/link";
 import { RotateCw, TriangleAlert } from "lucide-react";
 import { site, whatsappHref } from "@/config/site";
@@ -10,6 +11,7 @@ import { site, whatsappHref } from "@/config/site";
 export default function Error({ error, retry }: { error: unknown; retry: () => void }) {
   useEffect(() => {
     console.error(error);
+    reportCaughtError("error-boundary", error);
   }, [error]);
 
   return (
