@@ -30,12 +30,15 @@ export function CarImage({
   bodyType,
   color,
   className,
-  sizes = "(min-width: 1024px) 25vw, 50vw",
+  // A card is a quarter of a computer screen, half a tablet's, and the whole
+  // width of a phone (20 Nov: phones were sent a photo half the width they needed).
+  sizes = "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw",
   eager,
   showNote,
   fit = "contain",
 }: CarImageProps) {
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   if (!src || failed) {
     return (
@@ -67,10 +70,26 @@ export function CarImage({
       loading={eager ? "eager" : "lazy"}
       fetchPriority={eager ? "high" : undefined}
       className={cn(fit === "cover" ? "object-cover" : "object-contain", className)}
+      onLoad={() => setLoaded(true)}
       onError={() => setFailed(true)}
     />
   );
-  if (fit === "cover") return photo;
+  // Until the photo is in, its place shimmers softly (20 Nov), so a slow photo
+  // reads as on its way, not as an empty grey box. Plain CSS, no blurred copy
+  // of the photo (that one became the page's LCP, see below).
+  const waiting = !loaded && (
+    <div aria-hidden className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/70 to-transparent motion-safe:animate-shimmer" />
+    </div>
+  );
+  if (fit === "cover")
+    return (
+      <>
+        {!loaded && <div aria-hidden className="absolute inset-0 bg-surface-muted" />}
+        {waiting}
+        {photo}
+      </>
+    );
 
   // A plain backdrop behind the letterboxed photo (15 Nov). It was a blurred
   // copy of the photo, which the browser counted as the page's largest image
@@ -78,6 +97,7 @@ export function CarImage({
   return (
     <>
       <div aria-hidden className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_10%,#ffffff_0%,#eef0f3_55%,#e2e5ea_100%)]" />
+      {waiting}
       {photo}
     </>
   );

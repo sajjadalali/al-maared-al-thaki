@@ -26,7 +26,7 @@ export function CarCard({ car, eager, className }: { car: CarSummary; eager?: bo
         className
       )}
     >
-      <div className="relative aspect-[16/11] w-full overflow-hidden">
+      <div className="relative aspect-[3/2] w-full overflow-hidden">
         <CarImage
           src={car.images[0]}
           alt={`${name} ${car.year}`}
@@ -45,11 +45,6 @@ export function CarCard({ car, eager, className }: { car: CarSummary; eager?: bo
           >
             {isNew ? "جديدة · زيرو" : "مستعملة"}
           </span>
-          {car.origin && (
-            <span className="rounded-full bg-white/90 px-2.5 py-1 text-[11.5px] font-semibold text-neutral-600 shadow-sm ring-1 ring-black/5 backdrop-blur">
-              {originLabel(car.origin)}
-            </span>
-          )}
         </div>
 
         <CarFavoriteIcon id={car.id} />
@@ -97,9 +92,14 @@ export function CarCard({ car, eager, className }: { car: CarSummary; eager?: bo
         </div>
 
         <div className="mt-3 flex items-center justify-between text-[12.5px]">
-          <span className="flex items-center gap-1 text-neutral-500">
-            <MapPin className="h-3.5 w-3.5" />
-            {car.city}
+          {/* Where it came from sits with where it is (20 Nov); on the photo it
+              was a third chip over the car. */}
+          <span className="flex min-w-0 items-center gap-1 text-neutral-500">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">
+              {car.city}
+              {car.origin && ` · ${originLabel(car.origin)}`}
+            </span>
           </span>
           <span className="flex items-center gap-1 font-bold text-brand-700 transition group-hover:gap-1.5 group-hover:text-brand-950">
             التفاصيل
