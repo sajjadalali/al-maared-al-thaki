@@ -42,7 +42,7 @@ export function ChatInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex shrink-0 items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] group-data-[keyboard]/frame:pb-[calc(0.625rem+var(--kb-gap,0px))]"
+      className="flex shrink-0 items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] group-data-[keyboard]/frame:pb-[calc(0.625rem+var(--kb-gap,0px))] transition-[padding] duration-300 ease-sheet motion-reduce:transition-none"
     >
       {/* 16px text: smaller inputs make iOS Safari zoom the page on focus. */}
       <input
