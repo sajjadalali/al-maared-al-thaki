@@ -18,7 +18,7 @@ export function chatFrameMotion(leaving: boolean) {
  * when the chat opens and back when it closes; the real one hides meanwhile.
  */
 export const CHAT_AVATAR_CLASS =
-  "relative flex h-11 w-11 items-center justify-center rounded-full bg-white group-data-[flight]/sadeem:opacity-0";
+  "relative flex h-11 w-11 items-center justify-center rounded-full bg-brand-950 ring-2 ring-white/20 group-data-[flight]/sadeem:opacity-0";
 
 export const CHAT_HEADER_CLASS =
   "relative flex shrink-0 items-center justify-between gap-3 bg-brand-950 px-4 pb-3.5 pt-[max(0.875rem,env(safe-area-inset-top))] text-white group-data-[keyboard]/frame:py-1.5";

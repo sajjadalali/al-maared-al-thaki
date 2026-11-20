@@ -58,8 +58,9 @@ export function SadeemMark({
   tone?: keyof typeof TONES;
   /** The ya-meem and its bubble only: clearer than the whole word under ~32px. */
   compact?: boolean;
-  /** The dots move like Sadeem typing (still for reduced motion). */
-  animated?: boolean;
+  /** The dots move like Sadeem typing (still for reduced motion). "burst":
+      two hops every 7 seconds, in step with the launcher's beacon. */
+  animated?: boolean | "burst";
   /** The bubble's line in screen pixels, the same at every size (at avatar
       sizes a line that scales with the mark thins to a hair). Raise it for big uses. */
   line?: number;
@@ -91,7 +92,7 @@ export function SadeemMark({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <g className={cn("transition-colors duration-300", t.spark, animated && "sadeem-dots")}>
+      <g className={cn("transition-colors duration-300", t.spark, animated === "burst" ? "sadeem-dots-burst" : animated && "sadeem-dots")}>
         {dots.map((dot, i) => (
           <circle key={dot.cx} cx={dot.cx} cy={-395} r={dot.r} style={animated ? { animationDelay: `${i * 0.15}s` } : undefined} />
         ))}
