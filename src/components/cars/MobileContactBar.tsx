@@ -22,7 +22,7 @@ export function MobileContactBar({ car }: { car: Car }) {
               {carNameAr(car)} {car.year}
             </bdi>
           </p>
-          <p className="whitespace-nowrap text-[17px] font-bold leading-6 text-brand-950">
+          <p className="whitespace-nowrap text-[17px] font-bold leading-6 text-brand-950 max-[359px]:text-[15px]">
             {formatNumber(car.price)} <span className="text-xs font-semibold text-neutral-500">د.ع</span>
           </p>
         </div>
@@ -37,11 +37,13 @@ export function MobileContactBar({ car }: { car: Car }) {
           href={whatsappHref(carWhatsappMessage(car))}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-[#1fa855] px-4 text-sm font-bold text-white max-[359px]:px-3.5"
+          className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#1fa855] px-4 text-sm font-bold text-white max-[399px]:w-11 max-[399px]:px-0"
         >
-          <WhatsappIcon className="h-4.5 w-4.5" />
-          {/* The narrowest phones keep just the icon, so the price fits beside Sadeem. */}
-          <span className="max-[359px]:sr-only">واتساب</span>
+          <WhatsappIcon className="h-5 w-5" />
+          {/* Under 400 px (most Android phones are 360) it is just the icon, a
+              square like the call button, so the whole price fits beside Sadeem:
+              at 360 «د.ع» went under the call button (20 Nov). */}
+          <span className="max-[399px]:sr-only">واتساب</span>
         </a>
       </div>
     </div>

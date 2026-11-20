@@ -70,6 +70,11 @@
   --shadow-bubble: 0 1px 1.5px rgba(11, 19, 34, 0.05), 0 2px 8px -4px rgba(11, 19, 34, 0.06);
   --animate-chat-open: chat-open 0.36s var(--ease-sheet) both;
   --animate-chat-close: chat-close 0.24s cubic-bezier(0.4, 0, 1, 1) both;
+  /* Phones (20 Nov): the full-screen chat only slides and fades. Growing it
+     from the head scaled and re-rounded the whole screen every frame, which
+     stuttered on mid-range Android phones. */
+  --animate-chat-sheet-in: chat-sheet-in 0.26s var(--ease-sheet) both;
+  --animate-chat-sheet-out: chat-sheet-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
   --animate-scene-in: scene-in 0.5s var(--ease-sheet) both;
   --animate-scene-ask: scene-ask 0.45s var(--ease-sheet) both;
   --animate-scene-out: scene-out 0.36s ease-in both;
@@ -98,6 +103,28 @@
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+
+  @keyframes chat-sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(32px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes chat-sheet-out {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 0;
+      transform: translateY(32px);
     }
   }
 
