@@ -198,8 +198,8 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
       <div className="flex h-[520px] flex-col overflow-hidden rounded-[26px] bg-white shadow-[0_1px_2px_rgba(11,19,34,0.04),0_14px_32px_-20px_rgba(11,19,34,0.16)] ring-1 ring-brand-950/[0.06]">
         {/* The chat's header, as in the real one. */}
         <div aria-hidden className="flex shrink-0 items-center gap-3 bg-brand-950 px-4 py-3 text-white">
-          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-950 ring-2 ring-white/20">
-            <SadeemMark tone="light" className="w-[31px]" />
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-white/10">
+            <SadeemMark className="w-[31px]" />
             <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
           </span>
           <div className="min-w-0">
