@@ -8,7 +8,7 @@ import { ChatMessageBubble } from "./ChatMessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
 import { QuickActions } from "./QuickActions";
 import { ChatInput } from "./ChatInput";
-import { SadeemMascot } from "@/components/ui/SadeemMascot";
+import { SadeemMark } from "@/components/ui/SadeemMark";
 import { CHAT_AVATAR_CLASS, CHAT_FRAME_CLASS, CHAT_HEADER_CLASS, chatFrameMotion } from "./chatFrame";
 import {
   MAX_CHATS,
@@ -277,7 +277,7 @@ export default function ChatPanel({
       <div className={CHAT_HEADER_CLASS}>
         <div className="flex min-w-0 items-center gap-3">
           <span data-sadeem-avatar className={cn(CHAT_AVATAR_CLASS, "ring-2 ring-white/10")}>
-            <SadeemMascot className="h-9 w-9" />
+            <SadeemMark className="w-[34px]" />
             <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
           </span>
           <div className="min-w-0">

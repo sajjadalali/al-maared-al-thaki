@@ -1,5 +1,5 @@
 import { CheckCheck, Phone } from "lucide-react";
-import { SadeemMascot } from "@/components/ui/SadeemMascot";
+import { SadeemMark } from "@/components/ui/SadeemMark";
 import { CarDetailChatCard, CarRecommendationCard } from "./CarRecommendationCard";
 import { RichText } from "./RichText";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
@@ -50,7 +50,7 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   return (
     <div className="flex flex-row-reverse items-start gap-2 animate-msg-in">
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
-        <SadeemMascot className="h-6 w-6" />
+        <SadeemMark compact className="w-[19px]" />
       </span>
 
       <div className="flex min-w-0 max-w-[88%] flex-1 flex-col items-end gap-2">

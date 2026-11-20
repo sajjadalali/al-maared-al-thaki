@@ -4,7 +4,7 @@ import Image from "next/image";
 import { photoUrl } from "@/lib/photo";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { CalendarCheck, Check, CheckCheck, Clock, MessageCircle, Scale, Search, Send, SendHorizontal, Sparkles, type LucideIcon } from "lucide-react";
-import { SadeemMascot } from "@/components/ui/SadeemMascot";
+import { SadeemMark } from "@/components/ui/SadeemMark";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { askSadeem, openSadeemChat } from "@/lib/chatBus";
 import { cn } from "@/lib/cn";
@@ -199,7 +199,7 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
         {/* The chat's header, as in the real one. */}
         <div aria-hidden className="flex shrink-0 items-center gap-3 bg-brand-950 px-4 py-3 text-white">
           <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-white/10">
-            <SadeemMascot className="h-8 w-8" />
+            <SadeemMark className="w-[31px]" />
             <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
           </span>
           <div className="min-w-0">
@@ -229,7 +229,7 @@ function Stage({ scenes, active, mode, run, resting }: { scenes: Scene[]; active
                   <span className="absolute inset-0 rounded-full border-2 border-accent-400 animate-scene-ring" style={{ animationDelay: `${TYPING_AT}s` }} />
                 )}
                 <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
-                  <SadeemMascot className="h-5 w-5" />
+                  <SadeemMark compact className="w-4" />
                 </span>
               </Piece>
               <div className="min-w-0 flex-1">

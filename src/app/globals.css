@@ -458,3 +458,31 @@ body {
     transform: scale(1.7);
   }
 }
+
+/* Sadeem's mark: its three amber dots move like him typing (SadeemMark
+   animated). Inside an SVG the move is a share of each dot's own box, so it
+   reads the same at every size. */
+@keyframes sadeem-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  30% {
+    transform: translateY(-45%);
+    opacity: 0.55;
+  }
+}
+
+.sadeem-dots circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sadeem-dot 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sadeem-dots circle {
+    animation: none;
+  }
+}
