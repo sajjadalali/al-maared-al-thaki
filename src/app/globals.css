@@ -338,7 +338,10 @@ body {
 
 /* The hero's road (19 Nov; HeroInfographic): it unrolls from the top on load,
    the stops pop in as it reaches them, then a light drives down it and the
-   stop it stands at glows. Without motion, the road just stands there. */
+   stop it stands at glows. Without motion, the road just stands there.
+   20 Nov: the stops, their words and pictures are there from the first frame
+   (the stops grow into place, the words settle a few px), and the unrolling
+   takes 1 s. Before, half the hero stood empty until the road reached it. */
 .hero-road-dot {
   transform-box: fill-box;
   transform-origin: center;
@@ -372,7 +375,7 @@ body {
   .hero-road-reveal {
     transform-box: fill-box;
     transform-origin: top;
-    animation: hero-road-reveal 1.5s cubic-bezier(0.55, 0, 0.2, 1) both;
+    animation: hero-road-reveal 1s cubic-bezier(0.55, 0, 0.2, 1) both;
   }
 
   .hero-road-stop {
@@ -401,8 +404,7 @@ body {
 
 @keyframes hero-road-stop {
   from {
-    opacity: 0;
-    transform: scale(0.4);
+    transform: scale(0.7);
   }
   to {
     opacity: 1;
@@ -412,8 +414,7 @@ body {
 
 @keyframes hero-road-in {
   from {
-    opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
