@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Ref, type RefObject } from "react";
 import { X } from "lucide-react";
 import { onSadeemOpen, onSadeemPrompt, warmSadeem } from "@/lib/chatBus";
-import { SadeemMascot } from "@/components/ui/SadeemMascot";
+import { SadeemMark } from "@/components/ui/SadeemMark";
 import { cn } from "@/lib/cn";
 import { CHAT_AVATAR_CLASS, CHAT_FRAME_CLASS, CHAT_HEADER_CLASS, chatFrameMotion } from "./chatFrame";
 import { countInviteShown, inviteLines, invitesOff, invitesShown, readVisitor, turnInvitesOff } from "./invites";
@@ -34,7 +34,7 @@ function PanelLoading() {
       <div className={CHAT_HEADER_CLASS}>
         <div className="flex items-center gap-3">
           <span data-sadeem-avatar className={CHAT_AVATAR_CLASS}>
-            <SadeemMascot className="h-9 w-9" />
+            <SadeemMark className="w-[34px]" />
           </span>
           <p className="text-base font-bold">سديم</p>
         </div>
@@ -482,7 +482,7 @@ export function ChatWidget() {
             aria-label={label}
             className="relative flex h-[60px] w-[60px] items-center justify-center rounded-full bg-white shadow-[0_8px_24px_-4px_rgba(11,19,34,0.3)] ring-1 ring-brand-950/[0.08] transition duration-200 hover:scale-105 active:scale-95 docked:h-[52px] docked:w-[52px]"
           >
-            <SadeemMascot className="h-[80%] w-[80%]" />
+            <SadeemMark line={1.7} className="w-[68%]" />
             <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-[2.5px] border-white bg-success" />
             {unread && (
               <span className="absolute -left-1 -top-1 flex h-[22px] min-w-[22px] items-center justify-center rounded-full border-2 border-white bg-danger px-1 text-[11px] font-bold leading-none text-white">
@@ -501,7 +501,7 @@ export function ChatWidget() {
           aria-hidden
           className="pointer-events-none fixed z-[60] flex items-center justify-center rounded-full bg-white shadow-[0_8px_24px_-4px_rgba(11,19,34,0.3)] will-change-transform"
         >
-          <SadeemMascot className="h-[80%] w-[80%]" />
+          <SadeemMark line={1.7} className="w-[68%]" />
         </span>
       )}
 
