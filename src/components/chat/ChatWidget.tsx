@@ -34,7 +34,7 @@ function PanelLoading() {
       <div className={CHAT_HEADER_CLASS}>
         <div className="flex items-center gap-3">
           <span data-sadeem-avatar className={CHAT_AVATAR_CLASS}>
-            <SadeemMark tone="light" className="w-[34px]" />
+            <SadeemMark className="w-[34px]" />
           </span>
           <p className="text-base font-bold">سديم</p>
         </div>
@@ -378,6 +378,12 @@ export function ChatWidget() {
         fill: "both",
       }
     );
+    const face = fly.querySelector<HTMLElement>("[data-fly-light]");
+    const fade = face?.animate(flight === "open" ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }], {
+      duration: flight === "open" ? FLY_OPEN_MS : FLY_CLOSE_MS,
+      easing: "ease-in-out",
+      fill: "both",
+    });
     motion.onfinish = done;
     // A background tab may never run the animation: don't leave the head hidden.
     const fallback = window.setTimeout(done, 700);
@@ -385,6 +391,7 @@ export function ChatWidget() {
       window.clearTimeout(fallback);
       motion.onfinish = null;
       motion.cancel();
+      fade?.cancel();
     };
   }, [flight]);
 
@@ -501,9 +508,16 @@ export function ChatWidget() {
         <span
           ref={flyRef}
           aria-hidden
-          className="pointer-events-none fixed z-[60] flex items-center justify-center rounded-full bg-brand-950 shadow-[0_8px_24px_-4px_rgba(11,19,34,0.35)] ring-2 ring-white will-change-transform"
+          className="pointer-events-none fixed z-[60] rounded-full shadow-[0_8px_24px_-4px_rgba(11,19,34,0.35)] ring-2 ring-white will-change-transform"
         >
-          <SadeemMark tone="light" line={1.7} className="w-[68%]" />
+          {/* The launcher's navy face turns into the header's white one on the way
+              (and back): the header is navy, so its face is white to stand out. */}
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-brand-950">
+            <SadeemMark tone="light" line={1.7} className="w-[68%]" />
+          </span>
+          <span data-fly-light className="absolute inset-0 flex items-center justify-center rounded-full bg-white opacity-0">
+            <SadeemMark line={1.7} className="w-[68%]" />
+          </span>
         </span>
       )}
 

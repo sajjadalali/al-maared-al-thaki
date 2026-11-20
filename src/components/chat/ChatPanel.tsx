@@ -297,8 +297,8 @@ export default function ChatPanel({
     >
       <div className={CHAT_HEADER_CLASS}>
         <div className="flex min-w-0 items-center gap-3">
-          <span data-sadeem-avatar className={CHAT_AVATAR_CLASS}>
-            <SadeemMark tone="light" className="w-[34px]" />
+          <span data-sadeem-avatar className={cn(CHAT_AVATAR_CLASS, "ring-2 ring-white/10")}>
+            <SadeemMark className="w-[34px]" />
             <span className="absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-success" />
           </span>
           <div className="min-w-0">
