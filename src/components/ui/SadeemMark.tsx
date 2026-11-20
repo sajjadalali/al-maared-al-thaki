@@ -91,7 +91,7 @@ export function SadeemMark({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <g className={cn(t.spark, animated && "sadeem-dots")}>
+      <g className={cn("transition-colors duration-300", t.spark, animated && "sadeem-dots")}>
         {dots.map((dot, i) => (
           <circle key={dot.cx} cx={dot.cx} cy={-395} r={dot.r} style={animated ? { animationDelay: `${i * 0.15}s` } : undefined} />
         ))}
