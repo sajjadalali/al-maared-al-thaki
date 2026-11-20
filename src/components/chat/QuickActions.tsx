@@ -11,7 +11,9 @@ export function QuickActions({
   if (options.length === 0) return null;
 
   return (
-    <div className="relative shrink-0 border-t border-black/5 bg-white">
+    // While the buyer types (keyboard up) the suggestions step aside: the
+    // messages keep the room and the input sits on the keyboard (20 Nov).
+    <div className="relative shrink-0 border-t border-black/5 bg-white group-data-[keyboard]/frame:hidden">
       <div
         role="group"
         aria-label="اقتراحات"

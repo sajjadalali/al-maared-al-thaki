@@ -42,7 +42,7 @@ export function ChatInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex shrink-0 items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] group-data-[keyboard]/frame:pb-2.5"
+      className="flex shrink-0 items-center gap-2 border-t border-black/5 bg-white px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] group-data-[keyboard]/frame:pb-[calc(0.625rem+var(--kb-gap,0px))]"
     >
       {/* 16px text: smaller inputs make iOS Safari zoom the page on focus. */}
       <input
@@ -58,6 +58,9 @@ export function ChatInput({
 
       <button
         type="submit"
+        // The input keeps its focus, so the keyboard stays up after sending,
+        // as in a chat app (20 Nov). The click still sends.
+        onPointerDown={(e) => e.preventDefault()}
         disabled={!value.trim() || disabled}
         aria-label="إرسال"
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-900 text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-brand-900/30"

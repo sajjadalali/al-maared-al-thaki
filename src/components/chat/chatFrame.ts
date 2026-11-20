@@ -1,6 +1,9 @@
 /** Shared by the chat panel and its loading placeholder so both occupy the same frame. */
+// data-keyboard (phones, typing): a white spread shadow fills whatever the
+// browser leaves around the frame, so no strip of the page shows between the
+// input and the keyboard (iOS 26 Safari floats its address bar there).
 export const CHAT_FRAME_CLASS =
-  "group/frame fixed inset-0 z-50 flex h-[100dvh] w-full flex-col overflow-hidden bg-white sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(660px,calc(100dvh-2.5rem))] sm:w-[400px] origin-[calc(100%-3rem)_calc(100%-3rem)] sm:origin-[calc(100%-1.75rem)_calc(100%-1.75rem)] sm:rounded-3xl sm:border sm:border-black/5 sm:shadow-2xl sm:shadow-brand-950/25";
+  "group/frame data-[keyboard]:shadow-[0_0_0_100vh_#fff] fixed inset-0 z-50 flex h-[100dvh] w-full flex-col overflow-hidden bg-white sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(660px,calc(100dvh-2.5rem))] sm:w-[400px] origin-[calc(100%-3rem)_calc(100%-3rem)] sm:origin-[calc(100%-1.75rem)_calc(100%-1.75rem)] sm:rounded-3xl sm:border sm:border-black/5 sm:shadow-2xl sm:shadow-brand-950/25";
 
 /**
  * How the frame moves: it grows out of Sadeem's head (the launcher, whose
