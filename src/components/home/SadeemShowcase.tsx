@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { photoUrl } from "@/lib/photo";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { CalendarCheck, Check, CheckCheck, Clock, MessageCircle, Scale, Search, Send, SendHorizontal, Sparkles, type LucideIcon } from "lucide-react";
 import { SadeemMascot } from "@/components/ui/SadeemMascot";
@@ -37,7 +38,7 @@ function Piece({ at, mine, mode, className, children }: { at: number; mine?: boo
 function Thumb({ car, className }: { car: SceneCar; className?: string }) {
   return (
     <span className={cn("relative block shrink-0 overflow-hidden rounded-xl bg-brand-100", className)}>
-      {car.image && <Image src={car.image} alt="" fill sizes="96px" className="object-cover" />}
+      {car.image && <Image src={photoUrl(car.image)} alt="" fill sizes="96px" className="object-cover" />}
     </span>
   );
 }
