@@ -119,6 +119,7 @@ export default function ChatPanel({
         frame.style.top = "";
         frame.style.removeProperty("--kb-gap");
         frame.removeAttribute("data-keyboard");
+        document.documentElement.removeAttribute("data-sadeem-typing");
         return;
       }
       // With the keyboard up, what lies between the visible part's bottom and
@@ -139,6 +140,11 @@ export default function ChatPanel({
       frame.style.height = `${visible + gap}px`;
       frame.style.setProperty("--kb-gap", `${gap}px`);
       frame.toggleAttribute("data-keyboard", keyboard);
+      // iPhone (iOS 26 Safari) still drew the page between the input and the
+      // keyboard, past anything the frame paints. While typing, the page behind
+      // the full-screen chat is hidden and the document is white, so whatever
+      // Safari shows there is white (globals.css, data-sadeem-typing).
+      document.documentElement.toggleAttribute("data-sadeem-typing", keyboard);
     };
     fit();
     viewport.addEventListener("resize", fit);
@@ -154,6 +160,7 @@ export default function ChatPanel({
       frame.style.top = "";
       frame.style.removeProperty("--kb-gap");
       frame.removeAttribute("data-keyboard");
+      document.documentElement.removeAttribute("data-sadeem-typing");
     };
   }, [hidden]);
 

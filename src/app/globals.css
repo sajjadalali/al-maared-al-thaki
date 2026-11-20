@@ -529,3 +529,20 @@ body {
     animation: none;
   }
 }
+
+/* Phones, typing to Sadeem: the page behind the full-screen chat is hidden and
+   the document is white, so the strip iOS Safari leaves between the input and
+   the keyboard (its floating address bar) shows white, not the page (20 Nov).
+   A visible descendant shows through a hidden parent, so only the chat stays. */
+html[data-sadeem-typing],
+html[data-sadeem-typing] body {
+  background: #fff;
+}
+
+html[data-sadeem-typing] body {
+  visibility: hidden;
+}
+
+html[data-sadeem-typing] [data-sadeem-chat] {
+  visibility: visible;
+}
