@@ -72,7 +72,7 @@ export async function Hero() {
 
       {/* The search straddles the hero's lower edge and the page below it. */}
       <div className="bg-white">
-        <div className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-2 sm:px-6 lg:-mt-14 lg:px-8">
+        <div data-hero-search className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-2 sm:px-6 lg:-mt-14 lg:px-8">
           <CarQuickSearch cars={catalog.getAllCars().map(toFacetCar)} />
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Ref, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type Ref, type RefObject } from "react";
 import { X } from "lucide-react";
 import { onSadeemOpen, onSadeemPrompt, warmSadeem } from "@/lib/chatBus";
 import { SadeemMark } from "@/components/ui/SadeemMark";
@@ -134,7 +134,9 @@ function coversControl(bubble: HTMLElement): boolean {
  * Phones and tablets (20 Nov): Sadeem's head stays out of the way while the
  * top of the page is on screen (the homepage's navy front with its own «احچي
  * ويا سديم» button, elsewhere the header) and comes in once the page moves
- * past it. Laptops always show it, and so does a car page, where the head sits
+ * past it: on the homepage as soon as the search under the front comes into
+ * view (it waited for the front to pass the middle of the screen, a screen and
+ * a half down). Laptops always show it, and so does a car page, where the head sits
  * in the price bar.
  */
 function useTuckedAtTop(pathname: string) {
@@ -145,10 +147,9 @@ function useTuckedAtTop(pathname: string) {
     const update = () => {
       frame = 0;
       if (!small.matches || document.querySelector("[data-contact-bar]")) return setTucked(false);
-      const hero = document.querySelector<HTMLElement>("[data-hero]");
-      // The front is past once its bottom is above the middle of the screen.
-      const limit = hero ? hero.getBoundingClientRect().bottom + window.scrollY - window.innerHeight / 2 : 80;
-      setTucked(window.scrollY < limit);
+      const search = document.querySelector<HTMLElement>("[data-hero-search]");
+      // The search's top is a little way up the screen.
+      setTucked(search ? search.getBoundingClientRect().top > window.innerHeight - 60 : window.scrollY < 80);
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
@@ -165,6 +166,137 @@ function useTuckedAtTop(pathname: string) {
     };
   }, [pathname]);
   return tucked;
+}
+
+const SPOT_KEY = "sadeem-head-spot";
+const EDGE = 20; // px from the screen's side, as bottom-5 / right-5
+const DRAG_START = 8; // px the finger moves before a press becomes a drag
+type Spot = { side: "left" | "right"; bottom: number };
+
+function readSpot(): Spot | null {
+  try {
+    const spot = JSON.parse(window.localStorage.getItem(SPOT_KEY) ?? "null") as Spot | null;
+    return spot && (spot.side === "left" || spot.side === "right") && Number.isFinite(spot.bottom) ? spot : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Keeps the head on screen: over the bottom edge and under the header. */
+function clampBottom(bottom: number, size: number) {
+  return Math.round(Math.min(Math.max(bottom, 12), window.innerHeight - size - 88));
+}
+
+/** Phones on a car page: the head sits in the price bar and stays there. */
+const isDocked = () =>
+  !!document.querySelector("[data-contact-bar]") && window.matchMedia("(max-width: 1023px)").matches;
+
+/**
+ * Sadeem's head can be dragged (20 Nov), like a chat head: it follows the
+ * finger or the mouse, and when let go it glides to the nearer side of the
+ * screen at the height it was dropped. The spot is kept for later visits. A
+ * press that hardly moves is still a tap that opens the chat.
+ */
+function useDraggableHead(head: RefObject<HTMLElement | null>) {
+  const wrapper = useRef<HTMLDivElement>(null);
+  const [spot, setSpot] = useState<Spot | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const press = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
+  // A drag ends in a click on the button; that click must not open the chat.
+  const justDragged = useRef(false);
+
+  useEffect(() => {
+    // Read after mount: the server render has no storage.
+    const saved = readSpot();
+    if (saved) queueMicrotask(() => setSpot(saved));
+    const refit = () =>
+      setSpot((s) => (s && head.current ? { ...s, bottom: clampBottom(s.bottom, head.current.offsetWidth) } : s));
+    window.addEventListener("resize", refit);
+    return () => window.removeEventListener("resize", refit);
+  }, [head]);
+
+  const onPointerDown = (e: ReactPointerEvent) => {
+    if (e.button !== 0 || isDocked()) return;
+    press.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    // A quick flick leaves the button before the first move arrives: the
+    // button keeps the pointer's moves until it is let go.
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: ReactPointerEvent) => {
+    const p = press.current;
+    const box = wrapper.current;
+    if (!p || p.id !== e.pointerId || !box) return;
+    const dx = e.clientX - p.x;
+    const dy = e.clientY - p.y;
+    if (!p.moved) {
+      if (Math.hypot(dx, dy) < DRAG_START) return;
+      p.moved = true;
+      setDragging(true);
+      box.style.transition = "none";
+    }
+    box.style.transform = `translate(${dx}px, ${dy}px)`;
+  };
+
+  const onPointerUp = (e: ReactPointerEvent) => {
+    const p = press.current;
+    const box = wrapper.current;
+    press.current = null;
+    if (!p || p.id !== e.pointerId || !p.moved || !box || !head.current) return;
+    justDragged.current = true;
+    window.setTimeout(() => (justDragged.current = false), 0);
+    const before = box.getBoundingClientRect();
+    const next: Spot = {
+      side: before.left + before.width / 2 < window.innerWidth / 2 ? "left" : "right",
+      bottom: clampBottom(window.innerHeight - before.bottom, head.current.offsetWidth),
+    };
+    try {
+      window.localStorage.setItem(SPOT_KEY, JSON.stringify(next));
+    } catch {
+      // Private mode: the spot lasts for this page only.
+    }
+    // Glide from where it was dropped to its new spot: place it there, then
+    // start the motion from the drop point back to no offset.
+    box.style.transform = "";
+    setSpot(next);
+    setDragging(false);
+    requestAnimationFrame(() => {
+      const after = box.getBoundingClientRect();
+      box.style.transition = "";
+      box.animate(
+        [{ transform: `translate(${before.left - after.left}px, ${before.top - after.top}px)` }, { transform: "none" }],
+        { duration: 380, easing: "cubic-bezier(0.32, 0.72, 0, 1)" }
+      );
+    });
+  };
+
+  const onPointerCancel = () => {
+    press.current = null;
+    setDragging(false);
+    if (wrapper.current) {
+      wrapper.current.style.transform = "";
+      wrapper.current.style.transition = "";
+    }
+  };
+
+  // The saved spot goes in through custom properties, so the price bar's
+  // docked place (CSS) still wins on a car page.
+  const style = spot
+    ? ({
+        "--head-bottom": `${spot.bottom}px`,
+        "--head-right": spot.side === "right" ? `${EDGE}px` : "auto",
+        "--head-left": spot.side === "left" ? `${EDGE}px` : "auto",
+      } as CSSProperties)
+    : undefined;
+
+  return {
+    wrapperRef: wrapper,
+    side: spot?.side ?? "right",
+    dragging,
+    style,
+    wasDrag: () => justDragged.current,
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel },
+  };
 }
 
 /** The line Sadeem's head is saying now (see invites.ts), while `active`. */
@@ -237,7 +369,10 @@ function HeadBubble({
   onOpen,
   onStop,
   boxRef,
+  side = "right",
 }: {
+  /** The screen side the head is on: the bubble opens toward the middle. */
+  side?: "left" | "right";
   text: string;
   shown: boolean;
   onOpen: () => void;
@@ -251,7 +386,8 @@ function HeadBubble({
       ref={boxRef}
       inert={!shown}
       className={cn(
-        "absolute bottom-1.5 right-full mr-3 w-max max-w-[min(17.5rem,calc(100vw-6.75rem))] origin-bottom-right transition duration-300 ease-(--ease-sheet)",
+        "absolute bottom-1.5 w-max max-w-[min(17.5rem,calc(100vw-6.75rem))] transition duration-300 ease-(--ease-sheet)",
+        side === "right" ? "right-full mr-3 origin-bottom-right" : "left-full ml-3 origin-bottom-left",
         "docked:bottom-full docked:right-0 docked:mb-3 docked:mr-0 docked:max-w-[min(17.5rem,calc(100vw-2rem))]",
         shown ? "scale-100 opacity-100" : "pointer-events-none scale-75 opacity-0"
       )}
@@ -262,7 +398,10 @@ function HeadBubble({
         tabIndex={-1}
         aria-hidden
         onClick={onOpen}
-        className="block rounded-[20px] rounded-br-md bg-white px-4 py-3 text-start text-[14px] font-semibold leading-6 text-brand-950 shadow-[0_10px_32px_-6px_rgba(11,19,34,0.28)] ring-1 ring-brand-950/[0.06]"
+        className={cn(
+          "block rounded-[20px] bg-white px-4 py-3 text-start text-[14px] font-semibold leading-6 text-brand-950 shadow-[0_10px_32px_-6px_rgba(11,19,34,0.28)] ring-1 ring-brand-950/[0.06]",
+          side === "right" ? "rounded-br-md" : "rounded-bl-md"
+        )}
       >
         {text}
       </button>
@@ -271,7 +410,7 @@ function HeadBubble({
           type="button"
           onClick={onStop}
           aria-label="إيقاف رسائل سديم"
-          className="tap-target absolute -left-2.5 -top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md ring-1 ring-brand-950/10 transition hover:text-brand-950"
+          className={cn("tap-target absolute -top-2.5 flex", side === "right" ? "-left-2.5" : "-right-2.5", "h-6 w-6 items-center justify-center rounded-full bg-white text-neutral-500 shadow-md ring-1 ring-brand-950/10 transition hover:text-brand-950")}
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -321,6 +460,20 @@ export function ChatWidget() {
     if (phaseRef.current === "open") return;
     warmSadeem();
     launcherBox.current = headRef.current?.getBoundingClientRect() ?? null;
+    // The chat grows out of the head wherever it was dragged: its transform
+    // origin is the head's centre, in the frame's own box (full screen on
+    // phones; 400 wide, 20 px off the bottom-right corner on larger screens).
+    const head = launcherBox.current;
+    if (head) {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const phone = w < 640;
+      const left = phone ? 0 : w - 20 - 400;
+      const top = phone ? 0 : h - 20 - Math.min(660, h - 40);
+      const x = Math.round(head.left + head.width / 2 - left);
+      const y = Math.round(head.top + head.height / 2 - top);
+      document.documentElement.style.setProperty("--sadeem-origin", `${x}px ${y}px`);
+    }
     setFlight("open");
     setPhase("open");
     setOpenedAt(performance.now());
@@ -488,8 +641,9 @@ export function ChatWidget() {
   const warmUp = () => void loadPanel().then(() => setMounted(true));
 
   const tucked = useTuckedAtTop(pathname);
+  const { wrapperRef: headBoxRef, side: headSide, dragging, style: headStyle, wasDrag, handlers: dragHandlers } = useDraggableHead(headRef);
   const inviteBox = useRef<HTMLDivElement>(null);
-  const invite = useInvite(phase === "closed" && !flight && !unread && !resumeHint && !tucked, /^\/cars\/.+/.test(pathname), inviteBox);
+  const invite = useInvite(phase === "closed" && !flight && !unread && !resumeHint && !tucked && !dragging, /^\/cars\/.+/.test(pathname), inviteBox);
   const status = unread ? "سديم رد عليك" : "رجوع للمحادثة";
   const label = unread ? "سديم رد عليك" : started ? "كمّل مع سديم" : "احچي ويا سديم";
 
@@ -500,9 +654,11 @@ export function ChatWidget() {
         // bands alike), sending out rings of colour. It stays
         // hidden while its flying copy is on the way back from the chat.
         <div
+          ref={headBoxRef}
           data-sadeem-head
+          style={headStyle}
           className={cn(
-            "fixed bottom-5 right-5 z-50 docked:bottom-[max(0.625rem,env(safe-area-inset-bottom))] docked:right-3",
+            "fixed bottom-[var(--head-bottom,1.25rem)] left-[var(--head-left,auto)] right-[var(--head-right,1.25rem)] z-50 docked:bottom-[max(0.625rem,env(safe-area-inset-bottom))] docked:left-auto docked:right-3",
             "transition duration-300 ease-out",
             !started && "animate-pop-in",
             flight === "close" && "invisible",
@@ -525,12 +681,15 @@ export function ChatWidget() {
           <button
             ref={headRef}
             type="button"
-            onClick={() => openChat()}
+            onClick={() => {
+              if (!wasDrag()) openChat();
+            }}
+            {...dragHandlers}
             onPointerEnter={warmUp}
             onTouchStart={warmUp}
             onFocus={warmUp}
             aria-label={label}
-            className="relative flex h-16 w-16 items-center justify-center rounded-full bg-brand-950 shadow-[0_8px_24px_-4px_rgba(11,19,34,0.35)] ring-2 ring-white transition duration-200 hover:scale-105 active:scale-95 sm:h-[72px] sm:w-[72px] docked:h-[58px] docked:w-[58px]"
+            className="relative flex h-16 w-16 items-center justify-center rounded-full bg-brand-950 shadow-[0_8px_24px_-4px_rgba(11,19,34,0.35)] ring-2 ring-white transition duration-200 touch-none select-none hover:scale-105 active:scale-95 sm:h-[72px] sm:w-[72px] docked:h-[58px] docked:w-[58px]"
           >
             <SadeemMark tone="light" animated="burst" line={1.7} className="w-[68%]" />
             <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-[2.5px] border-white bg-success" />
@@ -540,8 +699,8 @@ export function ChatWidget() {
               </span>
             )}
           </button>
-          <HeadBubble text={status} shown={(unread || resumeHint) && !tucked} onOpen={() => openChat()} />
-          <HeadBubble text={invite.text} shown={invite.shown} onOpen={() => openChat()} onStop={invite.stop} boxRef={inviteBox} />
+          <HeadBubble side={headSide} text={status} shown={(unread || resumeHint) && !tucked && !dragging} onOpen={() => openChat()} />
+          <HeadBubble side={headSide} text={invite.text} shown={invite.shown && !dragging} onOpen={() => openChat()} onStop={invite.stop} boxRef={inviteBox} />
         </div>
       )}
 
