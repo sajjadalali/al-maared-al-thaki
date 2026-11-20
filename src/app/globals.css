@@ -371,6 +371,21 @@ body {
   opacity: 0;
 }
 
+/* Computers with a shorter screen (20 Nov): the road is drawn smaller, so the
+   search under the hero stays whole (1536×864 and 1366×768 laptops; 1440×900
+   fits as it is). zoom, not transform: the hero's height shrinks with it. */
+@media (min-width: 64rem) and (max-height: 880px) {
+  .hero-road {
+    zoom: 0.88;
+  }
+}
+
+@media (min-width: 64rem) and (max-height: 800px) {
+  .hero-road {
+    zoom: 0.78;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .hero-road-reveal {
     transform-box: fill-box;
