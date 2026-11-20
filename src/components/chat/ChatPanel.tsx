@@ -117,21 +117,42 @@ export default function ChatPanel({
       if (window.innerWidth >= 640) {
         frame.style.height = "";
         frame.style.top = "";
+        frame.style.removeProperty("--kb-gap");
         frame.removeAttribute("data-keyboard");
         return;
       }
-      frame.style.height = `${Math.round(viewport.height)}px`;
-      frame.style.top = `${Math.round(viewport.offsetTop)}px`;
-      frame.toggleAttribute("data-keyboard", window.innerHeight - viewport.height > 120);
+      // With the keyboard up, what lies between the visible part's bottom and
+      // the screen's (the keyboard, and on iOS 26 Safari the floating address
+      // bar over the page) stays the frame's: it reaches the screen's bottom
+      // and the input bar's white fills that gap (--kb-gap), so the input sits
+      // on the keyboard like a chat app and no strip of the page shows under it
+      // (20 Nov: the page showed between the input and the keyboard, and the
+      // whole chat looked lifted).
+      // Up when the visible part shrank, or when the input has focus on a touch
+      // screen (some iPhones shrink the page itself, so the sizes alone miss it).
+      const typing = frame.contains(document.activeElement) && document.activeElement?.tagName === "INPUT";
+      const keyboard = window.innerHeight - viewport.height > 120 || (typing && window.matchMedia("(pointer: coarse)").matches);
+      const top = Math.round(viewport.offsetTop);
+      const visible = Math.round(viewport.height);
+      const gap = keyboard ? Math.max(0, Math.round(window.innerHeight) - top - visible) : 0;
+      frame.style.top = `${top}px`;
+      frame.style.height = `${visible + gap}px`;
+      frame.style.setProperty("--kb-gap", `${gap}px`);
+      frame.toggleAttribute("data-keyboard", keyboard);
     };
     fit();
     viewport.addEventListener("resize", fit);
     viewport.addEventListener("scroll", fit);
+    frame.addEventListener("focusin", fit);
+    frame.addEventListener("focusout", fit);
     return () => {
       viewport.removeEventListener("resize", fit);
       viewport.removeEventListener("scroll", fit);
+      frame.removeEventListener("focusin", fit);
+      frame.removeEventListener("focusout", fit);
       frame.style.height = "";
       frame.style.top = "";
+      frame.style.removeProperty("--kb-gap");
       frame.removeAttribute("data-keyboard");
     };
   }, [hidden]);
