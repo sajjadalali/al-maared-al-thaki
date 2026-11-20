@@ -26,7 +26,8 @@ export function CarGallery({ car, credits = [] }: { car: Car; credits?: (ImageCr
 
   return (
     <div>
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-black/[0.06] bg-surface sm:aspect-[16/10]">
+      {/* 3:2 like every car photo (scripts/frame-photos.mjs), so it fills the frame. */}
+      <div className="relative aspect-[3/2] w-full overflow-hidden rounded-3xl border border-black/[0.06] bg-surface">
         <CarImage
           src={images[active]}
           alt={alt}
