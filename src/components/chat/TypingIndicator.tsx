@@ -4,8 +4,8 @@ import { SadeemMark } from "@/components/ui/SadeemMark";
 export function TypingIndicator({ label }: { label?: string }) {
   return (
     <div className="flex flex-row-reverse items-start justify-start gap-2 animate-msg-in" role="status" aria-label={label ?? "سديم يكتب"}>
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
-        <SadeemMark compact animated className="w-[19px]" />
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-950 ring-1 ring-brand-950/10">
+        <SadeemMark compact animated tone="light" className="w-[19px]" />
       </span>
       <div className="flex items-center gap-1 rounded-2xl rounded-tl-md border border-black/[0.04] bg-white px-4 py-3.5 shadow-sm">
         {[0, 1, 2].map((i) => (

@@ -49,8 +49,8 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
 
   return (
     <div className="flex flex-row-reverse items-start gap-2 animate-msg-in">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
-        <SadeemMark compact className="w-[19px]" />
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-950 ring-1 ring-brand-950/10">
+        <SadeemMark compact tone="light" className="w-[19px]" />
       </span>
 
       <div className="flex min-w-0 max-w-[88%] flex-1 flex-col items-end gap-2">

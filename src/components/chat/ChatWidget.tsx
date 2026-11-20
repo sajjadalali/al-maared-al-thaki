@@ -34,7 +34,7 @@ function PanelLoading() {
       <div className={CHAT_HEADER_CLASS}>
         <div className="flex items-center gap-3">
           <span data-sadeem-avatar className={CHAT_AVATAR_CLASS}>
-            <SadeemMark className="w-[34px]" />
+            <SadeemMark tone="light" className="w-[34px]" />
           </span>
           <p className="text-base font-bold">سديم</p>
         </div>
@@ -451,7 +451,8 @@ export function ChatWidget() {
   return (
     <div className="group/sadeem contents" data-flight={flight ?? undefined} data-open={phase === "open" || undefined}>
       {phase !== "open" && (
-        // Sadeem's head: a white circle sending out rings of colour. It stays
+        // Sadeem's head: a navy circle with a white edge (seen on light and dark
+        // bands alike), sending out rings of colour. It stays
         // hidden while its flying copy is on the way back from the chat.
         <div
           data-sadeem-head
@@ -461,16 +462,17 @@ export function ChatWidget() {
             flight === "close" && "invisible"
           )}
         >
-          {/* The rings go out three times when the head appears, then stop (20 Nov). */}
+          {/* A beacon (20 Nov): two amber rings go out together with a burst of
+              Sadeem's typing dots, then rest; it comes back every 7 seconds. */}
           <span
             data-pulse
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-accent-400 animate-head-pulse [animation-iteration-count:3]"
+            className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-accent-400 animate-head-beacon"
           />
           <span
             data-pulse
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-accent-400 animate-head-pulse [animation-delay:0.55s] [animation-iteration-count:3]"
+            className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-accent-400 animate-head-beacon [animation-delay:0.55s]"
           />
           <button
             ref={headRef}
@@ -480,9 +482,9 @@ export function ChatWidget() {
             onTouchStart={warmUp}
             onFocus={warmUp}
             aria-label={label}
-            className="relative flex h-[60px] w-[60px] items-center justify-center rounded-full bg-white shadow-[0_8px_24px_-4px_rgba(11,19,34,0.3)] ring-1 ring-brand-950/[0.08] transition duration-200 hover:scale-105 active:scale-95 docked:h-[52px] docked:w-[52px]"
+            className="relative flex h-[60px] w-[60px] items-center justify-center rounded-full bg-brand-950 shadow-[0_8px_24px_-4px_rgba(11,19,34,0.35)] ring-2 ring-white transition duration-200 hover:scale-105 active:scale-95 docked:h-[52px] docked:w-[52px]"
           >
-            <SadeemMark line={1.7} className="w-[68%]" />
+            <SadeemMark tone="light" animated="burst" line={1.7} className="w-[68%]" />
             <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-[2.5px] border-white bg-success" />
             {unread && (
               <span className="absolute -left-1 -top-1 flex h-[22px] min-w-[22px] items-center justify-center rounded-full border-2 border-white bg-danger px-1 text-[11px] font-bold leading-none text-white">
@@ -499,9 +501,9 @@ export function ChatWidget() {
         <span
           ref={flyRef}
           aria-hidden
-          className="pointer-events-none fixed z-[60] flex items-center justify-center rounded-full bg-white shadow-[0_8px_24px_-4px_rgba(11,19,34,0.3)] will-change-transform"
+          className="pointer-events-none fixed z-[60] flex items-center justify-center rounded-full bg-brand-950 shadow-[0_8px_24px_-4px_rgba(11,19,34,0.35)] ring-2 ring-white will-change-transform"
         >
-          <SadeemMark line={1.7} className="w-[68%]" />
+          <SadeemMark tone="light" line={1.7} className="w-[68%]" />
         </span>
       )}
 

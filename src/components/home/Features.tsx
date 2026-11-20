@@ -46,8 +46,8 @@ export function Features() {
             من الفحص لحد ما تستلم المفتاح، فريق المعرض يكمّل وياك خطوة بخطوة. وأي سؤال عن خطوة منها، سديم يجاوبك عليه هسه.
           </p>
           <OpenChatButton className="group mt-6 inline-flex min-h-11 items-center gap-2.5 rounded-full bg-surface py-1.5 pe-4 ps-1.5 text-[14px] font-semibold text-brand-900 ring-1 ring-black/[0.06] transition hover:bg-brand-50 hover:ring-brand-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.06]">
-              <SadeemMark compact className="w-[21px]" />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-950 ring-1 ring-brand-950/10">
+              <SadeemMark compact tone="light" className="w-[21px]" />
             </span>
             اسأل سديم عن أي خطوة
           </OpenChatButton>
