@@ -24,7 +24,7 @@ export async function Hero() {
     // Pulled up under the header, which lies on the hero's ink until the page scrolls.
     // Computers (20 Nov): less space above and below the road, so the search
     // under it is whole on a 1440×900 screen (it was cut 43 px at the bottom).
-    <section className="relative -mt-[68px] bg-brand-950 lg:-mt-[76px]">
+    <section data-hero className="relative -mt-[68px] bg-brand-950 lg:-mt-[76px]">
       <div className="relative isolate overflow-hidden">
         <div className="relative mx-auto grid max-w-7xl items-center gap-x-12 gap-y-12 px-4 pb-24 pt-28 sm:px-6 lg:min-h-[720px] lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:px-8 lg:pb-16 lg:pt-24">
           <div className="max-w-xl text-white">

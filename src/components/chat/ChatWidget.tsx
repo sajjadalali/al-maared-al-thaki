@@ -130,6 +130,43 @@ function coversControl(bubble: HTMLElement): boolean {
   return false;
 }
 
+/**
+ * Phones and tablets (20 Nov): Sadeem's head stays out of the way while the
+ * top of the page is on screen (the homepage's navy front with its own «احچي
+ * ويا سديم» button, elsewhere the header) and comes in once the page moves
+ * past it. Laptops always show it, and so does a car page, where the head sits
+ * in the price bar.
+ */
+function useTuckedAtTop(pathname: string) {
+  const [tucked, setTucked] = useState(false);
+  useLayoutEffect(() => {
+    const small = window.matchMedia("(max-width: 1023px)");
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      if (!small.matches || document.querySelector("[data-contact-bar]")) return setTucked(false);
+      const hero = document.querySelector<HTMLElement>("[data-hero]");
+      // The front is past once its bottom is above the middle of the screen.
+      const limit = hero ? hero.getBoundingClientRect().bottom + window.scrollY - window.innerHeight / 2 : 80;
+      setTucked(window.scrollY < limit);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    small.addEventListener("change", update);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      small.removeEventListener("change", update);
+    };
+  }, [pathname]);
+  return tucked;
+}
+
 /** The line Sadeem's head is saying now (see invites.ts), while `active`. */
 function useInvite(active: boolean, onCarPage: boolean, bubble: RefObject<HTMLDivElement | null>) {
   const [invite, setInvite] = useState<{ text: string; shown: boolean } | null>(null);
@@ -450,8 +487,9 @@ export function ChatWidget() {
   const handleNavigate = useCallback(() => setNavigating(true), []);
   const warmUp = () => void loadPanel().then(() => setMounted(true));
 
+  const tucked = useTuckedAtTop(pathname);
   const inviteBox = useRef<HTMLDivElement>(null);
-  const invite = useInvite(phase === "closed" && !flight && !unread && !resumeHint, /^\/cars\/.+/.test(pathname), inviteBox);
+  const invite = useInvite(phase === "closed" && !flight && !unread && !resumeHint && !tucked, /^\/cars\/.+/.test(pathname), inviteBox);
   const status = unread ? "سديم رد عليك" : "رجوع للمحادثة";
   const label = unread ? "سديم رد عليك" : started ? "كمّل مع سديم" : "احچي ويا سديم";
 
@@ -465,9 +503,12 @@ export function ChatWidget() {
           data-sadeem-head
           className={cn(
             "fixed bottom-5 right-5 z-50 docked:bottom-[max(0.625rem,env(safe-area-inset-bottom))] docked:right-3",
+            "transition duration-300 ease-out",
             !started && "animate-pop-in",
-            flight === "close" && "invisible"
+            flight === "close" && "invisible",
+            tucked && "pointer-events-none translate-y-4 scale-75 opacity-0"
           )}
+          inert={tucked}
         >
           {/* A beacon (20 Nov): two amber rings go out together with a burst of
               Sadeem's typing dots, then rest; it comes back every 7 seconds. */}
@@ -489,7 +530,7 @@ export function ChatWidget() {
             onTouchStart={warmUp}
             onFocus={warmUp}
             aria-label={label}
-            className="relative flex h-[60px] w-[60px] items-center justify-center rounded-full bg-brand-950 shadow-[0_8px_24px_-4px_rgba(11,19,34,0.35)] ring-2 ring-white transition duration-200 hover:scale-105 active:scale-95 docked:h-[52px] docked:w-[52px]"
+            className="relative flex h-16 w-16 items-center justify-center rounded-full bg-brand-950 shadow-[0_8px_24px_-4px_rgba(11,19,34,0.35)] ring-2 ring-white transition duration-200 hover:scale-105 active:scale-95 sm:h-[72px] sm:w-[72px] docked:h-[58px] docked:w-[58px]"
           >
             <SadeemMark tone="light" animated="burst" line={1.7} className="w-[68%]" />
             <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-[2.5px] border-white bg-success" />
@@ -499,7 +540,7 @@ export function ChatWidget() {
               </span>
             )}
           </button>
-          <HeadBubble text={status} shown={unread || resumeHint} onOpen={() => openChat()} />
+          <HeadBubble text={status} shown={(unread || resumeHint) && !tucked} onOpen={() => openChat()} />
           <HeadBubble text={invite.text} shown={invite.shown} onOpen={() => openChat()} onStop={invite.stop} boxRef={inviteBox} />
         </div>
       )}
