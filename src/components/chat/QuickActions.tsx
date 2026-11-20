@@ -11,9 +11,11 @@ export function QuickActions({
   if (options.length === 0) return null;
 
   return (
-    // While the buyer types (keyboard up) the suggestions step aside: the
-    // messages keep the room and the input sits on the keyboard (20 Nov).
-    <div className="relative shrink-0 border-t border-black/5 bg-white group-data-[keyboard]/frame:hidden">
+    // With the keyboard up they stay, right above the input (20 Nov: the
+    // buyer wants them while typing). They step aside only once the buyer
+    // writes something of their own (ChatPanel's typingOwn), and come back
+    // when the input is cleared.
+    <div className="relative shrink-0 border-t border-black/5 bg-white">
       <div
         role="group"
         aria-label="اقتراحات"
