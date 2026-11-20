@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportCaughtError } from "@/lib/errorReporter";
 import { site } from "@/config/site";
 
 // The root layout itself failed: this page has no header, styles or fonts of
@@ -8,6 +9,7 @@ import { site } from "@/config/site";
 export default function GlobalError({ error, retry }: { error: unknown; retry: () => void }) {
   useEffect(() => {
     console.error(error);
+    reportCaughtError("global-error", error);
   }, [error]);
 
   return (
