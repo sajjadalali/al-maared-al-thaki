@@ -417,7 +417,9 @@ function Stop({
         />
         {/* The other stops step back while one is picked. */}
         <div className={cn("transition-opacity duration-300", dimmed ? "opacity-40" : "opacity-100")}>
-          <p className="flex items-baseline gap-2 text-[20px] font-bold leading-8 text-white">
+          {/* Phones under 375 px (most Android ones are 360): a smaller title, so it
+              stays on one line and a stop never runs into the next (20 Nov). */}
+          <p className="flex items-baseline gap-2 text-[20px] font-bold leading-8 text-white max-[374px]:gap-1.5 max-[374px]:text-[17px] max-[374px]:leading-7">
             <span
               className="inline-flex h-6 min-w-6 items-center justify-center self-center rounded-full text-[14px] font-bold transition-[background-color,color] duration-300"
               style={active ? { backgroundColor: stop.color, color: "#0b1322" } : { color: stop.color }}
@@ -426,7 +428,7 @@ function Stop({
             </span>
             {title}
           </p>
-          <p className="text-[13.5px] leading-6 text-white/60">{text}</p>
+          <p className="text-[13.5px] leading-6 text-white/60 max-[374px]:text-[12.5px] max-[374px]:leading-5">{text}</p>
           {children && <div className="mt-3">{children}</div>}
         </div>
       </li>
@@ -439,7 +441,7 @@ function MiniCar({ bodyType, color, picked }: { bodyType: string; color: string;
   return (
     <span
       className={cn(
-        "relative flex h-[60px] w-[calc((100%-1rem)/3)] max-w-[104px] items-center justify-center rounded-2xl",
+        "relative flex h-[60px] w-[calc((100%-1rem)/3)] max-w-[104px] items-center justify-center rounded-2xl max-[374px]:h-[50px]",
         picked ? "bg-white shadow-[0_10px_24px_-10px_rgba(79,179,255,0.9)] ring-2 ring-[#4fb3ff]" : "bg-white/[0.07] ring-1 ring-white/10"
       )}
     >

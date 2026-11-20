@@ -8,11 +8,13 @@ export const CHAT_FRAME_CLASS =
   "group/frame data-[keyboard]:shadow-[0_0_0_100vh_#fff] max-sm:transition-[height] max-sm:duration-300 max-sm:ease-sheet motion-reduce:transition-none fixed inset-0 z-50 flex h-[100dvh] w-full flex-col overflow-hidden bg-white sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(660px,calc(100dvh-2.5rem))] sm:w-[400px] origin-[var(--sadeem-origin,calc(100%-3rem)_calc(100%-3rem))] sm:origin-[var(--sadeem-origin,calc(100%-1.75rem)_calc(100%-1.75rem))] sm:rounded-3xl sm:border sm:border-black/5 sm:shadow-2xl sm:shadow-brand-950/25";
 
 /**
- * How the frame moves: it grows out of Sadeem's head (the launcher, whose
- * centre is the frame's transform-origin) and shrinks back into it.
+ * How the frame moves. Tablets and computers: it grows out of Sadeem's head
+ * (the launcher, whose centre is the frame's transform-origin) and shrinks
+ * back into it. Phones: the full-screen chat slides up and fades in, and back
+ * (20 Nov: scaling the whole screen stuttered on Android).
  */
 export function chatFrameMotion(leaving: boolean) {
-  return leaving ? "animate-chat-close" : "animate-chat-open";
+  return leaving ? "max-sm:animate-chat-sheet-out sm:animate-chat-close" : "max-sm:animate-chat-sheet-in sm:animate-chat-open";
 }
 
 /**

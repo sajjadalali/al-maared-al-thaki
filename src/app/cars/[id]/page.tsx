@@ -128,11 +128,11 @@ export default async function CarDetailsPage({ params }: CarDetailsPageProps) {
             <div className="mt-5 flex items-end justify-between gap-3 border-y border-black/[0.06] py-4">
               <div>
                 <p className="text-xs font-normal text-neutral-500">السعر</p>
-                <p className="mt-1 text-[30px] font-bold leading-none tracking-tight text-brand-950">
+                <p className="mt-1 text-[30px] font-bold leading-none tracking-tight text-brand-950 max-[399px]:text-[26px]">
                   {formatNumber(car.price)} <span className="text-base font-semibold text-neutral-500">د.ع</span>
                 </p>
               </div>
-              <p className="pb-0.5 text-sm font-semibold text-neutral-500" dir="ltr">
+              <p className="whitespace-nowrap pb-0.5 text-sm font-semibold text-neutral-500" dir="ltr">
                 {formatUSD(car.price)}
               </p>
             </div>
