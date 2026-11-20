@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHOTO_VERSION } from "./src/lib/photo";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -42,6 +43,12 @@ const nextConfig: NextConfig = {
     // the default 1920/2048/3840 widths only made the same photo again, three
     // more times per photo, for the server to make and keep (20 Nov).
     deviceSizes: [640, 750, 828, 1080, 1200, 1600],
+    // Car photos carry their version (src/lib/photo.ts), so a changed photo
+    // gets a new URL; any other local image, no query at all.
+    localPatterns: [
+      { pathname: "/cars/**", search: `?v=${PHOTO_VERSION}` },
+      { pathname: "/**", search: "" },
+    ],
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { CarArt } from "@/components/ui/CarArt";
 import { cn } from "@/lib/cn";
+import { photoUrl } from "@/lib/photo";
 
 interface CarImageProps {
   src?: string;
@@ -63,7 +64,7 @@ export function CarImage({
 
   const photo = (
     <Image
-      src={src}
+      src={photoUrl(src)}
       alt={alt}
       fill
       sizes={sizes}
