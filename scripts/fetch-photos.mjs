@@ -8,6 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
+import { framePhoto, frameSettings } from "./frame-photos.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const RESEARCH_DIR = join(ROOT, "content", "research");
@@ -83,11 +84,13 @@ async function download(photo) {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   if (!response.headers.get("content-type")?.startsWith("image/")) throw new Error("الرد ليس صورة");
   const input = Buffer.from(await response.arrayBuffer());
-  await sharp(input)
+  const resized = await sharp(input)
     .rotate()
     .resize({ width: MAX_WIDTH, withoutEnlargement: true })
     .webp({ quality: 80 })
-    .toFile(target);
+    .toBuffer();
+  // Every photo goes to the same 3:2 frame (scripts/frame-photos.mjs).
+  writeFileSync(target, (await framePhoto(resized, frameSettings()[photo.siteName])) ?? resized);
   return "downloaded";
 }
 

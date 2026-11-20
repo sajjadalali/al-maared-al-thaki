@@ -1,0 +1,13 @@
+{
+  "car-002-1.webp": { "y": 0.2 },
+  "car-003-3.webp": { "mode": "crop" },
+  "car-004-1.webp": { "y": 0.36 },
+  "car-004-2.webp": { "y": 0.2 },
+  "car-011-3.webp": { "mode": "crop" },
+  "car-012-1.webp": { "mode": "pad" },
+  "car-021-3.webp": { "y": 0.63 },
+  "car-022-3.webp": { "mode": "crop" },
+  "car-029-1.webp": { "mode": "pad" },
+  "car-032-1.webp": { "y": 0.36 },
+  "car-034-2.webp": { "y": 0.76 }
+}
