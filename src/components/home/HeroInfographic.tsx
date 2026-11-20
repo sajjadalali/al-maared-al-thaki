@@ -31,7 +31,7 @@ const ROAD = "M66 -30C66 10 48 24 48 58S84 150 84 196S46 314 46 362S84 486 84 53
 // there, the stop's text gets a soft panel and the others step back. It runs
 // only while the road is on screen, and not at all when the device asks for
 // less motion.
-const INTRO_MS = 1500;
+const INTRO_MS = 1000; // the road unrolling (globals.css .hero-road-reveal)
 const SPEED = 170; // px a second along the road, driving on its own
 const DWELL_MS = [2300, 2600, 2900, 3600];
 const intro = (y: number) => Math.round((INTRO_MS * (y + 30)) / 760);

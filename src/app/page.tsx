@@ -10,8 +10,10 @@ export default function Home() {
   return (
     // Computers: browsing (types, makes, cars), then Sadeem who helps choose,
     // then what the showroom does once a car is chosen, then the visit.
-    // Phones (19 Nov): Sadeem comes right after the hero. Below the cars it
-    // was almost 5 screens down, and he is what the site is about.
+    // Phones (20 Nov): the picked cars right after the hero, then Sadeem, then
+    // types and makes. With Sadeem and the makes before them, the first car
+    // photo was 6 screens down; a buyer comes to see cars. Sadeem stays second
+    // (on 19 Nov he moved up from 5 screens down, being what the site is about).
     // `*:w-full`: in a flex column the sections centred with mx-auto would
     // otherwise shrink to their content (and the car strip overflow on phones).
     <div className="flex flex-col *:w-full">
@@ -20,7 +22,9 @@ export default function Home() {
       </div>
       <BodyTypes />
       <Brands />
-      <FeaturedCars />
+      <div className="-order-2 lg:order-none">
+        <FeaturedCars />
+      </div>
       <div className="-order-1 lg:order-none">
         <SadeemSection />
       </div>
