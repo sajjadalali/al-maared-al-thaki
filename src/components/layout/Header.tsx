@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import { site, phoneHref, whatsappHref } from "@/config/site";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/layout/Logo";
+import { useBackCloses } from "@/lib/useBackCloses";
 
 // «السيارات» opens a list of its own (19 Nov: new and used were two more
 // links in the bar, next to it).
@@ -151,6 +152,9 @@ export function Header() {
   const { favorites } = useFavorites();
   const [open, setOpen] = useState(false);
   const [carsOpen, setCarsOpen] = useState(false);
+  // The phone's back button closes the menu (21 Nov). Its links replace the
+  // menu's history entry, so back from the page they open comes straight here.
+  const { dismiss: closeMenu } = useBackCloses(open, () => setOpen(false), "siteMenu");
   const scrolled = useScrolled();
   // On the homepage the header lies on the showroom photo until the page moves
   // (the hero slides under it); everywhere else, and once open, it is solid.
@@ -252,7 +256,7 @@ export function Header() {
 
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => (open ? closeMenu() : setOpen(true))}
             aria-label="القائمة"
             aria-expanded={open}
             className={cn(
@@ -289,6 +293,7 @@ export function Header() {
                         <Link
                           key={child.href}
                           href={child.href}
+                          replace
                           onClick={() => setOpen(false)}
                           className="rounded-xl px-3 py-2.5 text-[15px] font-semibold text-neutral-600 hover:bg-surface"
                         >
@@ -302,6 +307,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  replace
                   onClick={() => setOpen(false)}
                   className={cn(
                     "rounded-xl px-3 py-3 text-[15px] font-semibold",

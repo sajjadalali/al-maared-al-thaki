@@ -125,7 +125,7 @@ export function ContactForm() {
           rows={5}
           maxLength={1000}
           placeholder="اكتب سؤالك هنا..."
-          className="w-full resize-none rounded-xl border border-black/10 px-3.5 py-2.5 text-sm outline-none focus:border-brand-400"
+          className="w-full resize-none rounded-xl border border-black/10 px-3.5 py-2.5 text-base outline-none focus:border-brand-400 sm:text-sm"
         />
       </div>
       <button
@@ -172,6 +172,7 @@ function Field({
       <label htmlFor={name} className="mb-1.5 block text-xs font-bold text-neutral-500">
         {label}
       </label>
+      {/* 16px on phones (21 Nov): smaller text makes iPhone Safari zoom the page in on focus. */}
       <input
         id={name}
         name={name}
@@ -184,7 +185,7 @@ function Field({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${name}-error` : undefined}
         onInput={onInput}
-        className={`min-h-11 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-brand-400 ${error ? "border-danger" : "border-black/10"}`}
+        className={`min-h-11 w-full rounded-xl border px-3.5 py-2.5 text-base outline-none sm:text-sm focus:border-brand-400 ${error ? "border-danger" : "border-black/10"}`}
       />
       {error && (
         <p id={`${name}-error`} role="alert" className="mt-1.5 text-xs font-semibold text-danger">
