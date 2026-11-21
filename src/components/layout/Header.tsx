@@ -11,6 +11,7 @@ import { site, phoneHref, whatsappHref } from "@/config/site";
 import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/layout/Logo";
 import { useBackCloses } from "@/lib/useBackCloses";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 // «السيارات» opens a list of its own (19 Nov: new and used were two more
 // links in the bar, next to it).
@@ -155,12 +156,18 @@ export function Header() {
   // The phone's back button closes the menu (21 Nov). Its links replace the
   // menu's history entry, so back from the page they open comes straight here.
   const { dismiss: closeMenu } = useBackCloses(open, () => setOpen(false), "siteMenu");
+  // The page under the menu stays still, and a tap on it closes the menu.
+  useScrollLock(open);
   const scrolled = useScrolled();
   // On the homepage the header lies on the showroom photo until the page moves
   // (the hero slides under it); everywhere else, and once open, it is solid.
   const overlay = usePathname() === "/" && !scrolled && !open;
 
   return (
+    <>
+    {/* Under the header, not in it: the header's backdrop blur would make it
+        the box a fixed child is placed in. */}
+    {open && <div aria-hidden onClick={closeMenu} className="fixed inset-0 z-30 bg-black/25 animate-fade-in lg:hidden" />}
     <header
       className={cn(
         "sticky top-0 z-40 transition-colors duration-300",
@@ -344,5 +351,6 @@ export function Header() {
         </div>
       )}
     </header>
+    </>
   );
 }

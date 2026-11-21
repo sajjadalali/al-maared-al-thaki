@@ -19,6 +19,7 @@ export async function Hero() {
     .map((car) => car.price);
   const from = prices.length ? millions(Math.min(...prices)) : null;
   const to = prices.length ? millions(Math.max(...prices)) : null;
+  const quickSearchCars = catalog.getAllCars().map(toFacetCar);
 
   return (
     // Pulled up under the header, which lies on the hero's ink until the page scrolls.
@@ -26,7 +27,7 @@ export async function Hero() {
     // under it is whole on a 1440×900 screen (it was cut 43 px at the bottom).
     <section data-hero className="relative -mt-[68px] bg-brand-950 lg:-mt-[76px]">
       <div className="relative isolate overflow-hidden">
-        <div className="relative mx-auto grid max-w-7xl items-center gap-x-12 gap-y-12 px-4 pb-24 pt-28 sm:px-6 lg:min-h-[720px] lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:px-8 lg:pb-16 lg:pt-24">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-x-12 gap-y-12 px-4 pb-14 pt-28 sm:px-6 lg:pb-24 lg:min-h-[720px] lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:px-8 lg:pb-16 lg:pt-24">
           <div className="max-w-xl text-white">
             <h1 className="text-[36px] font-bold leading-[1.22] sm:text-5xl sm:leading-[1.2] lg:text-[60px] lg:leading-[1.18]">
               سيارتك المناسبة
@@ -64,16 +65,22 @@ export async function Hero() {
                 {from && to && `، من ${from} لحد ${to} مليون دينار.`}
               </span>
             </p>
+
+            {/* Phones and tablets (21 Nov): the search right under the buttons.
+                Under the road it was about two screens down on a phone. */}
+            <div data-hero-search className="mt-8 text-brand-950 lg:hidden">
+              <CarQuickSearch cars={quickSearchCars} />
+            </div>
           </div>
 
           <HeroInfographic available={available} brands={brands} />
         </div>
       </div>
 
-      {/* The search straddles the hero's lower edge and the page below it. */}
-      <div className="bg-white">
-        <div data-hero-search className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-2 sm:px-6 lg:-mt-14 lg:px-8">
-          <CarQuickSearch cars={catalog.getAllCars().map(toFacetCar)} />
+      {/* Computers: the search straddles the hero's lower edge and the page below it. */}
+      <div className="hidden bg-white lg:block">
+        <div data-hero-search className="relative z-10 mx-auto -mt-14 max-w-7xl px-8 pb-2">
+          <CarQuickSearch cars={quickSearchCars} />
         </div>
       </div>
     </section>

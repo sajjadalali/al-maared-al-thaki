@@ -7,14 +7,29 @@ import { WhatsappIcon } from "@/components/ui/SocialIcons";
 import { site, whatsappHref } from "@/config/site";
 import { iraqiMobile } from "@/lib/phone";
 
+type FieldName = "name" | "phone" | "message";
+type Errors = Partial<Record<FieldName, string>>;
+
 type State =
-  | { kind: "form"; phoneError?: string; sending?: boolean }
+  | { kind: "form"; errors?: Errors; sending?: boolean }
   // Stored and sent to the team; WhatsApp stays offered for whoever wants it.
   | { kind: "sent"; phone: string; link: string }
   // Could not be stored or sent: the message goes to WhatsApp, so nothing is lost.
   | { kind: "whatsapp"; link: string; why: string };
 
 const PHONE_ERROR = "اكتب رقم موبايل عراقي كامل: 11 رقم يبدي بـ 07";
+
+// The site checks the fields itself, in Arabic (21 Nov): the browser's own
+// check spoke the phone's language ("Please fill out this field" on English
+// phones). The first field that needs something gets the focus.
+function check(name: string, phone: string, rawPhone: string, message: string): Errors {
+  const errors: Errors = {};
+  if (!name) errors.name = "اكتب اسمك";
+  if (!rawPhone.trim()) errors.phone = "اكتب رقم موبايلك حتى نتصل بيك";
+  else if (!phone) errors.phone = PHONE_ERROR;
+  if (!message) errors.message = "اكتب سؤالك أو شنو تحتاج";
+  return errors;
+}
 
 // The request is saved (leads, source "form") and the sales team gets it on
 // Telegram, like the numbers Sadeem takes; WhatsApp is the fallback.
@@ -23,12 +38,17 @@ export function ContactForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const data = new FormData(form);
     const name = String(data.get("name") ?? "").trim();
     const message = String(data.get("message") ?? "").trim();
-    const phone = iraqiMobile(String(data.get("phone") ?? ""));
-    if (!phone) {
-      setState({ kind: "form", phoneError: PHONE_ERROR });
+    const rawPhone = String(data.get("phone") ?? "");
+    const phone = iraqiMobile(rawPhone);
+    const errors = check(name, phone ?? "", rawPhone, message);
+    const first = (["name", "phone", "message"] as const).find((f) => errors[f]);
+    if (first || !phone) {
+      setState({ kind: "form", errors });
+      form.querySelector<HTMLElement>(`[name="${first ?? "phone"}"]`)?.focus();
       return;
     }
     const link = whatsappHref([`الاسم: ${name}`, `الهاتف: ${phone}`, "", message].join("\n"));
@@ -45,8 +65,8 @@ export function ContactForm() {
         return;
       }
       const { error } = await res.json().catch(() => ({ error: "" }));
-      if (error === "bad_phone") return setState({ kind: "form", phoneError: PHONE_ERROR });
-      if (error === "showroom_phone") return setState({ kind: "form", phoneError: "هذا رقم المعرض، اكتب رقمك إنت" });
+      if (error === "bad_phone") return setState({ kind: "form", errors: { phone: PHONE_ERROR } });
+      if (error === "showroom_phone") return setState({ kind: "form", errors: { phone: "هذا رقم المعرض، اكتب رقمك إنت" } });
       setState({
         kind: "whatsapp",
         link,
@@ -98,20 +118,35 @@ export function ContactForm() {
     );
   }
 
+  const errors = state.kind === "form" ? (state.errors ?? {}) : {};
+  // Typing in a field clears its message.
+  const clear = (field: FieldName) => () => {
+    if (state.kind === "form" && state.errors?.[field]) setState({ kind: "form", errors: { ...state.errors, [field]: undefined } });
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field name="name" label="الاسم الكامل" placeholder="اسمك" required />
+        <Field
+          name="name"
+          label="الاسم الكامل"
+          placeholder="اسمك"
+          autoComplete="name"
+          required
+          error={errors.name}
+          onInput={clear("name")}
+        />
         <Field
           name="phone"
           label="رقم الهاتف"
           placeholder="07xx xxx xxxx"
           type="tel"
           inputMode="tel"
+          autoComplete="tel"
           dir="ltr"
           required
-          error={state.phoneError}
-          onInput={() => state.phoneError && setState({ kind: "form" })}
+          error={errors.phone}
+          onInput={clear("phone")}
         />
       </div>
       <div>
@@ -125,8 +160,16 @@ export function ContactForm() {
           rows={5}
           maxLength={1000}
           placeholder="اكتب سؤالك هنا..."
-          className="w-full resize-none rounded-xl border border-black/10 px-3.5 py-2.5 text-base outline-none focus:border-brand-400 sm:text-sm"
+          aria-invalid={errors.message ? true : undefined}
+          aria-describedby={errors.message ? "message-error" : undefined}
+          onInput={clear("message")}
+          className={`w-full resize-none rounded-xl border px-3.5 py-2.5 text-base outline-none focus:border-brand-400 sm:text-sm ${errors.message ? "border-danger" : "border-black/10"}`}
         />
+        {errors.message && (
+          <p id="message-error" role="alert" className="mt-1.5 text-xs font-semibold text-danger">
+            {errors.message}
+          </p>
+        )}
       </div>
       <button
         type="submit"
@@ -151,6 +194,7 @@ function Field({
   label,
   type = "text",
   inputMode,
+  autoComplete,
   placeholder,
   dir,
   required,
@@ -161,6 +205,7 @@ function Field({
   label: string;
   type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  autoComplete?: string;
   placeholder?: string;
   dir?: "ltr" | "rtl";
   required?: boolean;
@@ -178,6 +223,7 @@ function Field({
         name={name}
         type={type}
         inputMode={inputMode}
+        autoComplete={autoComplete}
         placeholder={placeholder}
         dir={dir}
         required={required}
