@@ -3,17 +3,17 @@ import { BodyTypes } from "@/components/home/BodyTypes";
 import { FeaturedCars } from "@/components/home/FeaturedCars";
 import { SadeemSection } from "@/components/home/SadeemSection";
 import { Brands } from "@/components/home/Brands";
+import { HomeSearch } from "@/components/home/HomeSearch";
 import { Features } from "@/components/home/Features";
 import { VisitCta } from "@/components/home/VisitCta";
 
 export default function Home() {
   return (
-    // Computers: browsing (types, makes, cars), then Sadeem who helps choose,
-    // then what the showroom does once a car is chosen, then the visit.
-    // Phones (20 Nov): the picked cars right after the hero, then Sadeem, then
-    // types and makes. With Sadeem and the makes before them, the first car
-    // photo was 6 screens down; a buyer comes to see cars. Sadeem stays second
-    // (on 19 Nov he moved up from 5 screens down, being what the site is about).
+    // 21 Nov (the owner's call): Sadeem, then the quick search, then the picked
+    // cars, on every screen. Computers: the hero, types and makes, then those
+    // three, then what the showroom does once a car is chosen, then the visit.
+    // Phones: the three right after the hero, then types and makes (20 Nov: a
+    // buyer comes to see cars, so the cars came up from 6 screens down).
     // `*:w-full`: in a flex column the sections centred with mx-auto would
     // otherwise shrink to their content (and the car strip overflow on phones).
     <div className="flex flex-col *:w-full">
@@ -22,11 +22,14 @@ export default function Home() {
       </div>
       <BodyTypes />
       <Brands />
+      <div className="-order-3 lg:order-none">
+        <SadeemSection />
+      </div>
       <div className="-order-2 lg:order-none">
-        <FeaturedCars />
+        <HomeSearch />
       </div>
       <div className="-order-1 lg:order-none">
-        <SadeemSection />
+        <FeaturedCars />
       </div>
       <Features />
       <VisitCta />
