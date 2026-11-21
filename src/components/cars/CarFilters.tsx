@@ -71,6 +71,11 @@ export function CarFilters({
           <input
             id="car-search"
             type="search"
+            // No autofill bar over the keyboard (21 Nov), as in Sadeem's chat.
+            autoComplete="off"
+            data-1p-ignore=""
+            data-lpignore="true"
+            data-bwignore=""
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="ماركة، موديل..."

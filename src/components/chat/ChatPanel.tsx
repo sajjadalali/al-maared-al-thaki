@@ -131,7 +131,7 @@ export default function ChatPanel({
       // whole chat looked lifted).
       // Up when the visible part shrank, or when the input has focus on a touch
       // screen (some iPhones shrink the page itself, so the sizes alone miss it).
-      const typing = frame.contains(document.activeElement) && document.activeElement?.tagName === "INPUT";
+      const typing = frame.contains(document.activeElement) && document.activeElement?.tagName === "TEXTAREA";
       const keyboard = window.innerHeight - viewport.height > 120 || (typing && window.matchMedia("(pointer: coarse)").matches);
       const top = Math.round(viewport.offsetTop);
       const visible = Math.round(viewport.height);
