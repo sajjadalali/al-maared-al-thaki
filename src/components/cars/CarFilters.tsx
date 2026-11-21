@@ -6,6 +6,7 @@ import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { PRICE_BANDS, priceBandIndex, type FilterOptionSets } from "@/lib/filterOptions";
 import { carCount } from "@/lib/format";
+import { useBackCloses } from "@/lib/useBackCloses";
 
 // URL keys that count as a user-chosen filter (sorting doesn't).
 const FILTER_KEYS = [
@@ -31,6 +32,15 @@ export function CarFilters({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState(searchParams.get("query") ?? "");
   const priceIdx = priceBandIndex(searchParams.get("minPrice"), searchParams.get("maxPrice"));
+  // The phone's back button closes the filters sheet and keeps what was
+  // chosen in it (21 Nov; before, it left the page).
+  const { dismiss: closeSheet, replacing } = useBackCloses(mobileOpen, () => setMobileOpen(false), "carFilters", {
+    sync: searchParams.toString(),
+    onBack: (href) => {
+      const url = new URL(href);
+      router.replace(url.pathname + url.search, { scroll: false });
+    },
+  });
 
   // Every change goes through one URL update, so related keys (minYear +
   // maxYear, minPrice + maxPrice) never overwrite each other.
@@ -40,6 +50,7 @@ export function CarFilters({
       if (value) params.set(key, value);
       else params.delete(key);
     }
+    replacing();
     router.replace(`${pathname}${params.toString() ? `?${params}` : ""}`, { scroll: false });
   }
 
@@ -57,6 +68,7 @@ export function CarFilters({
   function clearAll() {
     setQuery("");
     const sort = searchParams.get("sort");
+    replacing();
     router.replace(sort ? `${pathname}?sort=${sort}` : pathname, { scroll: false });
   }
 
@@ -72,6 +84,7 @@ export function CarFilters({
             id="car-search"
             type="search"
             // No autofill bar over the keyboard (21 Nov), as in Sadeem's chat.
+            // 16px on phones: smaller text makes iPhone Safari zoom in on focus.
             autoComplete="off"
             data-1p-ignore=""
             data-lpignore="true"
@@ -79,7 +92,7 @@ export function CarFilters({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="ماركة، موديل..."
-            className="min-h-11 w-full rounded-xl border border-black/10 bg-white py-2.5 pe-3.5 ps-9 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+            className="min-h-11 w-full rounded-xl border border-black/10 bg-white py-2.5 pe-3.5 ps-9 text-base outline-none sm:text-sm transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
           />
         </div>
       </div>
@@ -213,7 +226,7 @@ export function CarFilters({
 
       {mobileOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="تصفية النتائج">
-          <div className="absolute inset-0 bg-black/40 animate-fade-in" onClick={() => setMobileOpen(false)} />
+          <div className="absolute inset-0 bg-black/40 animate-fade-in" onClick={closeSheet} />
           <div className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl bg-white shadow-2xl animate-fade-in">
             <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-neutral-200" />
             <div className="flex items-center justify-between px-5 pb-3 pt-3">
@@ -223,7 +236,7 @@ export function CarFilters({
               </p>
               <button
                 type="button"
-                onClick={() => setMobileOpen(false)}
+                onClick={closeSheet}
                 aria-label="إغلاق"
                 className="flex h-11 w-11 items-center justify-center rounded-full text-neutral-500 hover:bg-surface"
               >
@@ -236,7 +249,7 @@ export function CarFilters({
             <div className="px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
               <button
                 type="button"
-                onClick={() => setMobileOpen(false)}
+                onClick={closeSheet}
                 className="w-full rounded-2xl bg-brand-950 py-3.5 text-[15px] font-bold text-white"
               >
                 {resultCount === 0 ? "ماكو نتائج" : `عرض ${carCount(resultCount, "after")}`}
