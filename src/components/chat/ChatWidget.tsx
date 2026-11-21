@@ -134,10 +134,10 @@ function coversControl(bubble: HTMLElement): boolean {
  * Phones and tablets (20 Nov): Sadeem's head stays out of the way while the
  * top of the page is on screen (the homepage's navy front with its own «احچي
  * ويا سديم» button, elsewhere the header) and comes in once the page moves
- * past it: on the homepage as soon as the search under the front comes into
- * view (it waited for the front to pass the middle of the screen, a screen and
- * a half down). Laptops always show it, and so does a car page, where the head sits
- * in the price bar.
+ * past it. On the homepage (21 Nov) the search sits right under the front's
+ * buttons: the head comes in once the search's bottom has risen clear of the
+ * head's corner, so it never covers the search's fields. Laptops always show
+ * it, and so does a car page, where the head has its own spot.
  */
 function useTuckedAtTop(pathname: string) {
   const [tucked, setTucked] = useState(false);
@@ -147,9 +147,9 @@ function useTuckedAtTop(pathname: string) {
     const update = () => {
       frame = 0;
       if (!small.matches || document.querySelector("[data-contact-bar]")) return setTucked(false);
+      // The first one: on phones and tablets, the search in the front.
       const search = document.querySelector<HTMLElement>("[data-hero-search]");
-      // The search's top is a little way up the screen.
-      setTucked(search ? search.getBoundingClientRect().top > window.innerHeight - 60 : window.scrollY < 80);
+      setTucked(search ? search.getBoundingClientRect().bottom > window.innerHeight - 100 : window.scrollY < 80);
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);

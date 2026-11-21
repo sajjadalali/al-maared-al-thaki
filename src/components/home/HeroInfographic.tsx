@@ -55,7 +55,7 @@ function useRoadTrip() {
   const [picked, setPicked] = useState<number | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  useEffect(() => {
+  function setUpRoad(): (() => void) | void {
     const path = road.current;
     const trail = lit.current;
     const dot = light.current;
@@ -64,12 +64,14 @@ function useRoadTrip() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     // The road, measured once: where each stop is along it, and for every
-    // height on it, how far along the road that is.
+    // height on it, how far along the road that is. Every 3 px along it
+    // (21 Nov; it was every 1): the light and the stops are placed within a
+    // few px of that, a third of the slow getPointAtLength calls.
     const total = path.getTotalLength();
     const at = STOPS.map(() => ({ len: 0, d: Infinity }));
     const lenAtY: number[] = [];
     let start = 0;
-    for (let len = 0; len <= total; len += 1) {
+    for (let len = 0; len <= total; len += 3) {
       const p = path.getPointAtLength(len);
       if (!start && p.y >= 4) start = len;
       const y = Math.round(p.y);
@@ -284,6 +286,25 @@ function useRoadTrip() {
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", measure);
+    };
+  }
+
+  useEffect(() => {
+    // Set up once the page is idle (21 Nov): measuring the road took about a
+    // fifth of a second on a mid-range phone, right while the page was
+    // starting, and on phones the road is below the first screen anyway.
+    let cleanup: (() => void) | void;
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) cleanup = setUpRoad();
+    };
+    const idle = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(run, { timeout: 1200 }) : null;
+    const timer = idle === null ? setTimeout(run, 300) : undefined;
+    return () => {
+      cancelled = true;
+      if (idle !== null) window.cancelIdleCallback(idle);
+      clearTimeout(timer);
+      cleanup?.();
     };
   }, []);
 

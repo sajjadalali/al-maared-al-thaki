@@ -7,6 +7,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { PRICE_BANDS, priceBandIndex, type FilterOptionSets } from "@/lib/filterOptions";
 import { carCount } from "@/lib/format";
 import { useBackCloses } from "@/lib/useBackCloses";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 // URL keys that count as a user-chosen filter (sorting doesn't).
 const FILTER_KEYS = [
@@ -34,6 +35,7 @@ export function CarFilters({
   const priceIdx = priceBandIndex(searchParams.get("minPrice"), searchParams.get("maxPrice"));
   // The phone's back button closes the filters sheet and keeps what was
   // chosen in it (21 Nov; before, it left the page).
+  useScrollLock(mobileOpen);
   const { dismiss: closeSheet, replacing } = useBackCloses(mobileOpen, () => setMobileOpen(false), "carFilters", {
     sync: searchParams.toString(),
     onBack: (href) => {
