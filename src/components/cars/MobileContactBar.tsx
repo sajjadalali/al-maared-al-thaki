@@ -6,14 +6,14 @@ import { carNameAr, formatNumber } from "@/lib/format";
 import type { Car } from "@/types/car";
 
 /**
- * Price and contact buttons pinned to the bottom of the screen on phones. The
- * start side is left free for Sadeem's button, which sits in this bar here.
+ * Price and contact buttons pinned to the bottom of the screen on phones.
+ * Sadeem's head floats on the left above it (21 Nov; it used to sit in here).
  */
 export function MobileContactBar({ car }: { car: Car }) {
   return (
     <div
       data-contact-bar
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white/95 pe-4 ps-20 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden"
     >
       <div className="mx-auto flex max-w-xl items-center gap-3 max-[359px]:gap-2">
         <div className="min-w-0 flex-1">
@@ -37,13 +37,12 @@ export function MobileContactBar({ car }: { car: Car }) {
           href={whatsappHref(carWhatsappMessage(car))}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#1fa855] px-4 text-sm font-bold text-white max-[399px]:w-11 max-[399px]:px-0"
+          className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#1fa855] px-4 text-sm font-bold text-white max-[359px]:w-11 max-[359px]:px-0"
         >
           <WhatsappIcon className="h-5 w-5" />
-          {/* Under 400 px (most Android phones are 360) it is just the icon, a
-              square like the call button, so the whole price fits beside Sadeem:
-              at 360 «د.ع» went under the call button (20 Nov). */}
-          <span className="max-[399px]:sr-only">واتساب</span>
+          {/* Under 360 px it is just the icon, a square like the call button, so
+              the whole price fits. */}
+          <span className="max-[359px]:sr-only">واتساب</span>
         </a>
       </div>
     </div>
