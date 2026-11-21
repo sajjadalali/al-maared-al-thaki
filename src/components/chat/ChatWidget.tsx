@@ -187,9 +187,26 @@ function clampBottom(bottom: number, size: number) {
   return Math.round(Math.min(Math.max(bottom, 12), window.innerHeight - size - 88));
 }
 
-/** Phones on a car page: the head sits in the price bar and stays there. */
+/**
+ * Phones and tablets on a car page: the head has its own fixed spot there, on
+ * the left, about a third of the way up the screen (21 Nov; it used to sit in
+ * the price bar). It isn't dragged there.
+ */
 const isDocked = () =>
   !!document.querySelector("[data-contact-bar]") && window.matchMedia("(max-width: 1023px)").matches;
+
+/** Whether the head is in a car page's own spot on the left (see isDocked). */
+function useDocked(pathname: string) {
+  const [docked, setDocked] = useState(false);
+  useLayoutEffect(() => {
+    const small = window.matchMedia("(max-width: 1023px)");
+    const update = () => setDocked(isDocked());
+    update();
+    small.addEventListener("change", update);
+    return () => small.removeEventListener("change", update);
+  }, [pathname]);
+  return docked;
+}
 
 /**
  * Sadeem's head can be dragged (20 Nov), like a chat head: it follows the
@@ -279,8 +296,8 @@ function useDraggableHead(head: RefObject<HTMLElement | null>) {
     }
   };
 
-  // The saved spot goes in through custom properties, so the price bar's
-  // docked place (CSS) still wins on a car page.
+  // The saved spot goes in through custom properties, so a car page's own
+  // place for the head (the docked variant, in CSS) still wins there.
   const style = spot
     ? ({
         "--head-bottom": `${spot.bottom}px`,
@@ -362,7 +379,7 @@ function useInvite(active: boolean, onCarPage: boolean, bubble: RefObject<HTMLDi
   return { text: invite?.text ?? "", shown: active && !stopped && Boolean(invite?.shown), stop };
 }
 
-/** What the head says, in a bubble beside it (above it in a car page's price bar). */
+/** What the head says, in a bubble beside it. */
 function HeadBubble({
   text,
   shown,
@@ -388,7 +405,6 @@ function HeadBubble({
       className={cn(
         "absolute bottom-1.5 w-max max-w-[min(17.5rem,calc(100vw-6.75rem))] transition duration-300 ease-(--ease-sheet)",
         side === "right" ? "right-full mr-3 origin-bottom-right" : "left-full ml-3 origin-bottom-left",
-        "docked:bottom-full docked:right-0 docked:mb-3 docked:mr-0 docked:max-w-[min(17.5rem,calc(100vw-2rem))]",
         shown ? "scale-100 opacity-100" : "pointer-events-none scale-75 opacity-0"
       )}
     >
@@ -641,7 +657,9 @@ export function ChatWidget() {
   const warmUp = () => void loadPanel().then(() => setMounted(true));
 
   const tucked = useTuckedAtTop(pathname);
-  const { wrapperRef: headBoxRef, side: headSide, dragging, style: headStyle, wasDrag, handlers: dragHandlers } = useDraggableHead(headRef);
+  const { wrapperRef: headBoxRef, side: spotSide, dragging, style: headStyle, wasDrag, handlers: dragHandlers } = useDraggableHead(headRef);
+  const docked = useDocked(pathname);
+  const headSide = docked ? "left" : spotSide;
   const inviteBox = useRef<HTMLDivElement>(null);
   const invite = useInvite(phase === "closed" && !flight && !unread && !resumeHint && !tucked && !dragging, /^\/cars\/.+/.test(pathname), inviteBox);
   const status = unread ? "سديم رد عليك" : "رجوع للمحادثة";
@@ -658,7 +676,7 @@ export function ChatWidget() {
           data-sadeem-head
           style={headStyle}
           className={cn(
-            "fixed bottom-[var(--head-bottom,1.25rem)] left-[var(--head-left,auto)] right-[var(--head-right,1.25rem)] z-50 docked:bottom-[max(0.625rem,env(safe-area-inset-bottom))] docked:left-auto docked:right-3",
+            "fixed bottom-[var(--head-bottom,1.25rem)] left-[var(--head-left,auto)] right-[var(--head-right,1.25rem)] z-50 docked:bottom-[max(6.5rem,33dvh)] docked:left-3 docked:right-auto",
             "transition duration-300 ease-out",
             !started && "animate-pop-in",
             flight === "close" && "invisible",
